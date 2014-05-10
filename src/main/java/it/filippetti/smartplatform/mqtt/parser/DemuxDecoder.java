@@ -11,6 +11,7 @@ import java.util.List;
  * @author andrea
  */
 abstract class DemuxDecoder {
+
     abstract void decode(ByteBuf in, List<Object> out) throws Exception;
     
     protected boolean decodeCommonHeader(AbstractMessage message, ByteBuf in) {

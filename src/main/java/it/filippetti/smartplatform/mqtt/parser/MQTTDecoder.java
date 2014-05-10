@@ -3,7 +3,9 @@ package it.filippetti.smartplatform.mqtt.parser;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.CorruptedFrameException;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
+import org.vertx.java.core.buffer.Buffer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,20 @@ public class MQTTDecoder {
        m_decoderMap.put(AbstractMessage.PUBREL, new PubRelDecoder());
     }
 
-    public void decode(ByteBuf in, List<Object> out) throws Exception {
+    public AbstractMessage dec(Buffer in) throws Exception {
+        ArrayList<Object> out = new ArrayList<>();
+        decode(in.getByteBuf(), out);
+        if(out.size()==1) {
+            Object o = out.get(0);
+            if (o instanceof AbstractMessage) {
+                return (AbstractMessage) o;
+            }
+        } else if(out.size()>1) {
+            throw new CorruptedFrameException("Parsed too many messages.");
+        }
+        return null;
+    }
+    private void decode(ByteBuf in, List<Object> out) throws Exception {
         in.markReaderIndex();
         if (!checkHeaderAvailability(in)) {
             in.resetReaderIndex();

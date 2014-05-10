@@ -70,13 +70,11 @@ public class MQTTBrokerVerticle extends Verticle {
                         public void onToken(byte[] token, boolean timeout) {
 
                             Buffer buffer = new Buffer(token);
-                            ByteBuf in = buffer.getByteBuf();
-                            ArrayList<Object> out = new ArrayList<>();
+//                            ByteBuf in = buffer.getByteBuf();
+//                            ArrayList<Object> out = new ArrayList<>();
                             try {
-                                decoder.decode(in, out);
-                                for(Object message : out) {
-                                    onMessageFromClient(netSocket, message, buffer, handlers);
-                                }
+                                AbstractMessage message = decoder.dec(buffer);
+                                onMessageFromClient(netSocket, message, buffer, handlers);
                             }
                             catch (Exception e) {
                                 container.logger().error(e.getMessage(), e);
@@ -152,9 +150,9 @@ public class MQTTBrokerVerticle extends Verticle {
         }
     }
 
-    private void onMessageFromClient(NetSocket netSocket, Object message, Buffer buffer, final Map<String, Set<Handler<Message>>> handlers) {
+    private void onMessageFromClient(NetSocket netSocket, AbstractMessage msg, Buffer buffer, final Map<String, Set<Handler<Message>>> handlers) {
         try {
-            AbstractMessage msg = (AbstractMessage) message;
+//            AbstractMessage msg = (AbstractMessage) message;
 //            trace(msg, " >> ");
             switch (msg.getMessageType()) {
                 case CONNECT:
@@ -290,17 +288,7 @@ public class MQTTBrokerVerticle extends Verticle {
 
     private void sendMessageToClient(NetSocket netSocket, AbstractMessage message) {
         try {
-//            Buffer b1 = new Buffer(2 + message.getRemainingLength());
-            Buffer b1 = new Buffer();
-            ByteBuf buff1 = b1.getByteBuf();
-            encoder.encode(message, buff1);
-            b1 = new Buffer(buff1);
-//            netSocket.write(b1);
-//            trace(message, " << ");
-//            container.logger().info(
-//                    Thread.currentThread().getId()+" "+Thread.currentThread().getName()
-//                            +" writed "+ b1.length() +" bytes to socket.writeHandlerID"
-//                            +" => "+ netSocket.writeHandlerID());
+            Buffer b1 = encoder.enc(message);
             sendMessageToClient(netSocket, b1);
 
         } catch(Throwable e) {
@@ -334,9 +322,7 @@ public class MQTTBrokerVerticle extends Verticle {
         try {
             String topic = publishMessage.getTopicName();
 //            JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
-            ByteBuf bb = new Buffer().getByteBuf();
-            encoder.encode(publishMessage, bb);
-            Buffer msgBin = new Buffer(bb);
+            Buffer msgBin = encoder.enc(publishMessage);
 
             Set<String> topicsSubscribed = vertx.sharedData().getSet("mqtt_topics");
             Set<String> topicsToPublish = new LinkedHashSet<>();
@@ -426,9 +412,7 @@ public class MQTTBrokerVerticle extends Verticle {
 //                            sendMessageToClient(netSocket, pm);
 
                             Buffer msgBin = (Buffer)message.body();
-                            List<Object> out = new ArrayList<>();
-                            decoder.decode(msgBin.getByteBuf(), out);
-                            PublishMessage pm = (PublishMessage)out.iterator().next();
+                            PublishMessage pm = (PublishMessage)decoder.dec(msgBin);
                             int iSentQos = qosUtils.toInt(pm.getQos());
                             int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
                             pm.setQos(qosUtils.toQos(iOkQos));

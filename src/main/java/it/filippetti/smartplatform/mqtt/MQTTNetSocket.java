@@ -28,15 +28,9 @@ public class MQTTNetSocket extends MQTTSocket {
     }
 
     public void start() {
-        final MQTTTokenizer tokenizer = startTokenizer();
-        netSocket.dataHandler(new Handler<Buffer>() {
-            @Override
-            public void handle(Buffer buffer) {
-                tokenizer.process(buffer.getBytes());
-            }
-        });
-        container.logger().debug("start "+ Thread.currentThread().getName());
+        netSocket.dataHandler(this);
     }
+
 
     @Override
     protected void sendMessageToClient(Buffer bytes) {
@@ -67,9 +61,7 @@ public class MQTTNetSocket extends MQTTSocket {
     @Override
     protected void storeMessage(PublishMessage publishMessage) {
         try {
-            ByteBuf bb = new Buffer().getByteBuf();
-            encoder.encode(publishMessage, bb);
-            Buffer tostore = new Buffer(bb);
+            Buffer tostore = encoder.enc(publishMessage);
             String key = publishMessage.getTopicName();
             messagesStore.put(key, tostore);
         } catch(Throwable e) {

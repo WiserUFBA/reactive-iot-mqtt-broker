@@ -1,6 +1,5 @@
 package it.filippetti.smartplatform.mqtt;
 
-import io.netty.buffer.ByteBuf;
 import it.filippetti.smartplatform.mqtt.parser.MQTTDecoder;
 import it.filippetti.smartplatform.mqtt.parser.MQTTEncoder;
 import org.dna.mqtt.moquette.proto.messages.*;
@@ -18,56 +17,54 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 /**
  * Created by giovanni on 07/05/2014.
  */
-public abstract class MQTTSocket {
+public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener, Handler<Buffer> {
 
     protected Vertx vertx;
     protected Container container;
-
     protected MQTTDecoder decoder;
     protected MQTTEncoder encoder;
     protected MQTTJson mqttJson;
+    private QOSUtils qosUtils;
 
     private Map<String, Set<Handler<Message>>> handlers;
     private MQTTTokenizer tokenizer;
+    private MQTTTopicsManager topicsManager;
 
     public MQTTSocket(Vertx vertx, Container container) {
         decoder = new MQTTDecoder();
         encoder = new MQTTEncoder();
         mqttJson = new MQTTJson();
+        qosUtils = new QOSUtils();
         handlers = new HashMap<>();
         tokenizer = new MQTTTokenizer();
+        tokenizer.registerListener(this);
+        topicsManager = new MQTTTopicsManager(vertx);
 
         this.vertx = vertx;
         this.container = container;
     }
 
-    public MQTTTokenizer startTokenizer() {
-        tokenizer.registerListener(new MQTTTokenizer.MqttTokenizerListener() {
-            @Override
-            public void onToken(byte[] token, boolean timeout) {
 
-                Buffer buffer = new Buffer(token);
-                ByteBuf in = buffer.getByteBuf();
-                ArrayList<Object> out = new ArrayList<>();
-                try {
-                    MQTTSocket.this.decoder.decode(in, out);
-                    for(Object message : out) {
-                        onMessageFromClient(message, buffer);
-                    }
-                }
-                catch (Exception e) {
-                    MQTTSocket.this.container.logger().error(e.getMessage(), e);
-                }
-            }
-        });
-        return tokenizer;
-    }
-//    abstract public void start();
-
-
-    protected void onMessageFromClient(Object message, Buffer buffer) {
+    @Override
+    public void onToken(byte[] token, boolean timeout) {
+        Buffer buffer = new Buffer(token);
         try {
-            AbstractMessage msg = (AbstractMessage) message;
+            AbstractMessage message = decoder.dec(buffer);
+            onMessageFromClient(message);
+        }
+        catch (Exception e) {
+            container.logger().error(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void handle(Buffer buffer) {
+        tokenizer.process(buffer.getBytes());
+    }
+
+
+    protected void onMessageFromClient(AbstractMessage msg) {
+        try {
             switch (msg.getMessageType()) {
                 case CONNECT:
                     ConnectMessage connect = (ConnectMessage)msg;
@@ -188,12 +185,8 @@ public abstract class MQTTSocket {
 
     protected void sendMessageToClient(AbstractMessage message) {
         try {
-            Buffer b1 = new Buffer();
-            ByteBuf buff1 = b1.getByteBuf();
-            encoder.encode(message, buff1);
-            b1 = new Buffer(buff1);
+            Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
-
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }
@@ -226,35 +219,12 @@ public abstract class MQTTSocket {
         try {
             String topic = publishMessage.getTopicName();
             JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
-            ByteBuf bb = new Buffer().getByteBuf();
-            encoder.encode(publishMessage, bb);
-            Buffer msgBin = new Buffer(bb);
+//            ByteBuf bb = new Buffer().getByteBuf();
+//            encoder.encode(publishMessage, bb);
+//            Buffer msgBin = new Buffer(bb);
 
-            Set<String> topicsSubscribed = vertx.sharedData().getSet("mqtt_topics");
-            Set<String> topicsToPublish = new LinkedHashSet<>();
-            for (String tsub : topicsSubscribed) {
-                if (tsub.contains("+")) {
-                    String pattern = tsub.replaceAll("\\+", ".+?");
-                    int topicSlashCount = topic.replaceAll("[^/]", "").length();
-                    int tsubSlashCount = tsub.replaceAll("[^/]", "").length();
-                    if (topicSlashCount == tsubSlashCount) {
-                        if (topic.matches(pattern)) {
-                            topicsToPublish.add(tsub);
-                        }
-                    }
-                } else if (tsub.contains("#")) {
-                    String pattern = tsub.replaceAll("/#", "/.+");
-                    int topicSlashCount = topic.replaceAll("[^/]", "").length();
-                    int tsubSlashCount = tsub.replaceAll("[^/]", "").length();
-                    if (topicSlashCount >= tsubSlashCount) {
-                        if (topic.matches(pattern)) {
-                            topicsToPublish.add(tsub);
-                        }
-                    }
-                } else if(topic.equals(tsub)) {
-                    topicsToPublish.add(tsub);
-                }
-            }
+//            Set<String> topicsSubscribed = vertx.sharedData().getSet("mqtt_topics");
+            Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
 
             for (String tpub : topicsToPublish) {
                 vertx.eventBus().publish(tpub, msg);
@@ -275,7 +245,6 @@ public abstract class MQTTSocket {
             for (SubscribeMessage.Couple c : subs) {
                 byte requestedQosByte = c.getQos();
                 final QOSType requestedQos = toQos(requestedQosByte);
-                final QOSUtils qosUtils = new QOSUtils();
                 final int iMaxQos = qosUtils.toInt(requestedQos);
 
                 String topic = c.getTopic();
@@ -310,7 +279,8 @@ public abstract class MQTTSocket {
                 Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
                 clientHandlers.add(handler);
                 vertx.eventBus().registerHandler(topic, handler);
-                vertx.sharedData().getSet("mqtt_topics").add(topic);
+//                vertx.sharedData().getSet("mqtt_topics").add(topic);
+                topicsManager.addSubscribedTopic(topic);
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
@@ -323,7 +293,8 @@ public abstract class MQTTSocket {
                 Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
                 for (Handler<Message> handler : clientHandlers) {
                     vertx.eventBus().unregisterHandler(topic, handler);
-                    vertx.sharedData().getSet("mqtt_topics").remove(topic);
+//                    vertx.sharedData().getSet("mqtt_topics").remove(topic);
+                    topicsManager.removeSubscribedTopic(topic);
                 }
                 clearClientHandlers(topic);
             }

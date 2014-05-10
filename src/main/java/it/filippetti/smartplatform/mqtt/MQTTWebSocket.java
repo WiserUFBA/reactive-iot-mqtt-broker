@@ -21,13 +21,7 @@ public class MQTTWebSocket extends MQTTSocket {
     }
 
     public void start() {
-        final MQTTTokenizer tokenizer = startTokenizer();
-        netSocket.dataHandler(new Handler<Buffer>() {
-            @Override
-            public void handle(Buffer buffer) {
-                tokenizer.process(buffer.getBytes());
-            }
-        });
+        netSocket.dataHandler(this);
     }
 
     @Override

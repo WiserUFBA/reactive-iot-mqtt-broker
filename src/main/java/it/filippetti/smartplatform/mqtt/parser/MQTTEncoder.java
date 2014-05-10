@@ -3,7 +3,10 @@ package it.filippetti.smartplatform.mqtt.parser;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.CorruptedFrameException;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
+import org.vertx.java.core.buffer.Buffer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +35,14 @@ public class MQTTEncoder {
        m_encoderMap.put(AbstractMessage.PUBREL, new PubRelEncoder());
     }
 
-    public void encode(AbstractMessage msg, ByteBuf bb) throws Exception {
+    public Buffer enc(AbstractMessage msg) throws Exception {
+        Buffer buff = new Buffer(2+msg.getRemainingLength());
+        ByteBuf bb = buff.getByteBuf();
+        encode(msg, bb);
+        return new Buffer(bb);
+    }
+
+    private void encode(AbstractMessage msg, ByteBuf bb) throws Exception {
         DemuxEncoder encoder = m_encoderMap.get(msg.getMessageType());
         if (encoder == null) {
             throw new CorruptedFrameException("Can't find any suitable decoder for message type: " + msg.getMessageType());
