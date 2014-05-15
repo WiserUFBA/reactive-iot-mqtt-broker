@@ -1,4 +1,4 @@
 vertx-mqtt-broker-mod
 =====================
 
-MQTT broker implementation on Vert.x
+Vert.x MQTT broker module implementation.

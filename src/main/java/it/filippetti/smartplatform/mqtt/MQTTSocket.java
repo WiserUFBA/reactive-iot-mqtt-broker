@@ -279,7 +279,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
                 clientHandlers.add(handler);
                 vertx.eventBus().registerHandler(topic, handler);
-//                vertx.sharedData().getSet("mqtt_topics").add(topic);
                 topicsManager.addSubscribedTopic(topic);
             }
         } catch(Throwable e) {
@@ -293,7 +292,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
                 for (Handler<Message> handler : clientHandlers) {
                     vertx.eventBus().unregisterHandler(topic, handler);
-//                    vertx.sharedData().getSet("mqtt_topics").remove(topic);
                     topicsManager.removeSubscribedTopic(topic);
                 }
                 clearClientHandlers(topic);
@@ -304,7 +302,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         }
     }
     private Set<Handler<Message>> getClientHandlers(String topic) {
-//        String sessionID = netSocket.writeHandlerID()+"_"+topic;
         String sessionID = topic;
         if(!handlers.containsKey(sessionID)) {
             handlers.put(sessionID, new HashSet<Handler<Message>>());
@@ -313,7 +310,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         return clientHandlers;
     }
     private void clearClientHandlers(String topic) {
-//        String sessionID = netSocket.writeHandlerID() + "_" + topic;
         String sessionID = topic;
         if (handlers.containsKey(sessionID)) {
             handlers.remove(sessionID);
@@ -325,4 +321,5 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     abstract protected void storeMessage(PublishMessage publishMessage);
     abstract protected void deleteMessage(PublishMessage publishMessage);
     abstract protected void storeWillMessage(String willMsg, byte willQos, String willTopic);
+
 }
