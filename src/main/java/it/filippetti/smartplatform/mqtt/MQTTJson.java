@@ -36,4 +36,13 @@ public class MQTTJson {
         }
         return ret;
     }
+
+    public JsonObject serializeWillMessage(String willMsg, byte willQos, String willTopic) {
+        JsonObject wm = new JsonObject()
+                .putString("topic",willTopic)
+                .putNumber("qos", new Integer(willQos))
+                .putString("message",willMsg);
+        return wm;
+    }
+
 }

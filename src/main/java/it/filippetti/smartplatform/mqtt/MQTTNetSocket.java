@@ -1,12 +1,11 @@
 package it.filippetti.smartplatform.mqtt;
 
-import io.netty.buffer.ByteBuf;
 import org.dna.mqtt.moquette.proto.messages.ConnectMessage;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.shareddata.ConcurrentSharedMap;
 import org.vertx.java.platform.Container;
@@ -18,7 +17,7 @@ public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
     private ConcurrentSharedMap<String, Buffer> messagesStore;
-    private ConcurrentSharedMap<String, Buffer> willMessagesStore;
+    private ConcurrentSharedMap<String, JsonObject> willMessagesStore;
 
     public MQTTNetSocket(Vertx vertx, Container container, NetSocket netSocket) {
         super(vertx, container);
@@ -83,6 +82,7 @@ public class MQTTNetSocket extends MQTTSocket {
 
     @Override
     protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {
-        vertx.sharedData().getMap("willMessages").put(willTopic, willMsg);
+        JsonObject wm = mqttJson.serializeWillMessage(willMsg, willQos, willTopic);
+        willMessagesStore.put(willTopic, wm);
     }
 }
