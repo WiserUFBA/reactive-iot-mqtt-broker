@@ -50,35 +50,29 @@ public class MQTTNetSocket extends MQTTSocket {
         }
     }
 
-    @Override
-    protected void handleConnectMessage(ConnectMessage connectMessage) {
-        super.handleConnectMessage(connectMessage);
-        String clientID = connectMessage.getClientID();
-        // TODO: use clientID for sessions management ... ?
-    }
 
-    @Override
-    protected void storeMessage(PublishMessage publishMessage) {
-        try {
-            Buffer tostore = encoder.enc(publishMessage);
-            String key = publishMessage.getTopicName();
-            messagesStore.put(key, tostore);
-        } catch(Throwable e) {
-            container.logger().error(e.getMessage());
-        }
-    }
-
-    @Override
-    protected void deleteMessage(PublishMessage publishMessage) {
-        try {
-            String key = publishMessage.getTopicName();
-            if(messagesStore.containsKey(key)) {
-                messagesStore.remove(key);
-            }
-        } catch(Throwable e) {
-            container.logger().error(e.getMessage());
-        }
-    }
+//    @Override
+//    protected void storeMessage(PublishMessage publishMessage) {
+//        try {
+//            Buffer tostore = encoder.enc(publishMessage);
+//            String key = publishMessage.getTopicName();
+//            messagesStore.put(key, tostore);
+//        } catch(Throwable e) {
+//            container.logger().error(e.getMessage());
+//        }
+//    }
+//
+//    @Override
+//    protected void deleteMessage(PublishMessage publishMessage) {
+//        try {
+//            String key = publishMessage.getTopicName();
+//            if(messagesStore.containsKey(key)) {
+//                messagesStore.remove(key);
+//            }
+//        } catch(Throwable e) {
+//            container.logger().error(e.getMessage());
+//        }
+//    }
 
     @Override
     protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {

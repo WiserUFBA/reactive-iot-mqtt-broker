@@ -14,6 +14,19 @@ public class QOSUtils {
             qosTmp = AbstractMessage.QOSType.EXACTLY_ONCE;
         return qosTmp;
     }
+    public byte toByte(AbstractMessage.QOSType qos) {
+        switch (qos) {
+            case MOST_ONE:
+                return 0;
+            case LEAST_ONE:
+                return 1;
+            case EXACTLY_ONCE:
+                return 2;
+            case RESERVED:
+                return 3;
+        }
+        return 0;
+    }
     public Integer toInt(AbstractMessage.QOSType qos) {
         switch (qos) {
             case MOST_ONE:

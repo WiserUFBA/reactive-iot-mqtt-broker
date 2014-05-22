@@ -2,6 +2,8 @@ package it.filippetti.smartplatform.mqtt;
 
 import it.filippetti.smartplatform.mqtt.parser.MQTTDecoder;
 import it.filippetti.smartplatform.mqtt.parser.MQTTEncoder;
+import it.filippetti.smartplatform.mqtt.persistence.MQTTStoreManager;
+import it.filippetti.smartplatform.mqtt.persistence.Subscription;
 import org.dna.mqtt.moquette.proto.messages.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -30,6 +32,10 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private MQTTTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
 
+    private String clientID;
+    private boolean cleanSession;
+    private PublishMessage lastPublishMessage;
+
     public MQTTSocket(Vertx vertx, Container container) {
         decoder = new MQTTDecoder();
         encoder = new MQTTEncoder();
@@ -42,6 +48,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
         this.vertx = vertx;
         this.container = container;
+
+        this.container.logger().info("New " + this.getClass().getSimpleName() + " " + this);
     }
 
 
@@ -153,7 +161,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // 5. Delete message
                     // 5. <- PubComp
 
-                    //deleteMessage(publish); ----> dove trovo il messaggio "publish"?
+                    deleteMessage();
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
                     sendMessageToClient(pubComp);
@@ -162,6 +170,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // TODO:
                     // 1. terminate the session
                     // se il flag "clean_session" del CONNECT era == 0, allora non pulisce le subscriptions di questo client
+                    removeClientID(clientID);
                     break;
                 case PUBACK:
                     // A PUBACK message is the response to a PUBLISH message with QoS level 1.
@@ -192,17 +201,39 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         }
     }
 
-    protected void handleConnectMessage(ConnectMessage connectMessage) {
+    protected void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
         ConnectMessage connect = connectMessage;
-        String clientID = connect.getClientID();
-        if(connect.isCleanSession()) {
-            // 1 sessione per SOLO la durata della connection
+        clientID = connect.getClientID();
+        cleanSession = connect.isCleanSession();
+        boolean clientIDExists = clientIDExists(clientID);
+        container.logger().info("Connect ClientID ==> "+ clientID);
+        if(clientIDExists) {
+            // TODO: reset older clientID socket connection
+            container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
+        }
+        container.logger().info(clientID + " " + this);
+        if(cleanSession) {
+            // session is not persistent
         }
         else {
-            // la sessione è persistente
-            // TODO:
-            // 1. prendere dalla vecchia connessione di questo client, tutte le vecchie subscriptions
-            // 2. risottoscrivere il client a tutti i topics
+            // session is persistent...
+            MQTTStoreManager store = getStore();
+            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
+            for (Subscription sub : subscriptions) {
+                // subsribe
+                QOSType qos = new QOSUtils().toQos(sub.getQos());
+                String topic = sub.getTopic();
+                subscribeClientToTopic(topic, qos);
+
+                // re-publish
+                List<byte[]> messages = store.getMessagesByTopic(topic);
+                for(byte[] message : messages) {
+                    // publish message to this client
+                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
+                    handlePublishMessage(pm);
+                    // delete will appen when publish end correctly.
+                }
+            }
         }
 
         if(connect.isWillFlag()) {
@@ -219,16 +250,11 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         try {
             String topic = publishMessage.getTopicName();
             JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
-//            ByteBuf bb = new Buffer().getByteBuf();
-//            encoder.encode(publishMessage, bb);
-//            Buffer msgBin = new Buffer(bb);
 
-//            Set<String> topicsSubscribed = vertx.sharedData().getSet("mqtt_topics");
             Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
 
             for (String tpub : topicsToPublish) {
                 vertx.eventBus().publish(tpub, msg);
-//                vertx.eventBus().publish(tpub, msgBin);
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
@@ -245,46 +271,81 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             for (SubscribeMessage.Couple c : subs) {
                 byte requestedQosByte = c.getQos();
                 final QOSType requestedQos = toQos(requestedQosByte);
-                final int iMaxQos = qosUtils.toInt(requestedQos);
-
+//                final int iMaxQos = qosUtils.toInt(requestedQos);
                 String topic = c.getTopic();
-                Handler<Message> handler = new Handler<Message>() {
-                    @Override
-                    public void handle(Message message) {
-                        try {
-                            JsonObject json = (JsonObject) message.body();
-                            PublishMessage pm = mqttJson.deserializePublishMessage(json);
-                            // il qos è quello MASSIMO RICHIESTO
-                            int iSentQos = qosUtils.toInt(pm.getQos());
-                            int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-                            pm.setQos(qosUtils.toQos(iOkQos));
-                            pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-                            sendMessageToClient(pm);
 
-//                            Buffer msgBin = (Buffer)message.body();
-//                            List<Object> out = new ArrayList<>();
-//                            decoder.decode(msgBin.getByteBuf(), out);
-//                            PublishMessage pm = (PublishMessage)out.iterator().next();
+                subscribeClientToTopic(topic, requestedQos);
+
+//                Handler<Message> handler = new Handler<Message>() {
+//                    @Override
+//                    public void handle(Message message) {
+//                        try {
+//                            JsonObject json = (JsonObject) message.body();
+//                            PublishMessage pm = mqttJson.deserializePublishMessage(json);
+//                            // il qos è quello MASSIMO RICHIESTO
 //                            int iSentQos = qosUtils.toInt(pm.getQos());
 //                            int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
 //                            pm.setQos(qosUtils.toQos(iOkQos));
-//                            pm.setRetainFlag(false);
+//                            pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
 //                            sendMessageToClient(pm);
+//
+////                            Buffer msgBin = (Buffer)message.body();
+////                            List<Object> out = new ArrayList<>();
+////                            decoder.decode(msgBin.getByteBuf(), out);
+////                            PublishMessage pm = (PublishMessage)out.iterator().next();
+////                            int iSentQos = qosUtils.toInt(pm.getQos());
+////                            int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
+////                            pm.setQos(qosUtils.toQos(iOkQos));
+////                            pm.setRetainFlag(false);
+////                            sendMessageToClient(pm);
+//
+//                        } catch (Throwable e) {
+//                            container.logger().error(e.getMessage(), e);
+//                        }
+//                    }
+//                };
+//                Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
+//                clientHandlers.add(handler);
+//                vertx.eventBus().registerHandler(topic, handler);
+//                topicsManager.addSubscribedTopic(topic);
 
-                        } catch (Throwable e) {
-                            container.logger().error(e.getMessage(), e);
-                        }
-                    }
-                };
-                Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-                clientHandlers.add(handler);
-                vertx.eventBus().registerHandler(topic, handler);
-                topicsManager.addSubscribedTopic(topic);
+                if(clientID!=null && cleanSession==false) {
+                    Subscription s = new Subscription();
+                    s.setQos(requestedQosByte);
+                    s.setTopic(topic);
+                    getStore().saveSubscription(s, clientID);
+                }
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }
     }
+
+    protected void subscribeClientToTopic(String topic, QOSType requestedQos) {
+        final int iMaxQos = qosUtils.toInt(requestedQos);
+        Handler<Message> handler = new Handler<Message>() {
+            @Override
+            public void handle(Message message) {
+                try {
+                    JsonObject json = (JsonObject) message.body();
+                    PublishMessage pm = mqttJson.deserializePublishMessage(json);
+                    // il qos è quello MASSIMO RICHIESTO
+                    int iSentQos = qosUtils.toInt(pm.getQos());
+                    int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
+                    pm.setQos(qosUtils.toQos(iOkQos));
+                    pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
+                    sendMessageToClient(pm);
+                } catch (Throwable e) {
+                    container.logger().error(e.getMessage(), e);
+                }
+            }
+        };
+        Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
+        clientHandlers.add(handler);
+        vertx.eventBus().registerHandler(topic, handler);
+        topicsManager.addSubscribedTopic(topic);
+    }
+
     protected void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {
         try {
             List<String> topics = unsubscribeMessage.topics();
@@ -293,6 +354,9 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 for (Handler<Message> handler : clientHandlers) {
                     vertx.eventBus().unregisterHandler(topic, handler);
                     topicsManager.removeSubscribedTopic(topic);
+                    if(clientID!=null && cleanSession==false) {
+                        getStore().deleteSubcription(topic, clientID);
+                    }
                 }
                 clearClientHandlers(topic);
             }
@@ -318,8 +382,48 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
     abstract protected void sendMessageToClient(Buffer bytes);
-    abstract protected void storeMessage(PublishMessage publishMessage);
-    abstract protected void deleteMessage(PublishMessage publishMessage);
+    protected void storeMessage(PublishMessage publishMessage) {
+        lastPublishMessage = publishMessage;
+        try {
+            byte[] m = encoder.enc(publishMessage).getBytes();
+            getStore().saveMessage(clientID+publishMessage.getMessageID(), m, publishMessage.getTopicName());
+        } catch(Exception e) {
+            container.logger().error(e.getMessage(), e);
+        }
+    }
+    protected void deleteMessage(PublishMessage publishMessage) {
+        try {
+            byte[] m = encoder.enc(publishMessage).getBytes();
+            getStore().deleteMessage(clientID+publishMessage.getMessageID(), m, publishMessage.getTopicName());
+        } catch(Exception e) {
+            container.logger().error(e.getMessage(), e);
+        }
+        lastPublishMessage = null;
+    }
+    protected void deleteMessage() {
+        deleteMessage(lastPublishMessage);
+    }
     abstract protected void storeWillMessage(String willMsg, byte willQos, String willTopic);
 
+
+    protected MQTTStoreManager getStore() {
+        MQTTStoreManager s = new MQTTStoreManager(vertx, container);
+        return s;
+    }
+
+    protected boolean clientIDExists(String clientID) {
+        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
+        boolean exists = allClientIDs.contains(clientID);
+        if(exists) {
+            return false;
+        } else {
+            allClientIDs.add(clientID);
+            return true;
+        }
+    }
+
+    protected void removeClientID(String clientID) {
+        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
+        allClientIDs.remove(clientID);
+    }
 }
