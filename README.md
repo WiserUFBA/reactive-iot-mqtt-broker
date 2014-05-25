@@ -17,3 +17,16 @@ Required: Vert.x 2.1M1+ and Maven 3+
 mvn clean package<br/>
 cd target<br/>
 vertx runzip vertx-mqtt-broker-mod-1.0-SNAPSHOT-mod.zip<br/>
+
+TODO
+----
+<ul>
+<li>Include tests
+</li>
+<li>Debug persistence og qos 1 and 2 messages, in case more client are connected and subvscribed to the same topics
+</li>
+<li>Clean persistence related code, make it extensible (RAM, Cassandra, HBase, MongoDB as pluggable storage engine)
+</li>
+<li>Implement will message support and all protocol features.
+</li>
+</ul>
