@@ -1,7 +1,7 @@
 {
 
   // Java verticle
-  "main":"it.filippetti.smartplatform.mqtt.MQTTBroker",
+  "main":"io.github.giovibal.mqtt.MQTTBroker",
   "worker": false,
 
   "description":"An MQTT Broker module for vert.x",
