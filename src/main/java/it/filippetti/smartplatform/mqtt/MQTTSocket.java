@@ -112,16 +112,16 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                             break;
                         case MOST_ONE:
                             // 1. publish message to subscribers
-                            handlePublishMessage(publish);
+                            handlePublishMessage(publish, false);
                             break;
                         case LEAST_ONE:
                             // 1. Store message
                             // 2. publish message to subscribers
                             // 3. Delete message
                             // 4. <- PubAck
-                            storeMessage(publish);
-                            handlePublishMessage(publish);
-                            deleteMessage(publish);
+//                            storeMessage(publish);
+                            handlePublishMessage(publish, true);
+//                            deleteMessage(publish);
                             PubAckMessage pubAck = new PubAckMessage();
                             pubAck.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubAck);
@@ -134,8 +134,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                             // 4. -> PubRel from client
                             // 5. Delete message
                             // 5. <- PubComp
-                            storeMessage(publish);
-                            handlePublishMessage(publish);
+//                            storeMessage(publish);
+                            handlePublishMessage(publish, true);
                             PubRecMessage pubRec = new PubRecMessage();
                             pubRec.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubRec);
@@ -149,6 +149,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     sendMessageToClient(prelResp);
                     break;
                 case PUBCOMP:
+//                    deleteMessage();
                     break;
                 case PUBREL:
                     PubRelMessage pubRel = (PubRelMessage)msg;
@@ -161,7 +162,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // 5. Delete message
                     // 5. <- PubComp
 
-                    deleteMessage();
+//                    deleteMessage();
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
                     sendMessageToClient(pubComp);
@@ -171,11 +172,13 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // 1. terminate the session
                     // se il flag "clean_session" del CONNECT era == 0, allora non pulisce le subscriptions di questo client
                     removeClientID(clientID);
+                    clientID = null;
                     break;
                 case PUBACK:
                     // A PUBACK message is the response to a PUBLISH message with QoS level 1.
                     // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
                     // and by a subscriber in response to a PUBLISH message from the server.
+//                    deleteMessage();
                     break;
                 case PINGREQ:
                     PingRespMessage pingResp = new PingRespMessage();
@@ -212,50 +215,57 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
         }
         container.logger().info(clientID + " " + this);
-        if(cleanSession) {
-            // session is not persistent
-        }
-        else {
-            // session is persistent...
-            MQTTStoreManager store = getStore();
-            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
-            for (Subscription sub : subscriptions) {
-                // subsribe
-                QOSType qos = new QOSUtils().toQos(sub.getQos());
-                String topic = sub.getTopic();
-                subscribeClientToTopic(topic, qos);
-
-                // re-publish
-                List<byte[]> messages = store.getMessagesByTopic(topic);
-                for(byte[] message : messages) {
-                    // publish message to this client
-                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-                    handlePublishMessage(pm);
-                    // delete will appen when publish end correctly.
-                }
-            }
-        }
+//        if(cleanSession) {
+//            // session is not persistent
+//        }
+//        else {
+//            // session is persistent...
+//            MQTTStoreManager store = getStore();
+//            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
+//            for (Subscription sub : subscriptions) {
+//                // subsribe
+//                QOSType qos = new QOSUtils().toQos(sub.getQos());
+//                String topic = sub.getTopic();
+//                subscribeClientToTopic(topic, qos);
+//
+//                // re-publish
+//                List<byte[]> messages = store.getMessagesByTopic(topic);
+//                for(byte[] message : messages) {
+//                    // publish message to this client
+//                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
+//                    handlePublishMessage(pm, false);
+//                    // delete will appen when publish end correctly.
+//                    deleteMessage(pm);
+//                }
+//            }
+//        }
+        republishMessages();
 
         if(connect.isWillFlag()) {
             String willMsg = connect.getWillMessage();
             byte willQos = connect.getWillQos();
             String willTopic = connect.getWillTopic();
-            // TODO: fare lo storage di questo willMessage, così da inviarlo al disconnect di questo client
             storeWillMessage(willMsg, willQos, willTopic);
         }
     }
 
 
-    protected void handlePublishMessage(PublishMessage publishMessage) {
+    protected void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
         try {
             String topic = publishMessage.getTopicName();
             JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
 
             Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
-
+            QOSType qt = publishMessage.getQos();
             for (String tpub : topicsToPublish) {
+                if(activatePersistence) {
+                    if (qt == QOSType.EXACTLY_ONCE || qt == QOSType.LEAST_ONE) {
+                        storeMessage(publishMessage, tpub);
+                    }
+                }
                 vertx.eventBus().publish(tpub, msg);
             }
+            lastPublishMessage = publishMessage;
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }
@@ -276,38 +286,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
                 subscribeClientToTopic(topic, requestedQos);
 
-//                Handler<Message> handler = new Handler<Message>() {
-//                    @Override
-//                    public void handle(Message message) {
-//                        try {
-//                            JsonObject json = (JsonObject) message.body();
-//                            PublishMessage pm = mqttJson.deserializePublishMessage(json);
-//                            // il qos è quello MASSIMO RICHIESTO
-//                            int iSentQos = qosUtils.toInt(pm.getQos());
-//                            int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-//                            pm.setQos(qosUtils.toQos(iOkQos));
-//                            pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-//                            sendMessageToClient(pm);
-//
-////                            Buffer msgBin = (Buffer)message.body();
-////                            List<Object> out = new ArrayList<>();
-////                            decoder.decode(msgBin.getByteBuf(), out);
-////                            PublishMessage pm = (PublishMessage)out.iterator().next();
-////                            int iSentQos = qosUtils.toInt(pm.getQos());
-////                            int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-////                            pm.setQos(qosUtils.toQos(iOkQos));
-////                            pm.setRetainFlag(false);
-////                            sendMessageToClient(pm);
-//
-//                        } catch (Throwable e) {
-//                            container.logger().error(e.getMessage(), e);
-//                        }
-//                    }
-//                };
-//                Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-//                clientHandlers.add(handler);
-//                vertx.eventBus().registerHandler(topic, handler);
-//                topicsManager.addSubscribedTopic(topic);
+//                republishMessages();
+
 
                 if(clientID!=null && cleanSession==false) {
                     Subscription s = new Subscription();
@@ -318,6 +298,33 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
+        }
+    }
+
+    private void republishMessages() throws Exception {
+        if(cleanSession) {
+            // session is not persistent
+        }
+        else {
+            // session is persistent...
+            MQTTStoreManager store = getStore();
+            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
+            for (Subscription sub : subscriptions) {
+                // subsribe
+                QOSType qos = new QOSUtils().toQos(sub.getQos());
+                String topic2 = sub.getTopic();
+                subscribeClientToTopic(topic2, qos);
+
+                // re-publish
+                List<byte[]> messages = store.getMessagesByTopic(topic2);
+                for(byte[] message : messages) {
+                    // publish message to this client
+                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
+                    handlePublishMessage(pm, false);
+                    // delete will appen when publish end correctly.
+                    deleteMessage(pm);
+                }
+            }
         }
     }
 
@@ -382,11 +389,12 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
     abstract protected void sendMessageToClient(Buffer bytes);
-    protected void storeMessage(PublishMessage publishMessage) {
-        lastPublishMessage = publishMessage;
+    protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
+//        lastPublishMessage = publishMessage;
         try {
             byte[] m = encoder.enc(publishMessage).getBytes();
-            getStore().saveMessage(clientID+publishMessage.getMessageID(), m, publishMessage.getTopicName());
+            String key = clientID+publishMessage.getMessageID();
+            getStore().saveMessage(key, m, topicToPublish);
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
         }
@@ -394,14 +402,20 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     protected void deleteMessage(PublishMessage publishMessage) {
         try {
             byte[] m = encoder.enc(publishMessage).getBytes();
-            getStore().deleteMessage(clientID+publishMessage.getMessageID(), m, publishMessage.getTopicName());
+            String key = clientID+publishMessage.getMessageID();
+            Set<String> topics = topicsManager.calculateTopicsToPublish(publishMessage.getTopicName());
+            for(String tsub : topics) {
+                getStore().deleteMessage(key, m, tsub);
+            }
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
         }
-        lastPublishMessage = null;
+//        lastPublishMessage = null;
     }
     protected void deleteMessage() {
-        deleteMessage(lastPublishMessage);
+//        if(lastPublishMessage!=null)
+        // for now, let throws NullPointerException ...
+            deleteMessage(lastPublishMessage);
     }
     abstract protected void storeWillMessage(String willMsg, byte willQos, String willTopic);
 

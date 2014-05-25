@@ -44,7 +44,7 @@ public class MQTTWebSocket extends MQTTSocket {
     }
 
     @Override
-    protected void storeMessage(PublishMessage publishMessage) {
+    protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
 
     }
 
