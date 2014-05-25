@@ -49,7 +49,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         this.vertx = vertx;
         this.container = container;
 
-        this.container.logger().info("New " + this.getClass().getSimpleName() + " " + this);
+//        this.container.logger().info("New " + this.getClass().getSimpleName() + " " + this);
     }
 
 
@@ -213,33 +213,11 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         if(clientIDExists) {
             // TODO: reset older clientID socket connection
             container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
+        } else {
+            addClientID(clientID);
         }
-        container.logger().info(clientID + " " + this);
-//        if(cleanSession) {
-//            // session is not persistent
-//        }
-//        else {
-//            // session is persistent...
-//            MQTTStoreManager store = getStore();
-//            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
-//            for (Subscription sub : subscriptions) {
-//                // subsribe
-//                QOSType qos = new QOSUtils().toQos(sub.getQos());
-//                String topic = sub.getTopic();
-//                subscribeClientToTopic(topic, qos);
-//
-//                // re-publish
-//                List<byte[]> messages = store.getMessagesByTopic(topic);
-//                for(byte[] message : messages) {
-//                    // publish message to this client
-//                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-//                    handlePublishMessage(pm, false);
-//                    // delete will appen when publish end correctly.
-//                    deleteMessage(pm);
-//                }
-//            }
-//        }
-        republishMessages();
+
+        republishPendingMessages();
 
         if(connect.isWillFlag()) {
             String willMsg = connect.getWillMessage();
@@ -281,13 +259,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             for (SubscribeMessage.Couple c : subs) {
                 byte requestedQosByte = c.getQos();
                 final QOSType requestedQos = toQos(requestedQosByte);
-//                final int iMaxQos = qosUtils.toInt(requestedQos);
                 String topic = c.getTopic();
-
                 subscribeClientToTopic(topic, requestedQos);
-
-//                republishMessages();
-
 
                 if(clientID!=null && cleanSession==false) {
                     Subscription s = new Subscription();
@@ -301,7 +274,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         }
     }
 
-    private void republishMessages() throws Exception {
+    private void republishPendingMessages() throws Exception {
         if(cleanSession) {
             // session is not persistent
         }
@@ -337,7 +310,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     JsonObject json = (JsonObject) message.body();
                     PublishMessage pm = mqttJson.deserializePublishMessage(json);
                     // il qos è quello MASSIMO RICHIESTO
-                    int iSentQos = qosUtils.toInt(pm.getQos());
+                    QOSType originalQos = pm.getQos();
+                    int iSentQos = qosUtils.toInt(originalQos);
                     int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
                     pm.setQos(qosUtils.toQos(iOkQos));
                     pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
@@ -410,7 +384,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
         }
-//        lastPublishMessage = null;
     }
     protected void deleteMessage() {
 //        if(lastPublishMessage!=null)
@@ -425,15 +398,14 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         return s;
     }
 
+    protected void addClientID(String clientID) {
+        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
+        allClientIDs.add(clientID);
+    }
     protected boolean clientIDExists(String clientID) {
         Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
         boolean exists = allClientIDs.contains(clientID);
-        if(exists) {
-            return false;
-        } else {
-            allClientIDs.add(clientID);
-            return true;
-        }
+        return exists;
     }
 
     protected void removeClientID(String clientID) {

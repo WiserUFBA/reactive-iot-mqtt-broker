@@ -113,7 +113,7 @@ public class MQTTStoreManager {
 
     /** get subscribed topics by clientID from session*/
     public List<Subscription> getSubscriptionsByClientID(String clientID) {
-        container.logger().info("getSubscriptionsByClientID "+ clientID);
+//        container.logger().info("getSubscriptionsByClientID "+ clientID);
         ArrayList<Subscription> ret = new ArrayList<>();
         Set<String> subscriptions = vertx.sharedData().getSet(clientID);
         for(String item : subscriptions) {
@@ -126,7 +126,7 @@ public class MQTTStoreManager {
 
     /** remove topic from session */
     public void deleteSubcription(String topic, String clientID) {
-        container.logger().info("deleteSubcription "+ topic +" "+clientID);
+//        container.logger().info("deleteSubcription "+ topic +" "+clientID);
         Set<String> subscriptions = vertx.sharedData().getSet(clientID);
         Set<String> copyOfSubscriptions = new LinkedHashSet<>(subscriptions);
         for(String item : copyOfSubscriptions) {
@@ -176,13 +176,13 @@ public class MQTTStoreManager {
     public void saveMessage(String messageKey, byte[] message, String topic) {
         incrementID(topic);
         String k = ""+currentID(topic);
-        container.logger().info("saveMessage " + topic + " " + k);
+//        container.logger().info("saveMessage " + topic + " " + k);
         vertx.sharedData().getMap(topic).put(k, message);
     }
 
     /** retrieve all stored messages by topic */
     public List<byte[]> getMessagesByTopic(String topic) {
-        container.logger().info("getMessagesByTopic "+ topic);
+//        container.logger().info("getMessagesByTopic "+ topic);
         Map<String, byte[]> set = vertx.sharedData().getMap(topic);
         ArrayList<byte[]> ret = new ArrayList<>(set.values());
         return ret;
@@ -192,15 +192,11 @@ public class MQTTStoreManager {
     public void deleteMessage(String messageKey, byte[] message, String topic) {
         String k = ""+currentID(topic);
         Map<String, byte[]> set = vertx.sharedData().getMap(topic);
-        container.logger().info("deleteMessage " + topic + " " + k);
+//        container.logger().info("deleteMessage " + topic + " " + k);
         if(set.containsKey(k)) {
             set.remove(k);
             decrementID(topic);
         }
-
-//        if(set.isEmpty()) {
-//            vertx.sharedData().removeMap(topic);
-//        }
     }
 
 }
