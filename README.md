@@ -23,9 +23,9 @@ TODO
 <ul>
 <li>Include tests
 </li>
-<li>Debug persistence og qos 1 and 2 messages, in case more client are connected and subvscribed to the same topics
+<li>Debug persistence og qos 1 and 2 messages, in case more client are connected and subscribed to the same topics
 </li>
-<li>Clean persistence related code, make it extensible (RAM, Cassandra, HBase, MongoDB as pluggable storage engine)
+<li>Clean persistence related code, make it extensible (RAM, Cassandra, HBase, MongoDB as plug-able storage engine)
 </li>
 <li>Implement will message support and all protocol features.
 </li>
