@@ -198,6 +198,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             container.logger().error(e.getMessage());
         }
     }
+    abstract protected void sendMessageToClient(Buffer bytes);
 
     protected void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
         ConnectMessage connect = connectMessage;
@@ -303,7 +304,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 try {
                     JsonObject json = (JsonObject) message.body();
                     PublishMessage pm = mqttJson.deserializePublishMessage(json);
-                    // il qos è quello MASSIMO RICHIESTO
+                    // the qos is the max required ...
                     QOSType originalQos = pm.getQos();
                     int iSentQos = qosUtils.toInt(originalQos);
                     int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
@@ -356,7 +357,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
 
 
-    abstract protected void sendMessageToClient(Buffer bytes);
+
     protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
         try {
             byte[] m = encoder.enc(publishMessage).getBytes();

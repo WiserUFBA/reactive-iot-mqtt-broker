@@ -23,9 +23,7 @@ public class MQTTBroker extends Verticle {
                     MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, container, netSocket);
                     mqttNetSocket.start();
                 }
-            });
-
-            netServer.listen(1883);
+            }).listen(1883);
             container.logger().info("Startd MQTT TCP-Broker on port: "+ 1883);
 
             vertx.createHttpServer().websocketHandler(new Handler<ServerWebSocket>() {
