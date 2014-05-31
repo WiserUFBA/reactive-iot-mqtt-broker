@@ -14,13 +14,11 @@ import org.vertx.java.platform.Container;
 public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
-    private ConcurrentSharedMap<String, Buffer> messagesStore;
     private ConcurrentSharedMap<String, JsonObject> willMessagesStore;
 
     public MQTTNetSocket(Vertx vertx, Container container, NetSocket netSocket) {
         super(vertx, container);
         this.netSocket = netSocket;
-        messagesStore = vertx.sharedData().getMap("messages");
         willMessagesStore = vertx.sharedData().getMap("will_messages");
     }
 

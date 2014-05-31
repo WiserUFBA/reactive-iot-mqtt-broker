@@ -4,6 +4,7 @@ import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
 /**
  * Created by giovanni on 16/04/2014.
+ * QoS transformes methods.
  */
 public class QOSUtils {
     public AbstractMessage.QOSType toQos(byte qosByte) {

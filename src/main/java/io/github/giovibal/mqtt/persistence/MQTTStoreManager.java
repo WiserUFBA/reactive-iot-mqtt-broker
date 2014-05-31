@@ -94,6 +94,14 @@ import java.util.*;
  *
  * delete topic/message
  * deleteMessage(... message, String topic)
+ *
+ * TODO:
+ * 1. validate debug and test logic
+ * 2. consolidate an spi interface
+ * 3. make some implementations
+ *      - ram impl
+ *      - cassandra/hbase impl
+ *      - verticle/module impl (with json contract throught EventBus?)
  */
 public class MQTTStoreManager {
     private Vertx vertx;
@@ -173,30 +181,29 @@ public class MQTTStoreManager {
 
 
     /** store topic/message */
-    public void saveMessage(String messageKey, byte[] message, String topic) {
+    public void pushMessage(byte[] message, String topic) {
         incrementID(topic);
         String k = ""+currentID(topic);
-//        container.logger().info("saveMessage " + topic + " " + k);
         vertx.sharedData().getMap(topic).put(k, message);
     }
 
     /** retrieve all stored messages by topic */
     public List<byte[]> getMessagesByTopic(String topic) {
-//        container.logger().info("getMessagesByTopic "+ topic);
         Map<String, byte[]> set = vertx.sharedData().getMap(topic);
         ArrayList<byte[]> ret = new ArrayList<>(set.values());
         return ret;
     }
 
     /** delete topic/message */
-    public void deleteMessage(String messageKey, byte[] message, String topic) {
+    public byte[] popMessage(String topic) {
         String k = ""+currentID(topic);
         Map<String, byte[]> set = vertx.sharedData().getMap(topic);
-//        container.logger().info("deleteMessage " + topic + " " + k);
         if(set.containsKey(k)) {
-            set.remove(k);
+            byte[] removed = set.remove(k);
             decrementID(topic);
+            return removed;
         }
+        return null;
     }
 
 }

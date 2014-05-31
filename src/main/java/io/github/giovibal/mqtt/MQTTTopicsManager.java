@@ -8,6 +8,7 @@ import java.util.Set;
 
 /**
  * Created by giovanni on 10/05/2014.
+ * Manages subscritpions and MQTT topic rules
  */
 public class MQTTTopicsManager {
 

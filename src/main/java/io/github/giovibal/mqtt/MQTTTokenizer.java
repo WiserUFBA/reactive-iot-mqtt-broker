@@ -4,7 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 
-
+/**
+ * Created by Paolo Iddas.
+ * MQTT Protocol tokenizer.
+ */
 public class MQTTTokenizer {
 	public static void main(String[] args) {
 		// byte[] data = new byte[]{0x00, 0x01};

@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 
 /**
  * Created by giovanni on 14/04/14.
+ * JSON Utility class
  */
 public class MQTTJson {
 

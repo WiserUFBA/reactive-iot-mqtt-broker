@@ -18,6 +18,7 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 
 /**
  * Created by giovanni on 07/05/2014.
+ * Base class for connection handling, 1 tcp connection corresponds to 1 instance of this class.
  */
 public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener, Handler<Buffer> {
 
@@ -27,14 +28,12 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     protected MQTTEncoder encoder;
     protected MQTTJson mqttJson;
     private QOSUtils qosUtils;
-
     private Map<String, Set<Handler<Message>>> handlers;
     private MQTTTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
-
     private String clientID;
     private boolean cleanSession;
-    private PublishMessage lastPublishMessage;
+    private MQTTStoreManager store;
 
     public MQTTSocket(Vertx vertx, Container container) {
         decoder = new MQTTDecoder();
@@ -45,11 +44,10 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         tokenizer = new MQTTTokenizer();
         tokenizer.registerListener(this);
         topicsManager = new MQTTTopicsManager(vertx);
+        store = new MQTTStoreManager(vertx, container);
 
         this.vertx = vertx;
         this.container = container;
-
-//        this.container.logger().info("New " + this.getClass().getSimpleName() + " " + this);
     }
 
 
@@ -149,7 +147,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     sendMessageToClient(prelResp);
                     break;
                 case PUBCOMP:
-//                    deleteMessage();
                     break;
                 case PUBREL:
                     PubRelMessage pubRel = (PubRelMessage)msg;
@@ -162,7 +159,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // 5. Delete message
                     // 5. <- PubComp
 
-//                    deleteMessage();
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
                     sendMessageToClient(pubComp);
@@ -170,7 +166,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 case DISCONNECT:
                     // TODO:
                     // 1. terminate the session
-                    // se il flag "clean_session" del CONNECT era == 0, allora non pulisce le subscriptions di questo client
+                    // If flag "clean_session" of CONNECT was == 0, then remember the client subscriptions for next connection
                     removeClientID(clientID);
                     clientID = null;
                     break;
@@ -178,7 +174,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // A PUBACK message is the response to a PUBLISH message with QoS level 1.
                     // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
                     // and by a subscriber in response to a PUBLISH message from the server.
-//                    deleteMessage();
                     break;
                 case PINGREQ:
                     PingRespMessage pingResp = new PingRespMessage();
@@ -243,7 +238,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 }
                 vertx.eventBus().publish(tpub, msg);
             }
-            lastPublishMessage = publishMessage;
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }
@@ -364,38 +358,29 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
     abstract protected void sendMessageToClient(Buffer bytes);
     protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
-//        lastPublishMessage = publishMessage;
         try {
             byte[] m = encoder.enc(publishMessage).getBytes();
-            String key = clientID+publishMessage.getMessageID();
-            getStore().saveMessage(key, m, topicToPublish);
+            getStore().pushMessage(m, topicToPublish);
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
         }
     }
     protected void deleteMessage(PublishMessage publishMessage) {
         try {
-            byte[] m = encoder.enc(publishMessage).getBytes();
-            String key = clientID+publishMessage.getMessageID();
-            Set<String> topics = topicsManager.calculateTopicsToPublish(publishMessage.getTopicName());
+            String pubtopic = publishMessage.getTopicName();
+            Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
             for(String tsub : topics) {
-                getStore().deleteMessage(key, m, tsub);
+                getStore().popMessage(tsub);
             }
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
         }
     }
-    protected void deleteMessage() {
-//        if(lastPublishMessage!=null)
-        // for now, let throws NullPointerException ...
-            deleteMessage(lastPublishMessage);
-    }
     abstract protected void storeWillMessage(String willMsg, byte willQos, String willTopic);
 
 
     protected MQTTStoreManager getStore() {
-        MQTTStoreManager s = new MQTTStoreManager(vertx, container);
-        return s;
+        return store;
     }
 
     protected void addClientID(String clientID) {

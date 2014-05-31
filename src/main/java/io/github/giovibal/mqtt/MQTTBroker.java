@@ -8,6 +8,7 @@ import org.vertx.java.platform.Verticle;
 
 /**
  * Created by giovanni on 11/04/2014.
+ * The Main Verticle
  */
 public class MQTTBroker extends Verticle {
 
