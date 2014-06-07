@@ -18,8 +18,12 @@ Required: Vert.x 2.1M1+ and Maven 3+
 git clone https://github.com/giovibal/vertx-mqtt-broker-mod.git
 cd vertx-mqtt-broker-mod
 mvn clean package
-cd target
-vertx runzip vertx-mqtt-broker-mod-1.0-SNAPSHOT-mod.zip
+mvn vertx:runMod
+```
+or if you have vert.x installed ...
+```
+mvn clean install
+vertx runmod io.gihub.giovibal.mqtt~vertx-mqtt-broker-mod~1.0-SNAPSHOT
 ```
 
 Features
