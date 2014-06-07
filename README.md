@@ -26,5 +26,9 @@ Features
 ----
 * Suport both QoS 1 and 2 messages
 * Persistence and session management (cleanSession=false)
-* TODO - Clean persistence related code, make it extensible (RAM, Cassandra, HBase, MongoDB as plug-able storage engine)
-* TODO - Implement will message support and all protocol features.
+* TODO - Expose persistence SPI interfaces
+* TODO - Implement SPI for login management
+* TODO - Implement multi-tenancy
+* TODO - Implement some out-of-the-box persistence plugins: RAM/Hazelcast, Cassandra, HBase, MongoDB
+* TODO - Implement will message support 
+* TODO - Make more tests

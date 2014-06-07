@@ -57,6 +57,14 @@
             <id>sonatype-nexus-snapshots</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
+        <repository>
+            <id>eclipse-paho-releases</id>
+            <url>https://repo.eclipse.org/content/repositories/paho-releases/</url>
+        </repository>
+        <repository>
+            <id>eclipse-paho-snapshots</id>
+            <url>https://repo.eclipse.org/content/repositories/paho-snapshots</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -103,39 +111,17 @@
         </dependency>
         -->
 
-        <!--<dependency>
-            <groupId>org.dna.mqtt</groupId>
-            <artifactId>moquette-broker</artifactId>
-            <version>0.6-SNAPSHOT</version>
-        </dependency>-->
-        <!--<dependency>
-            <groupId>org.dna.mqtt</groupId>
-            <artifactId>moquette-netty-parser</artifactId>
-            <version>0.6-SNAPSHOT</version>
-        </dependency>-->
-
-
-
-        <!--<dependency>
-            <groupId>com.googlecode.disruptor</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>2.7.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.fusesource.hawtbuf</groupId>
-            <artifactId>hawtbuf</artifactId>
-            <version>1.9</version>
-        </dependency>
-        <dependency>
-            <groupId>org.fusesource.hawtdb</groupId>
-            <artifactId>hawtdb</artifactId>
-            <version>1.6</version>
-        </dependency>-->
-
         <dependency>
             <groupId>org.dna.mqtt</groupId>
             <artifactId>moquette-parser-commons</artifactId>
             <version>0.6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>mqtt-client</artifactId>
+            <!--<version>0.4.0</version>-->
+            <version>0.4.1-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
