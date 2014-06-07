@@ -1,10 +1,13 @@
 package io.github.giovibal.mqtt;
 
+import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.platform.Verticle;
+
+import java.util.Set;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -34,6 +37,20 @@ public class MQTTBroker extends Verticle {
                 }
             }).listen(11883);
             container.logger().info("Startd MQTT WebSocket-Broker on port: "+ 11883);
+
+
+            final MQTTStoreManager store = new MQTTStoreManager(vertx, container);
+            // DEBUG
+            vertx.setPeriodic(3000, new Handler<Long>() {
+                @Override
+                public void handle(Long aLong) {
+                    Set<String> clients = store.getClientIDs();
+                    for(String clientID : clients) {
+                        int subscriptions = store.getSubscriptionsByClientID(clientID).size();
+                        container.logger().info(clientID+" ----> "+ subscriptions);
+                    }
+                }
+            });
         } catch(Exception e ) {
             container.logger().error(e.getMessage(), e);
         }

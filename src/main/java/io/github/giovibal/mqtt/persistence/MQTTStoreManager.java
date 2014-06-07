@@ -1,5 +1,6 @@
 package io.github.giovibal.mqtt.persistence;
 
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.platform.Container;
 
@@ -56,7 +57,7 @@ import java.util.*;
  *              remove message or decrement message retain counter (when 0 -> remove message)
  *
  * on subscribe (clearSession=false)
- *      restore session from clientID (private String clientID --> variable in MQTTSocket instance populated during connect)
+ *      restore session from clientID
  *      if clientID exists (only if clearSession was false):
  *          append topic to session (for long persistence)
  *
@@ -107,7 +108,7 @@ public class MQTTStoreManager {
     private Vertx vertx;
     private Container container;
 
-    public MQTTStoreManager(Vertx vertx, Container container) {
+    public MQTTStoreManager(Vertx vertx, final Container container) {
         this.vertx = vertx;
         this.container = container;
     }
@@ -117,6 +118,7 @@ public class MQTTStoreManager {
     public void saveSubscription(Subscription subscription, String clientID) {
         String s = subscription.toString();
         vertx.sharedData().getSet(clientID).add(s);
+        vertx.sharedData().getSet("persistence.clients").add(clientID);
     }
 
     /** get subscribed topics by clientID from session*/
@@ -146,7 +148,12 @@ public class MQTTStoreManager {
         }
         if(subscriptions.isEmpty()) {
             vertx.sharedData().removeSet(clientID);
+            vertx.sharedData().getSet("persistence.clients").remove(clientID);
         }
+    }
+
+    public Set<String> getClientIDs() {
+        return vertx.sharedData().getSet("persistence.clients");
     }
 
 
@@ -182,25 +189,36 @@ public class MQTTStoreManager {
 
     /** store topic/message */
     public void pushMessage(byte[] message, String topic) {
-        incrementID(topic);
-        String k = ""+currentID(topic);
-        vertx.sharedData().getMap(topic).put(k, message);
+        Set<String> clients = getClientIDs();
+        for(String clientID : clients) {
+            List<Subscription> subscriptions = getSubscriptionsByClientID(clientID);
+            for(Subscription s : subscriptions) {
+                if(s.getTopic().equals(topic)) {
+                    String key = clientID + topic;
+                    incrementID(key);
+                    String k = "" + currentID(key);
+                    vertx.sharedData().getMap(key).put(k, message);
+                }
+            }
+        }
     }
 
     /** retrieve all stored messages by topic */
-    public List<byte[]> getMessagesByTopic(String topic) {
-        Map<String, byte[]> set = vertx.sharedData().getMap(topic);
+    public List<byte[]> getMessagesByTopic(String topic, String clientID) {
+        String key  = clientID+topic;
+        Map<String, byte[]> set = vertx.sharedData().getMap(key);
         ArrayList<byte[]> ret = new ArrayList<>(set.values());
         return ret;
     }
 
     /** delete topic/message */
-    public byte[] popMessage(String topic) {
-        String k = ""+currentID(topic);
-        Map<String, byte[]> set = vertx.sharedData().getMap(topic);
+    public byte[] popMessage(String topic, String clientID) {
+        String key  = clientID+topic;
+        String k = ""+currentID(key);
+        Map<String, byte[]> set = vertx.sharedData().getMap(key);
         if(set.containsKey(k)) {
             byte[] removed = set.remove(k);
-            decrementID(topic);
+            decrementID(key);
             return removed;
         }
         return null;

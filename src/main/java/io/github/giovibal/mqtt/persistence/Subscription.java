@@ -2,6 +2,7 @@ package io.github.giovibal.mqtt.persistence;
 
 import io.github.giovibal.mqtt.QOSUtils;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
+import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -49,4 +50,5 @@ public class Subscription {
         String s = toJson().encode();
         return s;
     }
+
 }

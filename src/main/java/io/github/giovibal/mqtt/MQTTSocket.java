@@ -31,7 +31,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private Map<String, Set<Handler<Message>>> handlers;
     private MQTTTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
-    private String clientID;
+    protected String clientID;
     private boolean cleanSession;
     private MQTTStoreManager store;
 
@@ -167,8 +167,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     // TODO:
                     // 1. terminate the session
                     // If flag "clean_session" of CONNECT was == 0, then remember the client subscriptions for next connection
-                    removeClientID(clientID);
-                    clientID = null;
+                    DisconnectMessage disconnectMessage = (DisconnectMessage)msg;
+                    handleDisconnect(disconnectMessage);
                     break;
                 case PUBACK:
                     // A PUBACK message is the response to a PUBLISH message with QoS level 1.
@@ -234,6 +234,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             for (String tpub : topicsToPublish) {
                 if(activatePersistence) {
                     if (qt == QOSType.EXACTLY_ONCE || qt == QOSType.LEAST_ONE) {
+                        // TODO store by topic and clientID (of client who subscribed to topic) and manage a queue by client -> topic
                         storeMessage(publishMessage, tpub);
                     }
                 }
@@ -284,7 +285,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 subscribeClientToTopic(topic2, qos);
 
                 // re-publish
-                List<byte[]> messages = store.getMessagesByTopic(topic2);
+                List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
                 for(byte[] message : messages) {
                     // publish message to this client
                     PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
@@ -296,7 +297,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         }
     }
 
-    protected void subscribeClientToTopic(String topic, QOSType requestedQos) {
+    protected void subscribeClientToTopic(final String topic, QOSType requestedQos) {
         final int iMaxQos = qosUtils.toInt(requestedQos);
         Handler<Message> handler = new Handler<Message>() {
             @Override
@@ -310,6 +311,13 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
                     pm.setQos(qosUtils.toQos(iOkQos));
                     pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
+
+//                    if (cleanSession==false
+//                            && isDisconnected()
+//                            && (originalQos == QOSType.EXACTLY_ONCE || originalQos == QOSType.LEAST_ONE)) {
+//                        storeMessage(pm, topic);
+//                    }
+
                     sendMessageToClient(pm);
                 } catch (Throwable e) {
                     container.logger().error(e.getMessage(), e);
@@ -357,6 +365,14 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
 
 
+    protected void handleDisconnect(DisconnectMessage disconnectMessage) {
+        if(cleanSession) {
+            //TODO deallocate this istance (we must architect to do this)
+        }
+        removeClientID(clientID);
+        clientID = null;
+    }
+
 
     protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
         try {
@@ -371,7 +387,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             String pubtopic = publishMessage.getTopicName();
             Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
             for(String tsub : topics) {
-                getStore().popMessage(tsub);
+                getStore().popMessage(tsub, clientID);
             }
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
@@ -398,4 +414,9 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
         allClientIDs.remove(clientID);
     }
+
+    protected boolean isDisconnected() {
+        return clientID == null;
+    }
+
 }
