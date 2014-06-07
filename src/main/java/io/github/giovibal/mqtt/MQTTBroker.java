@@ -41,9 +41,10 @@ public class MQTTBroker extends Verticle {
 
             final MQTTStoreManager store = new MQTTStoreManager(vertx, container);
             // DEBUG
-            vertx.setPeriodic(3000, new Handler<Long>() {
+            vertx.setPeriodic(10000, new Handler<Long>() {
                 @Override
                 public void handle(Long aLong) {
+                    container.logger().info("stats...");
                     Set<String> clients = store.getClientIDs();
                     for(String clientID : clients) {
                         int subscriptions = store.getSubscriptionsByClientID(clientID).size();
