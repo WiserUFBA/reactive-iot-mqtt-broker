@@ -201,7 +201,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
     abstract protected void sendMessageToClient(Buffer bytes);
 
-    protected String getTenant(ConnectMessage connectMessage) throws Exception {
+    protected String getTenant(ConnectMessage connectMessage) {
         String tenant = "";
         int idx = clientID.lastIndexOf('@');
         if(idx > 0) {
