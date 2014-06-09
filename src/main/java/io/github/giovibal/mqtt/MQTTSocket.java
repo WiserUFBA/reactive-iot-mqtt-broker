@@ -338,7 +338,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 for (Handler<Message> handler : clientHandlers) {
                     vertx.eventBus().unregisterHandler(topic, handler);
                     topicsManager.removeSubscribedTopic(topic);
-                    if(clientID!=null && cleanSession==false) {
+                    // remove persistent subscriptions
+                    if(clientID!=null/*&& cleanSession==false*/) {
                         getStore().deleteSubcription(topic, clientID);
                     }
                 }
@@ -366,8 +367,18 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
     protected void handleDisconnect(DisconnectMessage disconnectMessage) {
-        if(cleanSession) {
-            //TODO deallocate this istance (we must architect to do this)
+        //TODO deallocate this instance ...
+        Set<String> topics = handlers.keySet();
+        for (String topic : topics) {
+            Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
+            for (Handler<Message> handler : clientHandlers) {
+                vertx.eventBus().unregisterHandler(topic, handler);
+                topicsManager.removeSubscribedTopic(topic);
+                if (clientID != null && cleanSession) {
+                    getStore().deleteSubcription(topic, clientID);
+                }
+            }
+//            clearClientHandlers(topic);
         }
         removeClientID(clientID);
         clientID = null;

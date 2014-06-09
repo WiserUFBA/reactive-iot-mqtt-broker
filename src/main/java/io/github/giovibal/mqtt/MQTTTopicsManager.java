@@ -13,20 +13,35 @@ import java.util.Set;
 public class MQTTTopicsManager {
 
     private Vertx vertx;
-    private Set<String> topicsSubscribed;
+    private Map<String, Integer> topicsSubscribed;
     public MQTTTopicsManager(Vertx vertx) {
         this.vertx = vertx;
-        this.topicsSubscribed = this.vertx.sharedData().getSet("mqtt_subscribed_topics");
+        this.topicsSubscribed = this.vertx.sharedData().getMap("mqtt_subscribed_topics");
     }
 
     public Set<String> getSubscribedTopics() {
-        return topicsSubscribed;
+        return topicsSubscribed.keySet();
     }
     public void addSubscribedTopic(String topic) {
-        topicsSubscribed.add(topic);
+        Integer retain = 0;
+        if(topicsSubscribed.containsKey(topic)) {
+            retain = topicsSubscribed.get(topic);
+        }
+        retain++;
+        topicsSubscribed.put(topic, retain);
     }
     public void removeSubscribedTopic(String topic) {
-        topicsSubscribed.remove(topic);
+        Integer retain = 0;
+        if(topicsSubscribed.containsKey(topic)) {
+            retain = topicsSubscribed.get(topic);
+        }
+        if(retain <= 0) {
+            topicsSubscribed.remove(topic);
+        }
+        else {
+            retain--;
+            topicsSubscribed.put(topic, retain);
+        }
     }
 
 
