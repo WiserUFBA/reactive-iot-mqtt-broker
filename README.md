@@ -30,9 +30,9 @@ Features
 ----
 * Suport both QoS 1 and 2 messages
 * Persistence and session management (cleanSession=false)
+* Multi-tenancy: isolation of topics and storage with ClientID like client@tenant
 * TODO - Expose persistence SPI interfaces
 * TODO - Implement SPI for login management
-* TODO - Implement multi-tenancy
 * TODO - Implement some out-of-the-box persistence plugins: RAM/Hazelcast, Cassandra, HBase, MongoDB
 * TODO - Implement will message support 
 * TODO - Make more tests
