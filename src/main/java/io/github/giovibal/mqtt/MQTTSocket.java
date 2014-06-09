@@ -201,23 +201,28 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
     abstract protected void sendMessageToClient(Buffer bytes);
 
+    protected String getTenant(ConnectMessage connectMessage) throws Exception {
+        String tenant = "";
+        int idx = clientID.lastIndexOf('@');
+        if(idx > 0) {
+            tenant = clientID.substring(idx+1);
+        } else {
+            // global tenant
+            tenant = "";
+        }
+        return tenant;
+    }
+
     protected void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
         ConnectMessage connect = connectMessage;
         clientID = connect.getClientID();
         cleanSession = connect.isCleanSession();
 
         // initialize tenant
-        int idx = clientID.lastIndexOf('@');
-        if(idx > 0) {
-            this.tenant = clientID.substring(idx+1);
-            topicsManager = new MQTTTopicsManager(vertx, tenant);
-            store = new MQTTStoreManager(vertx, tenant);
-        } else {
-            // global tenant
-            this.tenant = "";
-            topicsManager = new MQTTTopicsManager(vertx, tenant);
-            store = new MQTTStoreManager(vertx, tenant);
-        }
+        tenant = getTenant(connectMessage);
+
+        topicsManager = new MQTTTopicsManager(vertx, tenant);
+        store = new MQTTStoreManager(vertx, tenant);
 
         boolean clientIDExists = clientIDExists(clientID);
         container.logger().info("Connect ClientID ==> "+ clientID);
