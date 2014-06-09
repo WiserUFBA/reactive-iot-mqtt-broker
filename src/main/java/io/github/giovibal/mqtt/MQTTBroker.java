@@ -39,7 +39,7 @@ public class MQTTBroker extends Verticle {
             container.logger().info("Startd MQTT WebSocket-Broker on port: "+ 11883);
 
 
-            final MQTTStoreManager store = new MQTTStoreManager(vertx, container);
+            final MQTTStoreManager store = new MQTTStoreManager(vertx, "");
             // DEBUG
             vertx.setPeriodic(10000, new Handler<Long>() {
                 @Override

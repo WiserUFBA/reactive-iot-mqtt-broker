@@ -14,9 +14,12 @@ public class MQTTTopicsManager {
 
     private Vertx vertx;
     private Map<String, Integer> topicsSubscribed;
-    public MQTTTopicsManager(Vertx vertx) {
+    private String tenant;
+
+    public MQTTTopicsManager(Vertx vertx, String tenant) {
         this.vertx = vertx;
-        this.topicsSubscribed = this.vertx.sharedData().getMap("mqtt_subscribed_topics");
+        this.tenant = tenant;
+        this.topicsSubscribed = this.vertx.sharedData().getMap(this.tenant + "mqtt_subscribed_topics");
     }
 
     public Set<String> getSubscribedTopics() {

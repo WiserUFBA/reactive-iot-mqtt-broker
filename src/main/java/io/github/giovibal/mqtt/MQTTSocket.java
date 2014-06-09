@@ -34,6 +34,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     protected String clientID;
     private boolean cleanSession;
     private MQTTStoreManager store;
+    private String tenant;
 
     public MQTTSocket(Vertx vertx, Container container) {
         decoder = new MQTTDecoder();
@@ -43,8 +44,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         handlers = new HashMap<>();
         tokenizer = new MQTTTokenizer();
         tokenizer.registerListener(this);
-        topicsManager = new MQTTTopicsManager(vertx);
-        store = new MQTTStoreManager(vertx, container);
+//        topicsManager = new MQTTTopicsManager(vertx);
+//        store = new MQTTStoreManager(vertx/*, container*/);
 
         this.vertx = vertx;
         this.container = container;
@@ -204,6 +205,20 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         ConnectMessage connect = connectMessage;
         clientID = connect.getClientID();
         cleanSession = connect.isCleanSession();
+
+        // initialize tenant
+        int idx = clientID.lastIndexOf('@');
+        if(idx > 0) {
+            this.tenant = clientID.substring(idx+1);
+            topicsManager = new MQTTTopicsManager(vertx, tenant);
+            store = new MQTTStoreManager(vertx, tenant);
+        } else {
+            // global tenant
+            this.tenant = "";
+            topicsManager = new MQTTTopicsManager(vertx, tenant);
+            store = new MQTTStoreManager(vertx, tenant);
+        }
+
         boolean clientIDExists = clientIDExists(clientID);
         container.logger().info("Connect ClientID ==> "+ clientID);
         if(clientIDExists) {
@@ -234,15 +249,19 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             for (String tpub : topicsToPublish) {
                 if(activatePersistence) {
                     if (qt == QOSType.EXACTLY_ONCE || qt == QOSType.LEAST_ONE) {
-                        // TODO store by topic and clientID (of client who subscribed to topic) and manage a queue by client -> topic
                         storeMessage(publishMessage, tpub);
                     }
                 }
-                vertx.eventBus().publish(tpub, msg);
+                vertx.eventBus().publish(toVertxTopic(tpub), msg);
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }
+    }
+    private String toVertxTopic(String mqttTopic) {
+        String s = tenant +"/"+ mqttTopic;
+        s = s.replaceAll("/+","/"); // remove multiple slashes
+        return s;
     }
 
     private QOSType toQos(byte qosByte) {
@@ -326,7 +345,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         };
         Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
         clientHandlers.add(handler);
-        vertx.eventBus().registerHandler(topic, handler);
+        vertx.eventBus().registerHandler(toVertxTopic(topic), handler);
         topicsManager.addSubscribedTopic(topic);
     }
 
@@ -336,7 +355,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             for (String topic : topics) {
                 Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
                 for (Handler<Message> handler : clientHandlers) {
-                    vertx.eventBus().unregisterHandler(topic, handler);
+                    vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
                     topicsManager.removeSubscribedTopic(topic);
                     // remove persistent subscriptions
                     if(clientID!=null/*&& cleanSession==false*/) {
@@ -367,21 +386,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
     protected void handleDisconnect(DisconnectMessage disconnectMessage) {
-//        //TODO deallocate this instance ...
-//        Set<String> topics = handlers.keySet();
-//        for (String topic : topics) {
-//            Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-//            for (Handler<Message> handler : clientHandlers) {
-//                vertx.eventBus().unregisterHandler(topic, handler);
-//                topicsManager.removeSubscribedTopic(topic);
-//                if (clientID != null && cleanSession) {
-//                    getStore().deleteSubcription(topic, clientID);
-//                }
-//            }
-////            clearClientHandlers(topic);
-//        }
-//        removeClientID(clientID);
-//        clientID = null;
         shutdown();
     }
     public void shutdown() {
@@ -390,7 +394,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         for (String topic : topics) {
             Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
             for (Handler<Message> handler : clientHandlers) {
-                vertx.eventBus().unregisterHandler(topic, handler);
+                vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
                 topicsManager.removeSubscribedTopic(topic);
                 if (clientID != null && cleanSession) {
                     getStore().deleteSubcription(topic, clientID);

@@ -106,26 +106,28 @@ import java.util.*;
  */
 public class MQTTStoreManager {
     private Vertx vertx;
-    private Container container;
+//    private Container container;
+    private String tenant;
 
-    public MQTTStoreManager(Vertx vertx, final Container container) {
+    public MQTTStoreManager(Vertx vertx/*, final Container container*/, String tenant) {
         this.vertx = vertx;
-        this.container = container;
+//        this.container = container;
+        this.tenant = tenant;
     }
 
 
     /** append topic to session (for long persistence) */
     public void saveSubscription(Subscription subscription, String clientID) {
         String s = subscription.toString();
-        vertx.sharedData().getSet(clientID).add(s);
-        vertx.sharedData().getSet("persistence.clients").add(clientID);
+        vertx.sharedData().getSet(tenant + clientID).add(s);
+        vertx.sharedData().getSet(tenant + "persistence.clients").add(clientID);
     }
 
     /** get subscribed topics by clientID from session*/
     public List<Subscription> getSubscriptionsByClientID(String clientID) {
 //        container.logger().info("getSubscriptionsByClientID "+ clientID);
         ArrayList<Subscription> ret = new ArrayList<>();
-        Set<String> subscriptions = vertx.sharedData().getSet(clientID);
+        Set<String> subscriptions = vertx.sharedData().getSet(tenant + clientID);
         for(String item : subscriptions) {
             Subscription s = new Subscription();
             s.fromString(item);
@@ -137,7 +139,7 @@ public class MQTTStoreManager {
     /** remove topic from session */
     public void deleteSubcription(String topic, String clientID) {
 //        container.logger().info("deleteSubcription "+ topic +" "+clientID);
-        Set<String> subscriptions = vertx.sharedData().getSet(clientID);
+        Set<String> subscriptions = vertx.sharedData().getSet(tenant + clientID);
         Set<String> copyOfSubscriptions = new LinkedHashSet<>(subscriptions);
         for(String item : copyOfSubscriptions) {
             Subscription s = new Subscription();
@@ -147,18 +149,18 @@ public class MQTTStoreManager {
             }
         }
         if(subscriptions.isEmpty()) {
-            vertx.sharedData().removeSet(clientID);
-            vertx.sharedData().getSet("persistence.clients").remove(clientID);
+            vertx.sharedData().removeSet(tenant + clientID);
+            vertx.sharedData().getSet(tenant + "persistence.clients").remove(clientID);
         }
     }
 
     public Set<String> getClientIDs() {
-        return vertx.sharedData().getSet("persistence.clients");
+        return vertx.sharedData().getSet(tenant + "persistence.clients");
     }
 
 
     private Map<String, Integer> seq() {
-        Map<String, Integer> seq = vertx.sharedData().getMap("sequence");
+        Map<String, Integer> seq = vertx.sharedData().getMap(tenant + "sequence");
         return seq;
     }
     private Integer currentID(String k) {
@@ -197,7 +199,7 @@ public class MQTTStoreManager {
                     String key = clientID + topic;
                     incrementID(key);
                     String k = "" + currentID(key);
-                    vertx.sharedData().getMap(key).put(k, message);
+                    vertx.sharedData().getMap(tenant + key).put(k, message);
                 }
             }
         }
@@ -206,7 +208,7 @@ public class MQTTStoreManager {
     /** retrieve all stored messages by topic */
     public List<byte[]> getMessagesByTopic(String topic, String clientID) {
         String key  = clientID+topic;
-        Map<String, byte[]> set = vertx.sharedData().getMap(key);
+        Map<String, byte[]> set = vertx.sharedData().getMap(tenant + key);
         ArrayList<byte[]> ret = new ArrayList<>(set.values());
         return ret;
     }
@@ -215,7 +217,7 @@ public class MQTTStoreManager {
     public byte[] popMessage(String topic, String clientID) {
         String key  = clientID+topic;
         String k = ""+currentID(key);
-        Map<String, byte[]> set = vertx.sharedData().getMap(key);
+        Map<String, byte[]> set = vertx.sharedData().getMap(tenant + key);
         if(set.containsKey(k)) {
             byte[] removed = set.remove(k);
             decrementID(key);

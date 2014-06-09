@@ -33,6 +33,12 @@ public class MQTTNetSocket extends MQTTSocket {
 
     public void start() {
         netSocket.dataHandler(this);
+//        netSocket.closeHandler(new Handler<Void>() {
+//            @Override
+//            public void handle(Void aVoid) {
+//                shutdown();
+//            }
+//        });
     }
 
 

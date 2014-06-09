@@ -1,6 +1,7 @@
 package io.github.giovibal.mqtt;
 
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
