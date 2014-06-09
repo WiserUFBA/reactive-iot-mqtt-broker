@@ -367,7 +367,25 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
     protected void handleDisconnect(DisconnectMessage disconnectMessage) {
-        //TODO deallocate this instance ...
+//        //TODO deallocate this instance ...
+//        Set<String> topics = handlers.keySet();
+//        for (String topic : topics) {
+//            Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
+//            for (Handler<Message> handler : clientHandlers) {
+//                vertx.eventBus().unregisterHandler(topic, handler);
+//                topicsManager.removeSubscribedTopic(topic);
+//                if (clientID != null && cleanSession) {
+//                    getStore().deleteSubcription(topic, clientID);
+//                }
+//            }
+////            clearClientHandlers(topic);
+//        }
+//        removeClientID(clientID);
+//        clientID = null;
+        shutdown();
+    }
+    public void shutdown() {
+        //deallocate this instance ...
         Set<String> topics = handlers.keySet();
         for (String topic : topics) {
             Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
