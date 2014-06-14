@@ -233,7 +233,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             addClientID(clientID);
         }
 
-        republishPendingMessages();
+//        republishPendingMessages();
 
         if(connect.isWillFlag()) {
             String willMsg = connect.getWillMessage();
@@ -242,7 +242,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             storeWillMessage(willMsg, willQos, willTopic);
         }
     }
-
 
     protected void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
         try {
@@ -288,6 +287,9 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     s.setTopic(topic);
                     getStore().saveSubscription(s, clientID);
                 }
+
+                // replay saved messages
+                republishPendingMessagesForSubscription(topic);
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
@@ -308,17 +310,40 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 String topic2 = sub.getTopic();
                 subscribeClientToTopic(topic2, qos);
 
-                // re-publish
-                List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
-                for(byte[] message : messages) {
-                    // publish message to this client
-                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
+//                // re-publish
+//                List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
+//                for(byte[] message : messages) {
+//                    // publish message to this client
+//                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
+////                    handlePublishMessage(pm, false);
+//                    // send message directly to THIS client
+//                    sendMessageToClient(pm);
+//                    // delete will appen when publish end correctly.
+//                    deleteMessage(pm);
+//                }
+                republishPendingMessagesForSubscription(topic2);
+            }
+        }
+    }
+    private void republishPendingMessagesForSubscription(String topic2) throws Exception {
+        if(!cleanSession) {
+            // session is persistent...
+            MQTTStoreManager store = getStore();
+            // subsribe
+//            QOSType qos = new QOSUtils().toQos(sub.getQos());
+//            String topic2 = sub.getTopic();
+//            subscribeClientToTopic(topic2, qos);
+
+            // re-publish
+            List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
+            for(byte[] message : messages) {
+                // publish message to this client
+                PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
 //                    handlePublishMessage(pm, false);
-                    // send message directly to THIS client
-                    sendMessageToClient(pm);
-                    // delete will appen when publish end correctly.
-                    deleteMessage(pm);
-                }
+                // send message directly to THIS client
+                sendMessageToClient(pm);
+                // delete will appen when publish end correctly.
+                deleteMessage(pm);
             }
         }
     }
