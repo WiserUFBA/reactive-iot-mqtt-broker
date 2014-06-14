@@ -106,12 +106,10 @@ import java.util.*;
  */
 public class MQTTStoreManager {
     private Vertx vertx;
-//    private Container container;
     private String tenant;
 
-    public MQTTStoreManager(Vertx vertx/*, final Container container*/, String tenant) {
+    public MQTTStoreManager(Vertx vertx, String tenant) {
         this.vertx = vertx;
-//        this.container = container;
         this.tenant = tenant;
     }
 
@@ -125,7 +123,6 @@ public class MQTTStoreManager {
 
     /** get subscribed topics by clientID from session*/
     public List<Subscription> getSubscriptionsByClientID(String clientID) {
-//        container.logger().info("getSubscriptionsByClientID "+ clientID);
         ArrayList<Subscription> ret = new ArrayList<>();
         Set<String> subscriptions = vertx.sharedData().getSet(tenant + clientID);
         for(String item : subscriptions) {
@@ -138,7 +135,6 @@ public class MQTTStoreManager {
 
     /** remove topic from session */
     public void deleteSubcription(String topic, String clientID) {
-//        container.logger().info("deleteSubcription "+ topic +" "+clientID);
         Set<String> subscriptions = vertx.sharedData().getSet(tenant + clientID);
         Set<String> copyOfSubscriptions = new LinkedHashSet<>(subscriptions);
         for(String item : copyOfSubscriptions) {

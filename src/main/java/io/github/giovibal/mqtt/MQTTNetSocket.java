@@ -21,7 +21,7 @@ public class MQTTNetSocket extends MQTTSocket {
     public MQTTNetSocket(Vertx vertx, final Container container, NetSocket netSocket) {
         super(vertx, container);
         this.netSocket = netSocket;
-        willMessagesStore = vertx.sharedData().getMap("will_messages");
+        this.willMessagesStore = vertx.sharedData().getMap("will_messages");
         this.netSocket.closeHandler(new Handler<Void>() {
             @Override
             public void handle(Void aVoid) {
@@ -33,20 +33,12 @@ public class MQTTNetSocket extends MQTTSocket {
 
     public void start() {
         netSocket.dataHandler(this);
-//        netSocket.closeHandler(new Handler<Void>() {
-//            @Override
-//            public void handle(Void aVoid) {
-//                shutdown();
-//            }
-//        });
     }
 
 
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {
-//            if(connectionClosed)
-//                container.logger().info("Send message to " + clientID + " with connection closed");
             if (!netSocket.writeQueueFull()) {
                 netSocket.write(bytes);
             } else {
@@ -62,30 +54,6 @@ public class MQTTNetSocket extends MQTTSocket {
             container.logger().error(e.getMessage());
         }
     }
-
-
-//    @Override
-//    protected void storeMessage(PublishMessage publishMessage) {
-//        try {
-//            Buffer tostore = encoder.enc(publishMessage);
-//            String key = publishMessage.getTopicName();
-//            messagesStore.put(key, tostore);
-//        } catch(Throwable e) {
-//            container.logger().error(e.getMessage());
-//        }
-//    }
-//
-//    @Override
-//    protected void deleteMessage(PublishMessage publishMessage) {
-//        try {
-//            String key = publishMessage.getTopicName();
-//            if(messagesStore.containsKey(key)) {
-//                messagesStore.remove(key);
-//            }
-//        } catch(Throwable e) {
-//            container.logger().error(e.getMessage());
-//        }
-//    }
 
     @Override
     protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {

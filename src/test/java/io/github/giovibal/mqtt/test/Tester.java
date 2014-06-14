@@ -217,7 +217,7 @@ public class Tester {
         }
     }
 
-    private static void stats() {
+    public static void stats() {
         Set<String> keys = messaggiArrivatiByClient.keySet();
         for(String clientID : keys) {
             Integer count = messaggiArrivatiByClient.get(clientID);
@@ -225,7 +225,7 @@ public class Tester {
         }
     }
 
-    private static Map<String, Integer> messaggiArrivatiByClient = new HashMap<>();
+    public static Map<String, Integer> messaggiArrivatiByClient = new HashMap<>();
     static class MQTTClientHandler implements MqttCallback {
 
         String clientID;

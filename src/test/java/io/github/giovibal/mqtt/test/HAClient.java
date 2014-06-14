@@ -49,7 +49,7 @@ public class HAClient {
     private MqttClient client1;
     private MqttClient client2;
     private MqttClient publisher;
-    private boolean allTestsPass = false;
+    public boolean allTestsPass = false;
 
     public HAClient(String uri) throws MqttException {
 

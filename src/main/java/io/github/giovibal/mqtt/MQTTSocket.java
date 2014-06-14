@@ -90,10 +90,10 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     }
                     if(subscribeMessage.isRetainFlag()) {
                         /*
-                         When a new subscription is established on a topic,
-                         the last retained message on that topic should be sent to the subscriber with the Retain flag set.
-                         If there is no retained message, nothing is sent
-                         */
+                        When a new subscription is established on a topic,
+                        the last retained message on that topic should be sent to the subscriber with the Retain flag set.
+                        If there is no retained message, nothing is sent
+                        */
                     }
                     sendMessageToClient(subAck);
                     break;
@@ -215,6 +215,11 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
     protected void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
         ConnectMessage connect = connectMessage;
+
+        // TODO: instanziate MQTTSession and to all the logic there.
+        // in case of cleanSession=false, session instance must persist (with HashMap reference ?)
+
+
         clientID = connect.getClientID();
         cleanSession = connect.isCleanSession();
 
