@@ -36,6 +36,8 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private MQTTStoreManager store;
     private String tenant;
 
+    private MQTTSession session;
+
     public MQTTSocket(Vertx vertx, Container container) {
         decoder = new MQTTDecoder();
         encoder = new MQTTEncoder();
@@ -81,25 +83,25 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     break;
                 case SUBSCRIBE:
                     SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
-                    handleSubscribeMessage(subscribeMessage);
+                    session.handleSubscribeMessage(subscribeMessage);
                     SubAckMessage subAck = new SubAckMessage();
                     subAck.setMessageID(subscribeMessage.getMessageID());
-                    for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
-                        QOSType qos = toQos(c.getQos());
-                        subAck.addType(qos);
-                    }
-                    if(subscribeMessage.isRetainFlag()) {
-                        /*
-                        When a new subscription is established on a topic,
-                        the last retained message on that topic should be sent to the subscriber with the Retain flag set.
-                        If there is no retained message, nothing is sent
-                        */
-                    }
+//                    for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
+//                        QOSType qos = toQos(c.getQos());
+//                        subAck.addType(qos);
+//                    }
+//                    if(subscribeMessage.isRetainFlag()) {
+//                        /*
+//                        When a new subscription is established on a topic,
+//                        the last retained message on that topic should be sent to the subscriber with the Retain flag set.
+//                        If there is no retained message, nothing is sent
+//                        */
+//                    }
                     sendMessageToClient(subAck);
                     break;
                 case UNSUBSCRIBE:
                     UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage)msg;
-                    handleUnsubscribeMessage(unsubscribeMessage);
+                    session.handleUnsubscribeMessage(unsubscribeMessage);
                     UnsubAckMessage unsubAck = new UnsubAckMessage();
                     unsubAck.setMessageID(unsubscribeMessage.getMessageID());
                     sendMessageToClient(unsubAck);
@@ -111,7 +113,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                             break;
                         case MOST_ONE:
                             // 1. publish message to subscribers
-                            handlePublishMessage(publish, false);
+                            session.handlePublishMessage(publish, false);
                             break;
                         case LEAST_ONE:
                             // 1. Store message
@@ -119,7 +121,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                             // 3. Delete message
                             // 4. <- PubAck
 //                            storeMessage(publish);
-                            handlePublishMessage(publish, true);
+                            session.handlePublishMessage(publish, true);
 //                            deleteMessage(publish);
                             PubAckMessage pubAck = new PubAckMessage();
                             pubAck.setMessageID(publish.getMessageID());
@@ -134,7 +136,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                             // 5. Delete message
                             // 5. <- PubComp
 //                            storeMessage(publish);
-                            handlePublishMessage(publish, true);
+                            session.handlePublishMessage(publish, true);
                             PubRecMessage pubRec = new PubRecMessage();
                             pubRec.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubRec);
@@ -191,7 +193,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
 
-    protected void sendMessageToClient(AbstractMessage message) {
+    public void sendMessageToClient(AbstractMessage message) {
         try {
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
@@ -201,24 +203,18 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
     abstract protected void sendMessageToClient(Buffer bytes);
 
-    protected String getTenant(ConnectMessage connectMessage) {
+    private String getTenant(ConnectMessage connectMessage) {
         String tenant = "";
+        String clientID = connectMessage.getClientID();
         int idx = clientID.lastIndexOf('@');
         if(idx > 0) {
             tenant = clientID.substring(idx+1);
-        } else {
-            // global tenant
-            tenant = "";
         }
         return tenant;
     }
 
-    protected void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
+    private void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
         ConnectMessage connect = connectMessage;
-
-        // TODO: instanziate MQTTSession and to all the logic there.
-        // in case of cleanSession=false, session instance must persist (with HashMap reference ?)
-
 
         clientID = connect.getClientID();
         cleanSession = connect.isCleanSession();
@@ -229,6 +225,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         topicsManager = new MQTTTopicsManager(vertx, tenant);
         store = new MQTTStoreManager(vertx, tenant);
 
+
         boolean clientIDExists = clientIDExists(clientID);
         container.logger().info("Connect ClientID ==> "+ clientID);
         if(clientIDExists) {
@@ -238,255 +235,43 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             addClientID(clientID);
         }
 
-//        republishPendingMessages();
-
         if(connect.isWillFlag()) {
             String willMsg = connect.getWillMessage();
             byte willQos = connect.getWillQos();
             String willTopic = connect.getWillTopic();
             storeWillMessage(willMsg, willQos, willTopic);
         }
-    }
 
-    protected void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
-        try {
-            String topic = publishMessage.getTopicName();
-            JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
 
-            Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
-            QOSType qt = publishMessage.getQos();
-            for (String tpub : topicsToPublish) {
-                if(activatePersistence) {
-                    if (qt == QOSType.EXACTLY_ONCE || qt == QOSType.LEAST_ONE) {
-                        storeMessage(publishMessage, tpub);
-                    }
-                }
-                vertx.eventBus().publish(toVertxTopic(tpub), msg);
-            }
-        } catch(Throwable e) {
-            container.logger().error(e.getMessage());
-        }
-    }
-    private String toVertxTopic(String mqttTopic) {
-        String s = tenant +"/"+ mqttTopic;
-        s = s.replaceAll("/+","/"); // remove multiple slashes
-        return s;
-    }
+        // TODO: instanziate MQTTSession and to all the logic there.
+        // in case of cleanSession=false, session instance must persist (with HashMap reference ?)
+        session = new MQTTSession(vertx, container, this, clientID, cleanSession, tenant);
 
-    private QOSType toQos(byte qosByte) {
-        return new QOSUtils().toQos(qosByte);
-    }
-
-    protected void handleSubscribeMessage(SubscribeMessage subscribeMessage) throws Exception {
-        try {
-            List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
-            for (SubscribeMessage.Couple c : subs) {
-                byte requestedQosByte = c.getQos();
-                final QOSType requestedQos = toQos(requestedQosByte);
-                String topic = c.getTopic();
-                subscribeClientToTopic(topic, requestedQos);
-
-                if(clientID!=null && cleanSession==false) {
-                    Subscription s = new Subscription();
-                    s.setQos(requestedQosByte);
-                    s.setTopic(topic);
-                    getStore().saveSubscription(s, clientID);
-                }
-
-                // replay saved messages
-                republishPendingMessagesForSubscription(topic);
-            }
-        } catch(Throwable e) {
-            container.logger().error(e.getMessage());
-        }
-    }
-
-    private void republishPendingMessages() throws Exception {
-        if(cleanSession) {
-            // session is not persistent
-        }
-        else {
-            // session is persistent...
-            MQTTStoreManager store = getStore();
-            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
-            for (Subscription sub : subscriptions) {
-                // subsribe
-                QOSType qos = new QOSUtils().toQos(sub.getQos());
-                String topic2 = sub.getTopic();
-                subscribeClientToTopic(topic2, qos);
-
-//                // re-publish
-//                List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
-//                for(byte[] message : messages) {
-//                    // publish message to this client
-//                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-////                    handlePublishMessage(pm, false);
-//                    // send message directly to THIS client
-//                    sendMessageToClient(pm);
-//                    // delete will appen when publish end correctly.
-//                    deleteMessage(pm);
-//                }
-                republishPendingMessagesForSubscription(topic2);
-            }
-        }
-    }
-    private void republishPendingMessagesForSubscription(String topic2) throws Exception {
-        if(!cleanSession) {
-            // session is persistent...
-            MQTTStoreManager store = getStore();
-            // subsribe
-//            QOSType qos = new QOSUtils().toQos(sub.getQos());
-//            String topic2 = sub.getTopic();
-//            subscribeClientToTopic(topic2, qos);
-
-            // re-publish
-            List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
-            for(byte[] message : messages) {
-                // publish message to this client
-                PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-//                    handlePublishMessage(pm, false);
-                // send message directly to THIS client
-                sendMessageToClient(pm);
-                // delete will appen when publish end correctly.
-                deleteMessage(pm);
-            }
-        }
-    }
-
-    protected void subscribeClientToTopic(final String topic, QOSType requestedQos) {
-        final int iMaxQos = qosUtils.toInt(requestedQos);
-        Handler<Message> handler = new Handler<Message>() {
-            @Override
-            public void handle(Message message) {
-                try {
-                    JsonObject json = (JsonObject) message.body();
-                    PublishMessage pm = mqttJson.deserializePublishMessage(json);
-                    // the qos is the max required ...
-                    QOSType originalQos = pm.getQos();
-                    int iSentQos = qosUtils.toInt(originalQos);
-                    int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-                    pm.setQos(qosUtils.toQos(iOkQos));
-                    pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-
-//                    if (cleanSession==false
-//                            && isDisconnected()
-//                            && (originalQos == QOSType.EXACTLY_ONCE || originalQos == QOSType.LEAST_ONE)) {
-//                        storeMessage(pm, topic);
-//                    }
-
-                    sendMessageToClient(pm);
-                } catch (Throwable e) {
-                    container.logger().error(e.getMessage(), e);
-                }
-            }
-        };
-        Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-        clientHandlers.add(handler);
-        vertx.eventBus().registerHandler(toVertxTopic(topic), handler);
-        topicsManager.addSubscribedTopic(topic);
-    }
-
-    protected void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {
-        try {
-            List<String> topics = unsubscribeMessage.topics();
-            for (String topic : topics) {
-                Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-                for (Handler<Message> handler : clientHandlers) {
-                    vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
-                    topicsManager.removeSubscribedTopic(topic);
-                    // remove persistent subscriptions
-                    if(clientID!=null/*&& cleanSession==false*/) {
-                        getStore().deleteSubcription(topic, clientID);
-                    }
-                }
-                clearClientHandlers(topic);
-            }
-        }
-        catch(Throwable e) {
-            container.logger().error(e.getMessage());
-        }
-    }
-    private Set<Handler<Message>> getClientHandlers(String topic) {
-        String sessionID = topic;
-        if(!handlers.containsKey(sessionID)) {
-            handlers.put(sessionID, new HashSet<Handler<Message>>());
-        }
-        Set<Handler<Message>> clientHandlers = handlers.get(sessionID);
-        return clientHandlers;
-    }
-    private void clearClientHandlers(String topic) {
-        String sessionID = topic;
-        if (handlers.containsKey(sessionID)) {
-            handlers.remove(sessionID);
-        }
     }
 
 
-    protected void handleDisconnect(DisconnectMessage disconnectMessage) {
-        shutdown();
-    }
-    public void shutdown() {
-        //deallocate this instance ...
-        Set<String> topics = handlers.keySet();
-        for (String topic : topics) {
-            Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-            for (Handler<Message> handler : clientHandlers) {
-                vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
-                topicsManager.removeSubscribedTopic(topic);
-                if (clientID != null && cleanSession) {
-                    getStore().deleteSubcription(topic, clientID);
-                }
-            }
-//            clearClientHandlers(topic);
-        }
-        removeClientID(clientID);
-        clientID = null;
+    private void handleDisconnect(DisconnectMessage disconnectMessage) {
+        session.shutdown();
     }
 
 
-    protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
-        try {
-            byte[] m = encoder.enc(publishMessage).getBytes();
-            getStore().pushMessage(m, topicToPublish);
-        } catch(Exception e) {
-            container.logger().error(e.getMessage(), e);
-        }
-    }
-    protected void deleteMessage(PublishMessage publishMessage) {
-        try {
-            String pubtopic = publishMessage.getTopicName();
-            Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
-            for(String tsub : topics) {
-                getStore().popMessage(tsub, clientID);
-            }
-        } catch(Exception e) {
-            container.logger().error(e.getMessage(), e);
-        }
-    }
-    abstract protected void storeWillMessage(String willMsg, byte willQos, String willTopic);
+    protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {
 
-
-    protected MQTTStoreManager getStore() {
-        return store;
     }
 
-    protected void addClientID(String clientID) {
+    private void addClientID(String clientID) {
         Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
         allClientIDs.add(clientID);
     }
-    protected boolean clientIDExists(String clientID) {
+    private boolean clientIDExists(String clientID) {
         Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
         boolean exists = allClientIDs.contains(clientID);
         return exists;
     }
 
-    protected void removeClientID(String clientID) {
+    private void removeClientID(String clientID) {
         Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
         allClientIDs.remove(clientID);
-    }
-
-    protected boolean isDisconnected() {
-        return clientID == null;
     }
 
 }

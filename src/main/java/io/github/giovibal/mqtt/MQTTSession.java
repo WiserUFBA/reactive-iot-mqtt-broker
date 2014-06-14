@@ -20,24 +20,27 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
  * Created by giovanni on 07/05/2014.
  * Base class for connection handling, 1 tcp connection corresponds to 1 instance of this class.
  */
-public abstract class MQTTSession {
+public class MQTTSession {
 
-    protected Vertx vertx;
-    protected Container container;
-    protected MQTTDecoder decoder;
-    protected MQTTEncoder encoder;
-    protected MQTTJson mqttJson;
+    private Vertx vertx;
+    private Container container;
+    private MQTTDecoder decoder;
+    private MQTTEncoder encoder;
+    private MQTTJson mqttJson;
     private QOSUtils qosUtils;
     private Map<String, Set<Handler<Message>>> handlers;
-//    private MQTTTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
-    protected String clientID;
+    private String clientID;
     private boolean cleanSession;
     private MQTTStoreManager store;
     private String tenant;
     private MQTTSocket mqttSocket;
 
-    public MQTTSession(Vertx vertx, Container container, MQTTSocket mqttSocket, MQTTTopicsManager topicsManager) {
+    public MQTTSession(Vertx vertx, Container container
+            , MQTTSocket mqttSocket
+            , String clientID, boolean cleanSession
+            , String tenant) {
+
         decoder = new MQTTDecoder();
         encoder = new MQTTEncoder();
         mqttJson = new MQTTJson();
@@ -51,13 +54,19 @@ public abstract class MQTTSession {
         this.vertx = vertx;
         this.container = container;
         this.mqttSocket = mqttSocket;
-        this.topicsManager = topicsManager;
+//        this.topicsManager = topicsManager;
+        this.clientID = clientID;
+        this.cleanSession = cleanSession;
+        this.tenant = tenant;
+
+        this.topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
+        this.store = new MQTTStoreManager(this.vertx, this.tenant);
     }
 
 
 
 
-    protected void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
+    public void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
         try {
             String topic = publishMessage.getTopicName();
             JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
@@ -86,7 +95,7 @@ public abstract class MQTTSession {
         return new QOSUtils().toQos(qosByte);
     }
 
-    protected void handleSubscribeMessage(SubscribeMessage subscribeMessage) throws Exception {
+    public void handleSubscribeMessage(SubscribeMessage subscribeMessage) throws Exception {
         try {
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
             for (SubscribeMessage.Couple c : subs) {
@@ -124,17 +133,6 @@ public abstract class MQTTSession {
                 String topic2 = sub.getTopic();
                 subscribeClientToTopic(topic2, qos);
 
-//                // re-publish
-//                List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
-//                for(byte[] message : messages) {
-//                    // publish message to this client
-//                    PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-////                    handlePublishMessage(pm, false);
-//                    // send message directly to THIS client
-//                    sendMessageToClient(pm);
-//                    // delete will appen when publish end correctly.
-//                    deleteMessage(pm);
-//                }
                 republishPendingMessagesForSubscription(topic2);
             }
         }
@@ -144,9 +142,6 @@ public abstract class MQTTSession {
             // session is persistent...
             MQTTStoreManager store = getStore();
             // subsribe
-//            QOSType qos = new QOSUtils().toQos(sub.getQos());
-//            String topic2 = sub.getTopic();
-//            subscribeClientToTopic(topic2, qos);
 
             // re-publish
             List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
@@ -162,7 +157,7 @@ public abstract class MQTTSession {
         }
     }
 
-    protected void subscribeClientToTopic(final String topic, QOSType requestedQos) {
+    private void subscribeClientToTopic(final String topic, QOSType requestedQos) {
         final int iMaxQos = qosUtils.toInt(requestedQos);
         Handler<Message> handler = new Handler<Message>() {
             @Override
@@ -195,7 +190,7 @@ public abstract class MQTTSession {
         topicsManager.addSubscribedTopic(topic);
     }
 
-    protected void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {
+    public void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {
         try {
             List<String> topics = unsubscribeMessage.topics();
             for (String topic : topics) {
@@ -231,7 +226,7 @@ public abstract class MQTTSession {
     }
 
 
-    protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
+    private void storeMessage(PublishMessage publishMessage, String topicToPublish) {
         try {
             byte[] m = encoder.enc(publishMessage).getBytes();
             getStore().pushMessage(m, topicToPublish);
@@ -239,7 +234,7 @@ public abstract class MQTTSession {
             container.logger().error(e.getMessage(), e);
         }
     }
-    protected void deleteMessage(PublishMessage publishMessage) {
+    private void deleteMessage(PublishMessage publishMessage) {
         try {
             String pubtopic = publishMessage.getTopicName();
             Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
@@ -251,7 +246,7 @@ public abstract class MQTTSession {
         }
     }
 
-    protected MQTTStoreManager getStore() {
+    private MQTTStoreManager getStore() {
         return store;
     }
 
@@ -270,8 +265,25 @@ public abstract class MQTTSession {
 //        allClientIDs.remove(clientID);
 //    }
 
-    protected boolean isDisconnected() {
-        return clientID == null;
-    }
+//    private boolean isDisconnected() {
+//        return clientID == null;
+//    }
 
+    public void shutdown() {
+        //deallocate this instance ...
+        Set<String> topics = handlers.keySet();
+        for (String topic : topics) {
+            Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
+            for (Handler<Message> handler : clientHandlers) {
+                vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
+                topicsManager.removeSubscribedTopic(topic);
+                if (clientID != null && cleanSession) {
+                    getStore().deleteSubcription(topic, clientID);
+                }
+            }
+//            clearClientHandlers(topic);
+        }
+//        removeClientID(clientID);
+//        clientID = null;
+    }
 }

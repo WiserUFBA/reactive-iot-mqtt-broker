@@ -43,18 +43,4 @@ public class MQTTWebSocket extends MQTTSocket {
         }
     }
 
-    @Override
-    protected void storeMessage(PublishMessage publishMessage, String topicToPublish) {
-
-    }
-
-    @Override
-    protected void deleteMessage(PublishMessage publishMessage) {
-
-    }
-
-    @Override
-    protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {
-
-    }
 }
