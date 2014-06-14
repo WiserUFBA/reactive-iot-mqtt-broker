@@ -313,7 +313,9 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                 for(byte[] message : messages) {
                     // publish message to this client
                     PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-                    handlePublishMessage(pm, false);
+//                    handlePublishMessage(pm, false);
+                    // send message directly to THIS client
+                    sendMessageToClient(pm);
                     // delete will appen when publish end correctly.
                     deleteMessage(pm);
                 }
