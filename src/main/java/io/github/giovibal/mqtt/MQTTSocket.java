@@ -24,14 +24,14 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
     protected Vertx vertx;
     protected Container container;
-    protected MQTTDecoder decoder;
-    protected MQTTEncoder encoder;
-    protected MQTTJson mqttJson;
-    private QOSUtils qosUtils;
-    private Map<String, Set<Handler<Message>>> handlers;
+    private MQTTDecoder decoder;
+    private MQTTEncoder encoder;
+//    protected MQTTJson mqttJson;
+//    private QOSUtils qosUtils;
+//    private Map<String, Set<Handler<Message>>> handlers;
     private MQTTTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
-    protected String clientID;
+    private String clientID;
     private boolean cleanSession;
     private MQTTStoreManager store;
     private String tenant;
@@ -41,9 +41,9 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     public MQTTSocket(Vertx vertx, Container container) {
         decoder = new MQTTDecoder();
         encoder = new MQTTEncoder();
-        mqttJson = new MQTTJson();
-        qosUtils = new QOSUtils();
-        handlers = new HashMap<>();
+//        mqttJson = new MQTTJson();
+//        qosUtils = new QOSUtils();
+//        handlers = new HashMap<>();
         tokenizer = new MQTTTokenizer();
         tokenizer.registerListener(this);
 //        topicsManager = new MQTTTopicsManager(vertx);
@@ -86,17 +86,17 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     session.handleSubscribeMessage(subscribeMessage);
                     SubAckMessage subAck = new SubAckMessage();
                     subAck.setMessageID(subscribeMessage.getMessageID());
-//                    for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
-//                        QOSType qos = toQos(c.getQos());
-//                        subAck.addType(qos);
-//                    }
-//                    if(subscribeMessage.isRetainFlag()) {
-//                        /*
-//                        When a new subscription is established on a topic,
-//                        the last retained message on that topic should be sent to the subscriber with the Retain flag set.
-//                        If there is no retained message, nothing is sent
-//                        */
-//                    }
+                    for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
+                        QOSType qos = new QOSUtils().toQos(c.getQos());
+                        subAck.addType(qos);
+                    }
+                    if(subscribeMessage.isRetainFlag()) {
+                        /*
+                         When a new subscription is established on a topic,
+                         the last retained message on that topic should be sent to the subscriber with the Retain flag set.
+                         If there is no retained message, nothing is sent
+                         */
+                    }
                     sendMessageToClient(subAck);
                     break;
                 case UNSUBSCRIBE:
@@ -112,30 +112,15 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                         case RESERVED:
                             break;
                         case MOST_ONE:
-                            // 1. publish message to subscribers
                             session.handlePublishMessage(publish, false);
                             break;
                         case LEAST_ONE:
-                            // 1. Store message
-                            // 2. publish message to subscribers
-                            // 3. Delete message
-                            // 4. <- PubAck
-//                            storeMessage(publish);
                             session.handlePublishMessage(publish, true);
-//                            deleteMessage(publish);
                             PubAckMessage pubAck = new PubAckMessage();
                             pubAck.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubAck);
                             break;
-
                         case EXACTLY_ONCE:
-                            // 1. Store message
-                            // 2. publish message to subscribers
-                            // 3. <- PubRec
-                            // 4. -> PubRel from client
-                            // 5. Delete message
-                            // 5. <- PubComp
-//                            storeMessage(publish);
                             session.handlePublishMessage(publish, true);
                             PubRecMessage pubRec = new PubRecMessage();
                             pubRec.setMessageID(publish.getMessageID());
@@ -153,23 +138,11 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     break;
                 case PUBREL:
                     PubRelMessage pubRel = (PubRelMessage)msg;
-                    // HISTORY:
-                    // 1. Store message
-                    // 2. publish message to subscrribers
-                    // 3. <- PubRec
-                    // ------> 4. -> PubRel from client
-                    // TODO:
-                    // 5. Delete message
-                    // 5. <- PubComp
-
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
                     sendMessageToClient(pubComp);
                     break;
                 case DISCONNECT:
-                    // TODO:
-                    // 1. terminate the session
-                    // If flag "clean_session" of CONNECT was == 0, then remember the client subscriptions for next connection
                     DisconnectMessage disconnectMessage = (DisconnectMessage)msg;
                     handleDisconnect(disconnectMessage);
                     break;
@@ -229,34 +202,25 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         boolean clientIDExists = clientIDExists(clientID);
         container.logger().info("Connect ClientID ==> "+ clientID);
         if(clientIDExists) {
-            // TODO: reset older clientID socket connection
+            // Resume old session
             container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
         } else {
             addClientID(clientID);
         }
 
+        session = new MQTTSession(vertx, container, this, clientID, cleanSession, tenant);
+
         if(connect.isWillFlag()) {
             String willMsg = connect.getWillMessage();
             byte willQos = connect.getWillQos();
             String willTopic = connect.getWillTopic();
-            storeWillMessage(willMsg, willQos, willTopic);
+            session.storeWillMessage(willMsg, willQos, willTopic);
         }
-
-
-        // TODO: instanziate MQTTSession and to all the logic there.
-        // in case of cleanSession=false, session instance must persist (with HashMap reference ?)
-        session = new MQTTSession(vertx, container, this, clientID, cleanSession, tenant);
-
     }
-
 
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
+        removeClientID(clientID);
         session.shutdown();
-    }
-
-
-    protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {
-
     }
 
     private void addClientID(String clientID) {

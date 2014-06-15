@@ -1,7 +1,9 @@
 package io.github.giovibal.mqtt.persistence;
 
+import io.github.giovibal.mqtt.MQTTJson;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
 
 import java.util.*;
@@ -222,4 +224,10 @@ public class MQTTStoreManager {
         return null;
     }
 
+
+    public void storeWillMessage(String willMsg, byte willQos, String willTopic) {
+        MQTTJson mqttJson = new MQTTJson();
+        JsonObject wm = mqttJson.serializeWillMessage(willMsg, willQos, willTopic);
+        vertx.sharedData().getMap("will_messages").put(willTopic, wm);
+    }
 }

@@ -41,29 +41,23 @@ public class MQTTSession {
             , String clientID, boolean cleanSession
             , String tenant) {
 
-        decoder = new MQTTDecoder();
-        encoder = new MQTTEncoder();
-        mqttJson = new MQTTJson();
-        qosUtils = new QOSUtils();
-        handlers = new HashMap<>();
-//        tokenizer = new MQTTTokenizer();
-//        tokenizer.registerListener(this);
-//        topicsManager = new MQTTTopicsManager(vertx);
-//        store = new MQTTStoreManager(vertx);
-
         this.vertx = vertx;
         this.container = container;
+
         this.mqttSocket = mqttSocket;
-//        this.topicsManager = topicsManager;
         this.clientID = clientID;
         this.cleanSession = cleanSession;
         this.tenant = tenant;
 
+        this.decoder = new MQTTDecoder();
+        this.encoder = new MQTTEncoder();
+        this.mqttJson = new MQTTJson();
+        this.qosUtils = new QOSUtils();
+        this.handlers = new HashMap<>();
+
         this.topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
         this.store = new MQTTStoreManager(this.vertx, this.tenant);
     }
-
-
 
 
     public void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
@@ -91,16 +85,16 @@ public class MQTTSession {
         return s;
     }
 
-    private QOSType toQos(byte qosByte) {
-        return new QOSUtils().toQos(qosByte);
-    }
+//    private QOSType toQos(byte qosByte) {
+//        return qosUtils.toQos(qosByte);
+//    }
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) throws Exception {
         try {
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
             for (SubscribeMessage.Couple c : subs) {
                 byte requestedQosByte = c.getQos();
-                final QOSType requestedQos = toQos(requestedQosByte);
+                final QOSType requestedQos = qosUtils.toQos(requestedQosByte);
                 String topic = c.getTopic();
                 subscribeClientToTopic(topic, requestedQos);
 
@@ -129,7 +123,7 @@ public class MQTTSession {
             List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
             for (Subscription sub : subscriptions) {
                 // subsribe
-                QOSType qos = new QOSUtils().toQos(sub.getQos());
+                QOSType qos = qosUtils.toQos(sub.getQos());
                 String topic2 = sub.getTopic();
                 subscribeClientToTopic(topic2, qos);
 
@@ -148,7 +142,6 @@ public class MQTTSession {
             for(byte[] message : messages) {
                 // publish message to this client
                 PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
-//                    handlePublishMessage(pm, false);
                 // send message directly to THIS client
                 mqttSocket.sendMessageToClient(pm);
                 // delete will appen when publish end correctly.
@@ -250,24 +243,9 @@ public class MQTTSession {
         return store;
     }
 
-//    protected void addClientID(String clientID) {
-//        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
-//        allClientIDs.add(clientID);
-//    }
-//    protected boolean clientIDExists(String clientID) {
-//        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
-//        boolean exists = allClientIDs.contains(clientID);
-//        return exists;
-//    }
-//
-//    protected void removeClientID(String clientID) {
-//        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
-//        allClientIDs.remove(clientID);
-//    }
-
-//    private boolean isDisconnected() {
-//        return clientID == null;
-//    }
+    public void storeWillMessage(String willMsg, byte willQos, String willTopic) {
+        getStore().storeWillMessage(willMsg,willQos,willTopic);
+    }
 
     public void shutdown() {
         //deallocate this instance ...
