@@ -1,11 +1,16 @@
 package io.github.giovibal.mqtt;
 
+import io.netty.buffer.ByteBuf;
+import org.dna.mqtt.moquette.proto.messages.ConnAckMessage;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.ServerWebSocket;
+import org.vertx.java.core.http.WebSocketFrame;
+import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
+import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
 import org.vertx.java.platform.Container;
 
 /**
@@ -22,6 +27,7 @@ public class MQTTWebSocket extends MQTTSocket {
 
     public void start() {
         netSocket.dataHandler(this);
+        sendMessageToClient(new ConnAckMessage());
     }
 
     @Override
@@ -29,6 +35,7 @@ public class MQTTWebSocket extends MQTTSocket {
         try {
             if (!netSocket.writeQueueFull()) {
                 netSocket.write(bytes);
+//                netSocket.writeBinaryFrame(bytes);
             } else {
                 netSocket.pause();
                 netSocket.drainHandler(new VoidHandler() {
@@ -37,7 +44,6 @@ public class MQTTWebSocket extends MQTTSocket {
                     }
                 });
             }
-
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }

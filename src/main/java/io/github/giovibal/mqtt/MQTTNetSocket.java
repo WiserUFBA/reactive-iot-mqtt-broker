@@ -15,17 +15,14 @@ import org.vertx.java.platform.Container;
 public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
-//    private ConcurrentSharedMap<String, JsonObject> willMessagesStore;
     private boolean connectionClosed;
 
     public MQTTNetSocket(Vertx vertx, final Container container, NetSocket netSocket) {
         super(vertx, container);
         this.netSocket = netSocket;
-//        this.willMessagesStore = vertx.sharedData().getMap("will_messages");
         this.netSocket.closeHandler(new Handler<Void>() {
             @Override
             public void handle(Void aVoid) {
-//                container.logger().info("Client close connection: "+ clientID);
                 connectionClosed = true;
             }
         });
@@ -54,11 +51,4 @@ public class MQTTNetSocket extends MQTTSocket {
             container.logger().error(e.getMessage());
         }
     }
-
-//    @Override
-//    protected void storeWillMessage(String willMsg, byte willQos, String willTopic) {
-//        MQTTJson mqttJson = new MQTTJson();
-//        JsonObject wm = mqttJson.serializeWillMessage(willMsg, willQos, willTopic);
-//        willMessagesStore.put(willTopic, wm);
-//    }
 }

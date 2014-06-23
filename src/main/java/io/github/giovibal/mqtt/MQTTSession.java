@@ -60,18 +60,20 @@ public class MQTTSession {
     }
 
 
-    public void handlePublishMessage(PublishMessage publishMessage, boolean activatePersistence) {
+    public void handlePublishMessage(PublishMessage publishMessage) {
         try {
             String topic = publishMessage.getTopicName();
             JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
-
             Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
-            QOSType qt = publishMessage.getQos();
             for (String tpub : topicsToPublish) {
-                if(activatePersistence) {
-                    if (qt == QOSType.EXACTLY_ONCE || qt == QOSType.LEAST_ONE) {
+//                if (qt == QOSType.EXACTLY_ONCE || qt == QOSType.LEAST_ONE) {
+//                    storeMessage(publishMessage, tpub);
+//                }
+                switch (publishMessage.getQos()) {
+                    case LEAST_ONE:
+                    case EXACTLY_ONCE:
                         storeMessage(publishMessage, tpub);
-                    }
+                        break;
                 }
                 vertx.eventBus().publish(toVertxTopic(tpub), msg);
             }
@@ -80,14 +82,8 @@ public class MQTTSession {
         }
     }
     private String toVertxTopic(String mqttTopic) {
-        String s = tenant +"/"+ mqttTopic;
-        s = s.replaceAll("/+","/"); // remove multiple slashes
-        return s;
+        return topicsManager.toVertxTopic(mqttTopic);
     }
-
-//    private QOSType toQos(byte qosByte) {
-//        return qosUtils.toQos(qosByte);
-//    }
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) throws Exception {
         try {
@@ -113,32 +109,29 @@ public class MQTTSession {
         }
     }
 
-    private void republishPendingMessages() throws Exception {
-        if(cleanSession) {
-            // session is not persistent
-        }
-        else {
+    private void republishAllPendingMessages() throws Exception {
+        if(!cleanSession) {
             // session is persistent...
             MQTTStoreManager store = getStore();
             List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
             for (Subscription sub : subscriptions) {
                 // subsribe
                 QOSType qos = qosUtils.toQos(sub.getQos());
-                String topic2 = sub.getTopic();
-                subscribeClientToTopic(topic2, qos);
-
-                republishPendingMessagesForSubscription(topic2);
+                String topic = sub.getTopic();
+                subscribeClientToTopic(topic, qos);
+                republishPendingMessagesForSubscription(topic);
             }
         }
     }
-    private void republishPendingMessagesForSubscription(String topic2) throws Exception {
+
+    private void republishPendingMessagesForSubscription(String topic) throws Exception {
         if(!cleanSession) {
             // session is persistent...
             MQTTStoreManager store = getStore();
             // subsribe
 
             // re-publish
-            List<byte[]> messages = store.getMessagesByTopic(topic2, clientID);
+            List<byte[]> messages = store.getMessagesByTopic(topic, clientID);
             for(byte[] message : messages) {
                 // publish message to this client
                 PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));

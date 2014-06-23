@@ -3,16 +3,13 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
-import io.github.giovibal.mqtt.persistence.Subscription;
 import org.dna.mqtt.moquette.proto.messages.*;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
 
-import java.util.*;
+import java.util.Set;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 
@@ -26,10 +23,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     protected Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
-//    protected MQTTJson mqttJson;
-//    private QOSUtils qosUtils;
-//    private Map<String, Set<Handler<Message>>> handlers;
-    private MQTTTokenizer tokenizer;
+    protected MQTTTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
     private String clientID;
     private boolean cleanSession;
@@ -39,15 +33,10 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private MQTTSession session;
 
     public MQTTSocket(Vertx vertx, Container container) {
-        decoder = new MQTTDecoder();
-        encoder = new MQTTEncoder();
-//        mqttJson = new MQTTJson();
-//        qosUtils = new QOSUtils();
-//        handlers = new HashMap<>();
-        tokenizer = new MQTTTokenizer();
-        tokenizer.registerListener(this);
-//        topicsManager = new MQTTTopicsManager(vertx);
-//        store = new MQTTStoreManager(vertx/*, container*/);
+        this.decoder = new MQTTDecoder();
+        this.encoder = new MQTTEncoder();
+        this.tokenizer = new MQTTTokenizer();
+        this.tokenizer.registerListener(this);
 
         this.vertx = vertx;
         this.container = container;
@@ -68,6 +57,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
     @Override
     public void handle(Buffer buffer) {
+        System.out.println("handle "+ buffer.length());
         tokenizer.process(buffer.getBytes());
     }
 
@@ -112,16 +102,16 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                         case RESERVED:
                             break;
                         case MOST_ONE:
-                            session.handlePublishMessage(publish, false);
+                            session.handlePublishMessage(publish);
                             break;
                         case LEAST_ONE:
-                            session.handlePublishMessage(publish, true);
+                            session.handlePublishMessage(publish);
                             PubAckMessage pubAck = new PubAckMessage();
                             pubAck.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubAck);
                             break;
                         case EXACTLY_ONCE:
-                            session.handlePublishMessage(publish, true);
+                            session.handlePublishMessage(publish);
                             PubRecMessage pubRec = new PubRecMessage();
                             pubRec.setMessageID(publish.getMessageID());
                             sendMessageToClient(pubRec);

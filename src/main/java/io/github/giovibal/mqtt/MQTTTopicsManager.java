@@ -90,4 +90,10 @@ public class MQTTTopicsManager {
         int count = s.replaceAll("[^/]", "").length();
         return count;
     }
+
+    public String toVertxTopic(String mqttTopic) {
+        String s = tenant +"/"+ mqttTopic;
+        s = s.replaceAll("/+","/"); // remove multiple slashes
+        return s;
+    }
 }
