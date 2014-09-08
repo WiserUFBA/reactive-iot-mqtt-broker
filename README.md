@@ -31,7 +31,7 @@ Features
 * Suport both QoS 1 and 2 messages
 * Persistence and session management (cleanSession=false)
 * Multi-tenancy: isolation of topics and storage, just use client@tenant as ClientID
-
+* MQTT over WebSocket 
 
 Roadmap
 ----
