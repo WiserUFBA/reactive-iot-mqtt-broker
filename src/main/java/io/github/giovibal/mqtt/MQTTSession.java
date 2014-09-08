@@ -12,6 +12,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
@@ -149,22 +150,38 @@ public class MQTTSession {
             @Override
             public void handle(Message message) {
                 try {
-                    JsonObject json = (JsonObject) message.body();
-                    PublishMessage pm = mqttJson.deserializePublishMessage(json);
-                    // the qos is the max required ...
-                    QOSType originalQos = pm.getQos();
-                    int iSentQos = qosUtils.toInt(originalQos);
-                    int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-                    pm.setQos(qosUtils.toQos(iOkQos));
-                    pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-
+//                    JsonObject json = (JsonObject) message.body();
+                    // Check if message is json and deserializable, otherwise try to construct a custom PublishMessage.
+                    // Design from Paolo Iddas
+                    Object body = message.body();
+                    if (body instanceof JsonObject && mqttJson.isDeserializable((JsonObject) body)) {
+                        JsonObject json = (JsonObject) body;
+                        PublishMessage pm = mqttJson.deserializePublishMessage(json);
+                        // the qos is the max required ...
+                        QOSType originalQos = pm.getQos();
+                        int iSentQos = qosUtils.toInt(originalQos);
+                        int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
+                        pm.setQos(qosUtils.toQos(iOkQos));
+                        pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
 //                    if (cleanSession==false
 //                            && isDisconnected()
 //                            && (originalQos == QOSType.EXACTLY_ONCE || originalQos == QOSType.LEAST_ONE)) {
 //                        storeMessage(pm, topic);
 //                    }
 
-                    mqttSocket.sendMessageToClient(pm);
+                        mqttSocket.sendMessageToClient(pm);
+                    }
+                    else {
+
+                        PublishMessage pm = new PublishMessage();
+                        pm.setTopicName(topic);
+                        pm.setPayload(ByteBuffer.wrap(message.body().toString().getBytes()));
+                        pm.setQos(QOSType.MOST_ONE);
+                        pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
+                        pm.setDupFlag(false);
+                        mqttSocket.sendMessageToClient(pm);
+                    }
+
                 } catch (Throwable e) {
                     container.logger().error(e.getMessage(), e);
                 }

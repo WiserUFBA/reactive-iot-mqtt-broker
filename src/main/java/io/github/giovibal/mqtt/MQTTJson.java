@@ -1,7 +1,5 @@
 package io.github.giovibal.mqtt;
 
-import io.github.giovibal.mqtt.parser.MQTTDecoder;
-import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 import org.vertx.java.core.json.JsonObject;
@@ -13,6 +11,15 @@ import java.nio.ByteBuffer;
  * JSON Utility class
  */
 public class MQTTJson {
+
+    public boolean isDeserializable(JsonObject json) {
+        boolean ret = (
+               json.getFieldNames().contains("topicName")
+//          && json.getFieldNames().contains("qos")
+            && json.getFieldNames().contains("payload")
+        );
+        return ret;
+    }
 
     public JsonObject serializePublishMessage(PublishMessage publishMessage) {
         JsonObject ret = new JsonObject();
@@ -40,7 +47,7 @@ public class MQTTJson {
 
     public JsonObject serializeWillMessage(String willMsg, byte willQos, String willTopic) {
         JsonObject wm = new JsonObject()
-                .putString("topic",willTopic)
+                .putString("topicName",willTopic)
                 .putNumber("qos", new Integer(willQos))
                 .putString("message",willMsg);
         return wm;

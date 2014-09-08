@@ -47,6 +47,7 @@ public class MQTTBroker extends Verticle {
             container.logger().info("Startd MQTT WebSocket-Broker on port: "+ 61614);
 
 
+
 //            final MQTTStoreManager store = new MQTTStoreManager(vertx, "");
 //            // DEBUG
 //            vertx.setPeriodic(10000, new Handler<Long>() {
