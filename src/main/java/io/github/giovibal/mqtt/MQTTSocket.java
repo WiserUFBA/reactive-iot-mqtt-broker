@@ -57,7 +57,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
     @Override
     public void handle(Buffer buffer) {
-        System.out.println("handle "+ buffer.length());
+//        System.out.println("handle "+ buffer.length());
         tokenizer.process(buffer.getBytes());
     }
 
@@ -190,7 +190,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
         boolean clientIDExists = clientIDExists(clientID);
-        container.logger().info("Connect ClientID ==> "+ clientID);
+//        container.logger().info("Connect ClientID ==> "+ clientID);
         if(clientIDExists) {
             // Resume old session
             container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");

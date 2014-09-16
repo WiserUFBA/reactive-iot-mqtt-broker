@@ -1,0 +1,6 @@
+{
+    "tcp_port": 1883,
+    "websocket_enabled": true,
+    "websocket_port": 11883,
+    "websocket_subprotocol": "mqttv3.1"
+}

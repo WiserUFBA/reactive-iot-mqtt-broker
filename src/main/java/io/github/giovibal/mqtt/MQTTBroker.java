@@ -7,6 +7,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.WebSocketFrame;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.streams.Pump;
@@ -23,6 +24,11 @@ public class MQTTBroker extends Verticle {
     @Override
     public void start() {
         try {
+            JsonObject conf = container.config();
+            int port = conf.getInteger("tcp_port", 1883);
+            int wsPort = conf.getInteger("websocket_port", 11883);
+            boolean wsEnabled = conf.getBoolean("websocket_enabled", true);
+            String wsSubProtocol = conf.getString("websocket_subprotocol", "mqttv3.1");
 
             NetServer netServer = vertx.createNetServer();
             netServer.connectHandler(new Handler<NetSocket>() {
@@ -31,20 +37,22 @@ public class MQTTBroker extends Verticle {
                     MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, container, netSocket);
                     mqttNetSocket.start();
                 }
-            }).listen(1883);
-            container.logger().info("Startd MQTT TCP-Broker on port: "+ 1883);
+            }).listen(port);
+            container.logger().info("Startd MQTT TCP-Broker on port: "+ port);
 
-            final HttpServer http = vertx.createHttpServer();
-            http.setWebSocketSubProtocols("mqttv3.1");
-            http.setMaxWebSocketFrameSize(1024);
-            http.websocketHandler(new Handler<ServerWebSocket>() {
-                @Override
-                public void handle(ServerWebSocket serverWebSocket) {
-                    MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, container, serverWebSocket);
-                    mqttWebSocket.start();
-                }
-            }).listen(61614);
-            container.logger().info("Startd MQTT WebSocket-Broker on port: "+ 61614);
+            if(wsEnabled) {
+                final HttpServer http = vertx.createHttpServer();
+                http.setWebSocketSubProtocols(wsSubProtocol);
+                http.setMaxWebSocketFrameSize(1024);
+                http.websocketHandler(new Handler<ServerWebSocket>() {
+                    @Override
+                    public void handle(ServerWebSocket serverWebSocket) {
+                        MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, container, serverWebSocket);
+                        mqttWebSocket.start();
+                    }
+                }).listen(wsPort);
+                container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
+            }
 
 
 

@@ -46,7 +46,6 @@ public class MQTTNetSocket extends MQTTSocket {
                     }
                 });
             }
-
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }

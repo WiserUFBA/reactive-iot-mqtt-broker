@@ -27,7 +27,6 @@ public class MQTTWebSocket extends MQTTSocket {
 
     public void start() {
         netSocket.dataHandler(this);
-        sendMessageToClient(new ConnAckMessage());
     }
 
     @Override
