@@ -211,7 +211,7 @@ public class MQTTStoreManager {
         return ret;
     }
 
-    /** delete topic/message */
+    /** get and delete topic/message */
     public byte[] popMessage(String topic, String clientID) {
         String key  = clientID+topic;
         String k = ""+currentID(key);
