@@ -36,12 +36,6 @@ public class MQTTWebSocket extends MQTTSocket {
         });
     }
 
-//    public void shutdown() {
-//        super.shutdown();
-//        netSocket.close();
-//        netSocket = null;
-//    }
-
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {

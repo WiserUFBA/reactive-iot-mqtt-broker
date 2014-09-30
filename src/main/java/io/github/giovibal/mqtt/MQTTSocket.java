@@ -43,12 +43,16 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
     public void shutdown() {
+        if(tokenizer!=null) {
+            tokenizer.removeAllListeners();
+            tokenizer = null;
+        }
+        if(session!=null) {
+            session.shutdown();
+            session = null;
+        }
         container = null;
         vertx = null;
-        tokenizer.removeAllListeners();
-        tokenizer = null;
-        session.shutdown();
-        session = null;
     }
 
 
