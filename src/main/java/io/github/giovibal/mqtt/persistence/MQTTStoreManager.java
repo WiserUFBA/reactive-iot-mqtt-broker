@@ -7,6 +7,7 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -202,12 +203,26 @@ public class MQTTStoreManager {
             }
         }
     }
+    public void saveMessage(byte[] message, String topic) {
+        String key = topic;
+        vertx.sharedData().getMap(tenant).put(key, message);
+    }
+    public void deleteMessage(String topic) {
+        String key = topic;
+        Map<String, byte[]> map = vertx.sharedData().getMap(tenant);
+        if(map.containsKey(key)) {
+            map.remove(key);
+        }
+    }
 
     /** retrieve all stored messages by topic */
     public List<byte[]> getMessagesByTopic(String topic, String clientID) {
         String key  = clientID+topic;
         Map<String, byte[]> set = vertx.sharedData().getMap(tenant + key);
-        ArrayList<byte[]> ret = new ArrayList<>(set.values());
+        Map<String, byte[]> set2 = vertx.sharedData().getMap(tenant);
+        ArrayList<byte[]> ret = new ArrayList<>();
+        ret.addAll(set.values());
+        ret.addAll(set2.values());
         return ret;
     }
 

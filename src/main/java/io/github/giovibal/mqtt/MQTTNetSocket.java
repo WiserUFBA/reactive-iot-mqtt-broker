@@ -15,23 +15,29 @@ import org.vertx.java.platform.Container;
 public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
-    private boolean connectionClosed;
 
     public MQTTNetSocket(Vertx vertx, final Container container, NetSocket netSocket) {
         super(vertx, container);
         this.netSocket = netSocket;
-        this.netSocket.closeHandler(new Handler<Void>() {
-            @Override
-            public void handle(Void aVoid) {
-                connectionClosed = true;
-            }
-        });
+
     }
 
     public void start() {
         netSocket.dataHandler(this);
+        netSocket.closeHandler(new Handler<Void>() {
+            @Override
+            public void handle(Void aVoid) {
+                container.logger().info("net-socket closed ... "+ netSocket.writeHandlerID());
+                shutdown();
+            }
+        });
     }
 
+//    public void shutdown() {
+//        super.shutdown();
+//        netSocket.close();
+//        netSocket = null;
+//    }
 
     @Override
     protected void sendMessageToClient(Buffer bytes) {

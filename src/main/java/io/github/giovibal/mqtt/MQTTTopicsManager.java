@@ -49,6 +49,8 @@ public class MQTTTopicsManager {
 
 
     public Set<String> calculateTopicsToPublish(String topicOfPublishMessage) {
+        long t1,t2,t3;
+        t1=System.currentTimeMillis();
         String topic = topicOfPublishMessage;
         Set<String> subscribedTopics = getSubscribedTopics();
         Set<String> topicsToPublish = new LinkedHashSet<>();
@@ -57,26 +59,43 @@ public class MQTTTopicsManager {
                 topicsToPublish.add(tsub);
             }
             else {
-                if (tsub.contains("+") && !tsub.endsWith("#")) {
-                    String pattern = toPattern(tsub);
-                    int topicSlashCount = countSlash(topic);
-                    int tsubSlashCount = countSlash(tsub);
-                    if (topicSlashCount == tsubSlashCount) {
-                        if (topic.matches(pattern)) {
-                            topicsToPublish.add(tsub);
-                        }
-                    }
-                } else if (tsub.contains("+") || tsub.endsWith("#")) {
-                    String pattern = toPattern(tsub);
-                    int topicSlashCount = countSlash(topic);
-                    int tsubSlashCount = countSlash(tsub);
-                    if (topicSlashCount >= tsubSlashCount) {
-                        if (topic.matches(pattern)) {
-                            topicsToPublish.add(tsub);
-                        }
-                    }
+//                if (tsub.contains("+") && !tsub.endsWith("#")) {
+//                    String pattern = toPattern(tsub);
+//                    int topicSlashCount = countSlash(topic);
+//                    int tsubSlashCount = countSlash(tsub);
+//                    if (topicSlashCount == tsubSlashCount) {
+//                        if (topic.matches(pattern)) {
+//                            topicsToPublish.add(tsub);
+//                        }
+//                    }
+//                } else if (tsub.contains("+") || tsub.endsWith("#")) {
+//                    String pattern = toPattern(tsub);
+//                    int topicSlashCount = countSlash(topic);
+//                    int tsubSlashCount = countSlash(tsub);
+//                    if (topicSlashCount >= tsubSlashCount) {
+//                        if (topic.matches(pattern)) {
+//                            topicsToPublish.add(tsub);
+//                        }
+//                    }
+//                }
+
+                /**
+                 * Suggerimento di Paolo Iddas
+                 * regex = regex.replaceAll("\\#", ".*");
+                 * regex = regex.replaceAll("\\+", "[^/]*");
+                 */
+                String pattern = tsub;
+                pattern = pattern.replaceAll("\\#", ".*");
+                pattern = pattern.replaceAll("\\+", "[^/]*");
+                if (topic.matches(pattern)) {
+                    topicsToPublish.add(tsub);
                 }
             }
+        }
+        t2=System.currentTimeMillis();
+        t3=t2-t1;
+        if(t3>100) {
+            System.out.println("calculateTopicsToPublish: "+ t3 +" millis.");
         }
         return topicsToPublish;
     }

@@ -15,18 +15,18 @@ import java.util.List;
  */
 class PublishDecoder extends DemuxDecoder {
     
-    private static Logger LOG = LoggerFactory.getLogger(PublishDecoder.class);
+//    private static Logger LOG = LoggerFactory.getLogger(PublishDecoder.class);
 
     @Override
     void decode(ByteBuf in, List<Object> out) throws Exception {
-        LOG.info("decode invoked with buffer {}", in);
+//        LOG.info("decode invoked with buffer {}", in);
         in.resetReaderIndex();
         int startPos = in.readerIndex();
 
         //Common decoding part
         PublishMessage message = new PublishMessage();
         if (!decodeCommonHeader(message, in)) {
-            LOG.info("decode ask for more data after {}", in);
+//            LOG.info("decode ask for more data after {}", in);
             in.resetReaderIndex();
             return;
         }

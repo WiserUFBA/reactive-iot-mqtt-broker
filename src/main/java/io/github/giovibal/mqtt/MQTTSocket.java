@@ -29,7 +29,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private boolean cleanSession;
     private MQTTStoreManager store;
     private String tenant;
-
     private MQTTSession session;
 
     public MQTTSocket(Vertx vertx, Container container) {
@@ -41,6 +40,17 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         this.vertx = vertx;
         this.container = container;
     }
+
+
+    public void shutdown() {
+        container = null;
+        vertx = null;
+        tokenizer.removeAllListeners();
+        tokenizer = null;
+        session.shutdown();
+        session = null;
+    }
+
 
 
     @Override
@@ -155,7 +165,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
 
 
-
     public void sendMessageToClient(AbstractMessage message) {
         try {
             Buffer b1 = encoder.enc(message);
@@ -211,6 +220,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
         removeClientID(clientID);
         session.shutdown();
+        session = null;
     }
 
     private void addClientID(String clientID) {

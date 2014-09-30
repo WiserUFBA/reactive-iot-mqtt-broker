@@ -30,7 +30,9 @@ public class MQTTBroker extends Verticle {
             boolean wsEnabled = conf.getBoolean("websocket_enabled", true);
             String wsSubProtocol = conf.getString("websocket_subprotocol", "mqttv3.1");
 
+            // MQTT over TCP
             NetServer netServer = vertx.createNetServer();
+            netServer.setTCPKeepAlive(true);
             netServer.connectHandler(new Handler<NetSocket>() {
                 @Override
                 public void handle(final NetSocket netSocket) {
@@ -40,9 +42,11 @@ public class MQTTBroker extends Verticle {
             }).listen(port);
             container.logger().info("Startd MQTT TCP-Broker on port: "+ port);
 
+            // MQTT over WebSocket
             if(wsEnabled) {
                 final HttpServer http = vertx.createHttpServer();
                 http.setWebSocketSubProtocols(wsSubProtocol);
+                http.setTCPKeepAlive(true);
                 http.setMaxWebSocketFrameSize(1024);
                 http.websocketHandler(new Handler<ServerWebSocket>() {
                     @Override

@@ -66,20 +66,18 @@ public class MQTTSession {
             String topic = publishMessage.getTopicName();
             JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
             Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
+
+            // retain
+            if(publishMessage.isRetainFlag()) {
+                storeAsLastMessage(publishMessage, topic);
+            }
+            // QoS 1,2
             for (String tpub : topicsToPublish) {
-                boolean storeMessage = false;
-                if(publishMessage.isRetainFlag()) {
-                    storeMessage = true;
-                }
                 switch (publishMessage.getQos()) {
                     case LEAST_ONE:
                     case EXACTLY_ONCE:
-//                        storeMessage(publishMessage, tpub);
-                        storeMessage = true;
+                        storeMessage(publishMessage, tpub);
                         break;
-                }
-                if(storeMessage) {
-                    storeMessage(publishMessage, tpub);
                 }
                 vertx.eventBus().publish(toVertxTopic(tpub), msg);
             }
@@ -108,29 +106,12 @@ public class MQTTSession {
                 }
 
                 // replay saved messages
-                if(!cleanSession) {
-                    republishPendingMessagesForSubscription(topic);
-                }
+                republishPendingMessagesForSubscription(topic);
             }
         } catch(Throwable e) {
             container.logger().error(e.getMessage());
         }
     }
-
-//    private void republishAllPendingMessages() throws Exception {
-//        if(!cleanSession) {
-//            // session is persistent...
-//            MQTTStoreManager store = getStore();
-//            List<Subscription> subscriptions = store.getSubscriptionsByClientID(clientID);
-//            for (Subscription sub : subscriptions) {
-//                // subsribe
-//                QOSType qos = qosUtils.toQos(sub.getQos());
-//                String topic = sub.getTopic();
-//                subscribeClientToTopic(topic, qos);
-//                republishPendingMessagesForSubscription(topic);
-//            }
-//        }
-//    }
 
     private void republishPendingMessagesForSubscription(String topic) throws Exception {
 //        if(!cleanSession) {
@@ -170,16 +151,9 @@ public class MQTTSession {
                         int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
                         pm.setQos(qosUtils.toQos(iOkQos));
                         pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-//                    if (cleanSession==false
-//                            && isDisconnected()
-//                            && (originalQos == QOSType.EXACTLY_ONCE || originalQos == QOSType.LEAST_ONE)) {
-//                        storeMessage(pm, topic);
-//                    }
-
                         mqttSocket.sendMessageToClient(pm);
                     }
                     else {
-
                         PublishMessage pm = new PublishMessage();
                         pm.setTopicName(topic);
                         pm.setPayload(ByteBuffer.wrap(message.body().toString().getBytes()));
@@ -209,7 +183,7 @@ public class MQTTSession {
                     vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
                     topicsManager.removeSubscribedTopic(topic);
                     // remove persistent subscriptions
-                    if(clientID!=null/*&& cleanSession==false*/) {
+                    if(clientID!=null && cleanSession) {
                         getStore().deleteSubcription(topic, clientID);
                     }
                 }
@@ -244,17 +218,27 @@ public class MQTTSession {
             container.logger().error(e.getMessage(), e);
         }
     }
+    private void storeAsLastMessage(PublishMessage publishMessage, String topicToPublish) {
+        try {
+            byte[] m = encoder.enc(publishMessage).getBytes();
+            getStore().saveMessage(m, topicToPublish);
+        } catch(Exception e) {
+            container.logger().error(e.getMessage(), e);
+        }
+    }
     private void deleteMessage(PublishMessage publishMessage) {
         try {
             String pubtopic = publishMessage.getTopicName();
             Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
             for(String tsub : topics) {
                 getStore().popMessage(tsub, clientID);
+//                getStore().deleteMessage(tsub);
             }
         } catch(Exception e) {
             container.logger().error(e.getMessage(), e);
         }
     }
+
 
     private MQTTStoreManager getStore() {
         return store;
@@ -280,5 +264,8 @@ public class MQTTSession {
         }
 //        removeClientID(clientID);
 //        clientID = null;
+        mqttSocket = null;
+        vertx = null;
+        container = null;
     }
 }

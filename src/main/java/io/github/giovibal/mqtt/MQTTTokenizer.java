@@ -126,6 +126,10 @@ public class MQTTTokenizer {
 		listenerCollection.remove(listener);
 	}
 
+    public void removeAllListeners() {
+        listenerCollection.clear();
+    }
+
 	private void notifyListeners(byte[] token, boolean timeout) {
 
 		for (MqttTokenizerListener aListener : listenerCollection) {

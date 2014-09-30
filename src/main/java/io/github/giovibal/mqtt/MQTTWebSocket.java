@@ -27,7 +27,20 @@ public class MQTTWebSocket extends MQTTSocket {
 
     public void start() {
         netSocket.dataHandler(this);
+        netSocket.closeHandler(new Handler<Void>() {
+            @Override
+            public void handle(Void aVoid) {
+                container.logger().info("web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
+                shutdown();
+            }
+        });
     }
+
+//    public void shutdown() {
+//        super.shutdown();
+//        netSocket.close();
+//        netSocket = null;
+//    }
 
     @Override
     protected void sendMessageToClient(Buffer bytes) {
