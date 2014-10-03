@@ -7,6 +7,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.ServerWebSocket;
 import org.vertx.java.core.http.WebSocketFrame;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -28,7 +29,8 @@ public class MQTTBroker extends Verticle {
             int port = conf.getInteger("tcp_port", 1883);
             int wsPort = conf.getInteger("websocket_port", 11883);
             boolean wsEnabled = conf.getBoolean("websocket_enabled", true);
-            String wsSubProtocol = conf.getString("websocket_subprotocol", "mqttv3.1");
+            String wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
+            String[] wsSubProtocolsArr = wsSubProtocols.split(",");
 
             // MQTT over TCP
             NetServer netServer = vertx.createNetServer();
@@ -45,7 +47,7 @@ public class MQTTBroker extends Verticle {
             // MQTT over WebSocket
             if(wsEnabled) {
                 final HttpServer http = vertx.createHttpServer();
-                http.setWebSocketSubProtocols(wsSubProtocol);
+                http.setWebSocketSubProtocols(wsSubProtocolsArr);
                 http.setTCPKeepAlive(true);
                 http.setMaxWebSocketFrameSize(1024);
                 http.websocketHandler(new Handler<ServerWebSocket>() {
@@ -57,8 +59,6 @@ public class MQTTBroker extends Verticle {
                 }).listen(wsPort);
                 container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
             }
-
-
 
 //            final MQTTStoreManager store = new MQTTStoreManager(vertx, "");
 //            // DEBUG

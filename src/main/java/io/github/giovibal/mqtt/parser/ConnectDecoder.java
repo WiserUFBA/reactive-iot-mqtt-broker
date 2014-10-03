@@ -30,13 +30,30 @@ public class ConnectDecoder extends DemuxDecoder {
             in.resetReaderIndex();
             return;
         }
-        byte[] encProtoName = new byte[6];
+//        byte[] encProtoName = new byte[6];
+//        in.skipBytes(2); //size, is 0x06
+//        in.readBytes(encProtoName);
+//        String protoName = new String(encProtoName, "UTF-8");
+//        if (!"MQIsdp".equals(protoName)) {
+//            in.resetReaderIndex();
+//            throw new CorruptedFrameException("Invalid protoName: " + protoName);
+//        }
+        String protoName = null;
+        byte[] encProtoNameMQTT = new byte[4];
+        byte[] encProtoNameMQIsdp = new byte[6];
         in.skipBytes(2); //size, is 0x06
-        in.readBytes(encProtoName);
-        String protoName = new String(encProtoName, "UTF-8");
+        in.readBytes(encProtoNameMQIsdp);
+        protoName = new String(encProtoNameMQIsdp, "UTF-8");
         if (!"MQIsdp".equals(protoName)) {
             in.resetReaderIndex();
-            throw new CorruptedFrameException("Invalid protoName: " + protoName);
+            in.skipBytes(start); //skip headers
+            in.skipBytes(2); //size, is 0x06
+            in.readBytes(encProtoNameMQTT);
+            protoName = new String(encProtoNameMQTT, "UTF-8");
+            if (!"MQTT".equals(protoName)) {
+                in.resetReaderIndex();
+                throw new CorruptedFrameException("Invalid protoName: " + protoName);
+            }
         }
         message.setProtocolName(protoName);
 
@@ -141,5 +158,6 @@ public class ConnectDecoder extends DemuxDecoder {
 
         out.add(message);
     }
-    
+
+
 }
