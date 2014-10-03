@@ -19,7 +19,7 @@ class SubscribeDecoder extends DemuxDecoder {
         //Common decoding part
         SubscribeMessage message = new SubscribeMessage();
         in.resetReaderIndex();
-        if (!decodeCommonHeader(message, in)) {
+        if (!decodeCommonHeader(message, 0x02, in)) {
             in.resetReaderIndex();
             return;
         }
@@ -37,16 +37,25 @@ class SubscribeDecoder extends DemuxDecoder {
             decodeSubscription(in, message);
             readed = in.readerIndex()- start;
         }
+
+        if (message.subscriptions().isEmpty()) {
+            throw new CorruptedFrameException("subscribe MUST have got at least 1 couple topic/QoS");
+        }
         
         out.add(message);
     }
-    
+
     /**
      * Populate the message with couple of Qos, topic
      */
     private void decodeSubscription(ByteBuf in, SubscribeMessage message) throws UnsupportedEncodingException {
         String topic = Utils.decodeString(in);
-        byte qos = (byte)(in.readByte() & 0x03);
+        byte qosByte = in.readByte();
+        if ((qosByte & 0xFC) > 0) { //the first 6 bits is reserved => has to be 0
+            throw new CorruptedFrameException("subscribe MUST have QoS byte with reserved buts to 0, found " + Integer.toHexString(qosByte));
+        }
+        byte qos = (byte)(qosByte & 0x03);
+        //TODO check qos id 000000xx
         message.addSubscription(new SubscribeMessage.Couple(qos, topic));
     }
     

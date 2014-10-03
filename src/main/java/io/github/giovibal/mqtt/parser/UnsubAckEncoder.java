@@ -9,7 +9,7 @@ import org.dna.mqtt.moquette.proto.messages.UnsubAckMessage;
  * @author andrea
  */
 class UnsubAckEncoder extends DemuxEncoder<UnsubAckMessage> {
-    
+
     @Override
     protected void encode(UnsubAckMessage msg, ByteBuf out) {
         out.writeByte(AbstractMessage.UNSUBACK << 4).
@@ -17,3 +17,4 @@ class UnsubAckEncoder extends DemuxEncoder<UnsubAckMessage> {
                 writeShort(msg.getMessageID());
     }
 }
+

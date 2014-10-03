@@ -95,7 +95,7 @@ public class MQTTSession {
             for (SubscribeMessage.Couple c : subs) {
                 byte requestedQosByte = c.getQos();
                 final QOSType requestedQos = qosUtils.toQos(requestedQosByte);
-                String topic = c.getTopic();
+                String topic = c.getTopicFilter();
                 subscribeClientToTopic(topic, requestedQos);
 
                 if(clientID!=null && cleanSession==false) {
@@ -176,7 +176,7 @@ public class MQTTSession {
 
     public void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {
         try {
-            List<String> topics = unsubscribeMessage.topics();
+            List<String> topics = unsubscribeMessage.topicFilters();
             for (String topic : topics) {
                 Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
                 for (Handler<Message> handler : clientHandlers) {

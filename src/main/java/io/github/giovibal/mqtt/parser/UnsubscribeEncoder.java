@@ -14,7 +14,7 @@ class UnsubscribeEncoder extends DemuxEncoder<UnsubscribeMessage> {
 
     @Override
     protected void encode(UnsubscribeMessage message, ByteBuf out) {
-        if (message.topics().isEmpty()) {
+        if (message.topicFilters().isEmpty()) {
             throw new IllegalArgumentException("Found an unsubscribe message with empty topics");
         }
 
@@ -27,7 +27,7 @@ class UnsubscribeEncoder extends DemuxEncoder<UnsubscribeMessage> {
         ByteBuf buff = null;
         try {
             variableHeaderBuff.writeShort(message.getMessageID());
-            for (String topic : message.topics()) {
+            for (String topic : message.topicFilters()) {
                 variableHeaderBuff.writeBytes(Utils.encodeString(topic));
             }
 
