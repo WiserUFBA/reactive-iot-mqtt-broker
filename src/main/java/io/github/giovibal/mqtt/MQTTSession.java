@@ -125,7 +125,11 @@ public class MQTTSession {
                 // publish message to this client
                 PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
                 // send message directly to THIS client
-                mqttSocket.sendMessageToClient(pm);
+                //TODO: pezza controllare che il topic del messaggio corrisponda al topicFilter della subscription
+                boolean ok = topicsManager.match(pm.getTopicName(), topic);
+                if(ok) {
+                    mqttSocket.sendMessageToClient(pm);
+                }
                 // delete will appen when publish end correctly.
                 deleteMessage(pm);
             }

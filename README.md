@@ -12,7 +12,7 @@ for coder and decoder implementation of MQTT messages.
 
 Quick Start
 -----------
-Required: Vert.x 2.1M1+ and Maven 3+
+Requires Vert.x 2.1 and Maven 3+
 
 ```
 git clone https://github.com/giovibal/vertx-mqtt-broker-mod.git
@@ -23,7 +23,7 @@ mvn vertx:runMod
 or if you have vert.x installed ...
 ```
 mvn clean install
-vertx runmod io.gihub.giovibal.mqtt~vertx-mqtt-broker-mod~1.0-SNAPSHOT
+vertx runmod io.gihub.giovibal.mqtt~vertx-mqtt-broker-mod~1.1-SNAPSHOT
 ```
 
 Features
@@ -31,12 +31,12 @@ Features
 * Suport both QoS 1 and 2 messages
 * Persistence and session management (cleanSession=false)
 * Multi-tenancy: isolation of topics and storage, just use client@tenant as ClientID
-* MQTT over WebSocket 
+* MQTT over WebSocket
+* Retain flag
 
 Roadmap
 ----
 * Expose persistence SPI interfaces
-* Implement SPI for login management
+* SPI for login management
 * Implement some out-of-the-box persistence plugins: RAM, Cassandra, HBase, MongoDB
 * Implement will message support 
-* Make more tests
