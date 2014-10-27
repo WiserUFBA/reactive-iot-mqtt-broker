@@ -125,7 +125,7 @@ public class MQTTSession {
                 // publish message to this client
                 PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
                 // send message directly to THIS client
-                //TODO: pezza controllare che il topic del messaggio corrisponda al topicFilter della subscription
+                // check if message topic matches topicFilter of subscription
                 boolean ok = topicsManager.match(pm.getTopicName(), topic);
                 if(ok) {
                     mqttSocket.sendMessageToClient(pm);
