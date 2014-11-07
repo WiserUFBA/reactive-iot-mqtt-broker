@@ -1,6 +1,7 @@
 package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.HttpServer;
