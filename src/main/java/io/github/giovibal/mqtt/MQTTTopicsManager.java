@@ -1,9 +1,9 @@
 package io.github.giovibal.mqtt;
 
-import org.vertx.java.core.Vertx;
+import io.vertx.core.Vertx;
+import io.vertx.core.shareddata.LocalMap;
 
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -13,13 +13,13 @@ import java.util.Set;
 public class MQTTTopicsManager {
 
     private Vertx vertx;
-    private Map<String, Integer> topicsSubscribed;
+    private LocalMap<String, Integer> topicsSubscribed;
     private String tenant;
 
     public MQTTTopicsManager(Vertx vertx, String tenant) {
         this.vertx = vertx;
         this.tenant = tenant;
-        this.topicsSubscribed = this.vertx.sharedData().getMap(this.tenant + "mqtt_subscribed_topics");
+        this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_subscribed_topics");
     }
 
     public Set<String> getSubscribedTopics() {
@@ -27,7 +27,7 @@ public class MQTTTopicsManager {
     }
     public void addSubscribedTopic(String topic) {
         Integer retain = 0;
-        if(topicsSubscribed.containsKey(topic)) {
+        if(topicsSubscribed.keySet().contains(topic)) {
             retain = topicsSubscribed.get(topic);
         }
         retain++;
@@ -35,7 +35,7 @@ public class MQTTTopicsManager {
     }
     public void removeSubscribedTopic(String topic) {
         Integer retain = 0;
-        if(topicsSubscribed.containsKey(topic)) {
+        if(topicsSubscribed.keySet().contains(topic)) {
             retain = topicsSubscribed.get(topic);
         }
         if(retain <= 0) {
@@ -55,42 +55,6 @@ public class MQTTTopicsManager {
         Set<String> subscribedTopics = getSubscribedTopics();
         Set<String> topicsToPublish = new LinkedHashSet<>();
         for (String tsub : subscribedTopics) {
-//            if(tsub.equals(topic)) {
-//                topicsToPublish.add(tsub);
-//            }
-//            else {
-////                if (tsub.contains("+") && !tsub.endsWith("#")) {
-////                    String pattern = toPattern(tsub);
-////                    int topicSlashCount = countSlash(topic);
-////                    int tsubSlashCount = countSlash(tsub);
-////                    if (topicSlashCount == tsubSlashCount) {
-////                        if (topic.matches(pattern)) {
-////                            topicsToPublish.add(tsub);
-////                        }
-////                    }
-////                } else if (tsub.contains("+") || tsub.endsWith("#")) {
-////                    String pattern = toPattern(tsub);
-////                    int topicSlashCount = countSlash(topic);
-////                    int tsubSlashCount = countSlash(tsub);
-////                    if (topicSlashCount >= tsubSlashCount) {
-////                        if (topic.matches(pattern)) {
-////                            topicsToPublish.add(tsub);
-////                        }
-////                    }
-////                }
-//
-//                /**
-//                 * Suggerimento di Paolo Iddas
-//                 * regex = regex.replaceAll("\\#", ".*");
-//                 * regex = regex.replaceAll("\\+", "[^/]*");
-//                 */
-//                String pattern = tsub;
-//                pattern = pattern.replaceAll("\\#", ".*");
-//                pattern = pattern.replaceAll("\\+", "[^/]*");
-//                if (topic.matches(pattern)) {
-//                    topicsToPublish.add(tsub);
-//                }
-//            }
             boolean ok = match(topic, tsub);
             if(ok) {
                 topicsToPublish.add(tsub);

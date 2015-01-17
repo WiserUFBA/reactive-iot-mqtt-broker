@@ -1,17 +1,10 @@
 package io.github.giovibal.mqtt;
 
-import io.netty.buffer.ByteBuf;
-import org.dna.mqtt.moquette.proto.messages.ConnAckMessage;
-import org.dna.mqtt.moquette.proto.messages.PublishMessage;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VoidHandler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.WebSocketFrame;
-import org.vertx.java.core.http.impl.ws.DefaultWebSocketFrame;
-import org.vertx.java.core.http.impl.ws.WebSocketFrameInternal;
-import org.vertx.java.platform.Container;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.VoidHandler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ServerWebSocket;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -20,17 +13,17 @@ public class MQTTWebSocket extends MQTTSocket {
 
     private ServerWebSocket netSocket;
 
-    public MQTTWebSocket(Vertx vertx, Container container, ServerWebSocket netSocket) {
-        super(vertx, container);
+    public MQTTWebSocket(Vertx vertx, ServerWebSocket netSocket) {
+        super(vertx);
         this.netSocket = netSocket;
     }
 
     public void start() {
-        netSocket.dataHandler(this);
+        netSocket.handler(this);
         netSocket.closeHandler(new Handler<Void>() {
             @Override
             public void handle(Void aVoid) {
-                container.logger().info("web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
+                Container.logger().info("web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
                 shutdown();
             }
         });
@@ -41,7 +34,6 @@ public class MQTTWebSocket extends MQTTSocket {
         try {
             if (!netSocket.writeQueueFull()) {
                 netSocket.write(bytes);
-//                netSocket.writeBinaryFrame(bytes);
             } else {
                 netSocket.pause();
                 netSocket.drainHandler(new VoidHandler() {
@@ -51,7 +43,7 @@ public class MQTTWebSocket extends MQTTSocket {
                 });
             }
         } catch(Throwable e) {
-            container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage());
         }
     }
 

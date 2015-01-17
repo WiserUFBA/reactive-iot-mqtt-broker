@@ -1,9 +1,9 @@
 package io.github.giovibal.mqtt.parser;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 import org.dna.mqtt.moquette.proto.messages.SubscribeMessage;
-import org.vertx.java.core.buffer.Buffer;
 
 /**
  *
@@ -22,7 +22,7 @@ class SubscribeEncoder extends DemuxEncoder<SubscribeMessage> {
         }
 
 //        ByteBuf variableHeaderBuff = chc.alloc().buffer(4);
-        ByteBuf variableHeaderBuff = new Buffer(4).getByteBuf();
+        ByteBuf variableHeaderBuff = Buffer.buffer(4).getByteBuf();
         ByteBuf buff = null;
         try {
             variableHeaderBuff.writeShort(message.getMessageID());
@@ -34,7 +34,7 @@ class SubscribeEncoder extends DemuxEncoder<SubscribeMessage> {
             int variableHeaderSize = variableHeaderBuff.readableBytes();
             byte flags = Utils.encodeFlags(message);
 //            buff = chc.alloc().buffer(2 + variableHeaderSize);
-            buff = new Buffer(2 + variableHeaderSize).getByteBuf();
+            buff = Buffer.buffer(2 + variableHeaderSize).getByteBuf();
 
             buff.writeByte(AbstractMessage.SUBSCRIBE << 4 | flags);
             buff.writeBytes(Utils.encodeRemainingLength(variableHeaderSize));

@@ -1,9 +1,8 @@
 package io.github.giovibal.mqtt.persistence;
 
 import io.github.giovibal.mqtt.QOSUtils;
+import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.json.JsonObject;
 
 /**
  * Created by giovanni on 21/05/2014.
@@ -30,13 +29,13 @@ public class Subscription {
 
     private JsonObject toJson() {
         JsonObject s = new JsonObject()
-                .putString("topic", this.topic)
-                .putNumber("qos", this.qos);
+                .put("topic", this.topic)
+                .put("qos", this.qos);
         return s;
     }
 
     private void fromJson(JsonObject json) {
-        int qos = json.getNumber("qos", 0).intValue();
+        int qos = json.getInteger("qos", 0);
         AbstractMessage.QOSType qosType = new QOSUtils().toQos(qos);
         this.qos = new QOSUtils().toByte(qosType);
         this.topic = json.getString("topic");

@@ -1,12 +1,12 @@
 package io.github.giovibal.mqtt.parser;
 
+import io.github.giovibal.mqtt.Container;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeMap;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
-import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 
@@ -130,7 +130,8 @@ public class Utils {
             //NB every Java platform has got UTF-8 encoding by default, so this
             //exception are never raised.
         } catch (UnsupportedEncodingException ex) {
-            LoggerFactory.getLogger(Utils.class).error(null, ex);
+//            LoggerFactory.getLogger(Utils.class).error(null, ex);
+            Container.logger().error("Unsupported Encoding", ex);
             return null;
         }
         //Utils.writeWord(out, raw.length);

@@ -1,13 +1,10 @@
 package io.github.giovibal.mqtt;
 
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VoidHandler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.shareddata.ConcurrentSharedMap;
-import org.vertx.java.platform.Container;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.VoidHandler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetSocket;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -16,18 +13,18 @@ public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
 
-    public MQTTNetSocket(Vertx vertx, final Container container, NetSocket netSocket) {
-        super(vertx, container);
+    public MQTTNetSocket(Vertx vertx, NetSocket netSocket) {
+        super(vertx);
         this.netSocket = netSocket;
 
     }
 
     public void start() {
-        netSocket.dataHandler(this);
+        netSocket.handler(this);
         netSocket.closeHandler(new Handler<Void>() {
             @Override
             public void handle(Void aVoid) {
-                container.logger().info("net-socket closed ... "+ netSocket.writeHandlerID());
+                Container.logger().info("net-socket closed ... "+ netSocket.writeHandlerID());
                 shutdown();
             }
         });
@@ -47,7 +44,7 @@ public class MQTTNetSocket extends MQTTSocket {
                 });
             }
         } catch(Throwable e) {
-            container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage());
         }
     }
 }

@@ -1,9 +1,9 @@
 package io.github.giovibal.mqtt.parser;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 import org.dna.mqtt.moquette.proto.messages.ConnectMessage;
-import org.vertx.java.core.buffer.Buffer;
 
 /**
  *
@@ -16,9 +16,9 @@ public class ConnectEncoder extends DemuxEncoder<ConnectMessage> {
 //        ByteBuf staticHeaderBuff = chc.alloc().buffer(12);
 //        ByteBuf buff = chc.alloc().buffer();
 //        ByteBuf variableHeaderBuff = chc.alloc().buffer(12);
-        ByteBuf staticHeaderBuff = new Buffer(12).getByteBuf();
-        ByteBuf buff = new Buffer().getByteBuf();
-        ByteBuf variableHeaderBuff = new Buffer(12).getByteBuf();
+        ByteBuf staticHeaderBuff = Buffer.buffer(12).getByteBuf();
+        ByteBuf buff = Buffer.buffer().getByteBuf();
+        ByteBuf variableHeaderBuff = Buffer.buffer(12).getByteBuf();
         try {
             staticHeaderBuff.writeBytes(Utils.encodeString("MQIsdp"));
 

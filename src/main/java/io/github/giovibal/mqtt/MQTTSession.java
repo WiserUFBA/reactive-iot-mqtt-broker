@@ -4,18 +4,20 @@ import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
-import org.dna.mqtt.moquette.proto.messages.*;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.platform.Container;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.json.JsonObject;
+import org.dna.mqtt.moquette.proto.messages.PublishMessage;
+import org.dna.mqtt.moquette.proto.messages.SubscribeMessage;
+import org.dna.mqtt.moquette.proto.messages.UnsubscribeMessage;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
+import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -24,12 +26,12 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 public class MQTTSession {
 
     private Vertx vertx;
-    private Container container;
+//    private Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
     private MQTTJson mqttJson;
     private QOSUtils qosUtils;
-    private Map<String, Set<Handler<Message>>> handlers;
+    private Map<String, Set<MessageConsumer>> handlers;
     private MQTTTopicsManager topicsManager;
     private String clientID;
     private boolean cleanSession;
@@ -37,13 +39,13 @@ public class MQTTSession {
     private String tenant;
     private MQTTSocket mqttSocket;
 
-    public MQTTSession(Vertx vertx, Container container
+    public MQTTSession(Vertx vertx
             , MQTTSocket mqttSocket
             , String clientID, boolean cleanSession
             , String tenant) {
 
         this.vertx = vertx;
-        this.container = container;
+//        this.container = container;
 
         this.mqttSocket = mqttSocket;
         this.clientID = clientID;
@@ -82,7 +84,7 @@ public class MQTTSession {
                 vertx.eventBus().publish(toVertxTopic(tpub), msg);
             }
         } catch(Throwable e) {
-            container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage());
         }
     }
     private String toVertxTopic(String mqttTopic) {
@@ -109,7 +111,7 @@ public class MQTTSession {
                 republishPendingMessagesForSubscription(topic);
             }
         } catch(Throwable e) {
-            container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage());
         }
     }
 
@@ -123,7 +125,7 @@ public class MQTTSession {
             List<byte[]> messages = store.getMessagesByTopic(topic, clientID);
             for(byte[] message : messages) {
                 // publish message to this client
-                PublishMessage pm = (PublishMessage)decoder.dec(new Buffer(message));
+                PublishMessage pm = (PublishMessage)decoder.dec(Buffer.buffer(message));
                 // send message directly to THIS client
                 // check if message topic matches topicFilter of subscription
                 boolean ok = topicsManager.match(pm.getTopicName(), topic);
@@ -168,13 +170,18 @@ public class MQTTSession {
                     }
 
                 } catch (Throwable e) {
-                    container.logger().error(e.getMessage(), e);
+                    Container.logger().error(e.getMessage(), e);
                 }
             }
         };
-        Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-        clientHandlers.add(handler);
-        vertx.eventBus().registerHandler(toVertxTopic(topic), handler);
+//        Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
+//        clientHandlers.add(handler);
+//        vertx.eventBus().registerHandler(toVertxTopic(topic), handler);
+//        topicsManager.addSubscribedTopic(topic);
+        MessageConsumer consumer = vertx.eventBus().localConsumer(toVertxTopic(topic));
+        consumer.handler(handler);
+        Set<MessageConsumer> messageConsumers = getClientHandlers(topic);
+        messageConsumers.add(consumer);
         topicsManager.addSubscribedTopic(topic);
     }
 
@@ -182,9 +189,10 @@ public class MQTTSession {
         try {
             List<String> topics = unsubscribeMessage.topicFilters();
             for (String topic : topics) {
-                Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-                for (Handler<Message> handler : clientHandlers) {
-                    vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
+                Set<MessageConsumer> clientHandlers = getClientHandlers(topic);
+                for (MessageConsumer messageConsumer : clientHandlers) {
+//                    vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
+                    messageConsumer.unregister();
                     topicsManager.removeSubscribedTopic(topic);
                     // remove persistent subscriptions
                     if(clientID!=null && cleanSession) {
@@ -195,15 +203,15 @@ public class MQTTSession {
             }
         }
         catch(Throwable e) {
-            container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage());
         }
     }
-    private Set<Handler<Message>> getClientHandlers(String topic) {
+    private Set<MessageConsumer> getClientHandlers(String topic) {
         String sessionID = topic;
         if(!handlers.containsKey(sessionID)) {
-            handlers.put(sessionID, new HashSet<Handler<Message>>());
+            handlers.put(sessionID, new HashSet<MessageConsumer>());
         }
-        Set<Handler<Message>> clientHandlers = handlers.get(sessionID);
+        Set<MessageConsumer> clientHandlers = handlers.get(sessionID);
         return clientHandlers;
     }
     private void clearClientHandlers(String topic) {
@@ -219,7 +227,7 @@ public class MQTTSession {
             byte[] m = encoder.enc(publishMessage).getBytes();
             getStore().pushMessage(m, topicToPublish);
         } catch(Exception e) {
-            container.logger().error(e.getMessage(), e);
+            Container.logger().error(e.getMessage(), e);
         }
     }
     private void storeAsLastMessage(PublishMessage publishMessage, String topicToPublish) {
@@ -227,7 +235,7 @@ public class MQTTSession {
             byte[] m = encoder.enc(publishMessage).getBytes();
             getStore().saveMessage(m, topicToPublish);
         } catch(Exception e) {
-            container.logger().error(e.getMessage(), e);
+            Container.logger().error(e.getMessage(), e);
         }
     }
     private void deleteMessage(PublishMessage publishMessage) {
@@ -239,7 +247,7 @@ public class MQTTSession {
 //                getStore().deleteMessage(tsub);
             }
         } catch(Exception e) {
-            container.logger().error(e.getMessage(), e);
+            Container.logger().error(e.getMessage(), e);
         }
     }
 
@@ -256,20 +264,17 @@ public class MQTTSession {
         //deallocate this instance ...
         Set<String> topics = handlers.keySet();
         for (String topic : topics) {
-            Set<Handler<Message>> clientHandlers = getClientHandlers(topic);
-            for (Handler<Message> handler : clientHandlers) {
-                vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
+            Set<MessageConsumer> clientHandlers = getClientHandlers(topic);
+            for (MessageConsumer messageConsumer : clientHandlers) {
+//                vertx.eventBus().unregisterHandler(toVertxTopic(topic), handler);
+                messageConsumer.unregister();
                 topicsManager.removeSubscribedTopic(topic);
                 if (clientID != null && cleanSession) {
                     getStore().deleteSubcription(topic, clientID);
                 }
             }
-//            clearClientHandlers(topic);
         }
-//        removeClientID(clientID);
-//        clientID = null;
         mqttSocket = null;
         vertx = null;
-        container = null;
     }
 }

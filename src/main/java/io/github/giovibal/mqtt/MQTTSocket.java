@@ -3,13 +3,11 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.shareddata.LocalMap;
 import org.dna.mqtt.moquette.proto.messages.*;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.platform.Container;
-
-import java.util.Set;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 
@@ -20,7 +18,7 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener, Handler<Buffer> {
 
     protected Vertx vertx;
-    protected Container container;
+//    protected Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
     protected MQTTTokenizer tokenizer;
@@ -31,14 +29,13 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     private String tenant;
     private MQTTSession session;
 
-    public MQTTSocket(Vertx vertx, Container container) {
+    public MQTTSocket(Vertx vertx) {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.tokenizer = new MQTTTokenizer();
         this.tokenizer.registerListener(this);
 
         this.vertx = vertx;
-        this.container = container;
     }
 
 
@@ -51,7 +48,6 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             session.shutdown();
             session = null;
         }
-        container = null;
         vertx = null;
     }
 
@@ -59,13 +55,13 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
     @Override
     public void onToken(byte[] token, boolean timeout) {
-        Buffer buffer = new Buffer(token);
+        Buffer buffer = Buffer.buffer(token);
         try {
             AbstractMessage message = decoder.dec(buffer);
             onMessageFromClient(message);
         }
         catch (Exception e) {
-            container.logger().error(e.getMessage(), e);
+//            container.logger().error(e.getMessage(), e);
         }
     }
 
@@ -160,11 +156,11 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
                     sendMessageToClient(pingResp);
                     break;
                 default:
-                    container.logger().warn("type of message not known: "+ msg.getClass().getSimpleName());
+//                    container.logger().warn("type of message not known: "+ msg.getClass().getSimpleName());
                     break;
             }
         } catch (Exception ex) {
-            container.logger().error("Bad error in processing the message", ex);
+            Container.logger().error("Bad error in processing the message", ex);
         }
     }
 
@@ -174,7 +170,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
         } catch(Throwable e) {
-            container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage());
         }
     }
     abstract protected void sendMessageToClient(Buffer bytes);
@@ -206,12 +202,12 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 //        container.logger().info("Connect ClientID ==> "+ clientID);
         if(clientIDExists) {
             // Resume old session
-            container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
+            Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
         } else {
             addClientID(clientID);
         }
 
-        session = new MQTTSession(vertx, container, this, clientID, cleanSession, tenant);
+        session = new MQTTSession(vertx, this, clientID, cleanSession, tenant);
 
         if(connect.isWillFlag()) {
             String willMsg = connect.getWillMessage();
@@ -228,17 +224,17 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     }
 
     private void addClientID(String clientID) {
-        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
-        allClientIDs.add(clientID);
+        LocalMap<String, Object> allClientIDs = vertx.sharedData().getLocalMap("clientIDs");
+        allClientIDs.put(clientID, new Object());
     }
     private boolean clientIDExists(String clientID) {
-        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
-        boolean exists = allClientIDs.contains(clientID);
+        LocalMap<String, Object> allClientIDs = vertx.sharedData().getLocalMap("clientIDs");
+        boolean exists = allClientIDs.keySet().contains(clientID);
         return exists;
     }
 
     private void removeClientID(String clientID) {
-        Set<String> allClientIDs = vertx.sharedData().getSet("clientIDs");
+        LocalMap<String, Object> allClientIDs = vertx.sharedData().getLocalMap("clientIDs");
         allClientIDs.remove(clientID);
     }
 

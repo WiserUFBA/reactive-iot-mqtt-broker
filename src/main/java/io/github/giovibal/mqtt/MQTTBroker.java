@@ -1,64 +1,78 @@
 package io.github.giovibal.mqtt;
 
-import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.ServerWebSocket;
-import org.vertx.java.core.http.WebSocketFrame;
-import org.vertx.java.core.json.JsonArray;
-import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.net.NetServer;
-import org.vertx.java.core.net.NetSocket;
-import org.vertx.java.core.streams.Pump;
-import org.vertx.java.platform.Verticle;
-
-import java.util.Set;
+import io.vertx.core.*;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
 
 /**
  * Created by giovanni on 11/04/2014.
  * The Main Verticle
  */
-public class MQTTBroker extends Verticle {
+public class MQTTBroker extends AbstractVerticle {
+
+    public static void main(String[] args) {
+        Vertx vertx = Vertx.vertx();
+        vertx.deployVerticle(new MQTTBroker(),
+                new DeploymentOptions(),
+                new Handler<AsyncResult<String>>() {
+                    @Override
+                    public void handle(AsyncResult<String> stringAsyncResult) {
+                        if(stringAsyncResult.failed())
+                            stringAsyncResult.cause().printStackTrace();
+                        else {
+                            System.out.println(stringAsyncResult.result());
+                        }
+                    }
+                }
+        );
+    }
 
     @Override
     public void start() {
         try {
-            JsonObject conf = container.config();
+            JsonObject conf = config();
             int port = conf.getInteger("tcp_port", 1883);
             int wsPort = conf.getInteger("websocket_port", 11883);
             boolean wsEnabled = conf.getBoolean("websocket_enabled", true);
             String wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
-            String[] wsSubProtocolsArr = wsSubProtocols.split(",");
+//            String[] wsSubProtocolsArr = wsSubProtocols.split(",");
 
             // MQTT over TCP
-            NetServer netServer = vertx.createNetServer();
-            netServer.setTCPKeepAlive(true);
+            NetServerOptions opt = new NetServerOptions()
+                    .setTcpKeepAlive(true)
+                    .setPort(port);
+            NetServer netServer = vertx.createNetServer(opt);
             netServer.connectHandler(new Handler<NetSocket>() {
                 @Override
                 public void handle(final NetSocket netSocket) {
-                    MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, container, netSocket);
+                    MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, netSocket);
                     mqttNetSocket.start();
                 }
-            }).listen(port);
-            container.logger().info("Startd MQTT TCP-Broker on port: "+ port);
+            }).listen();
+            Container.logger().info("Startd MQTT TCP-Broker on port: "+ port);
 
             // MQTT over WebSocket
             if(wsEnabled) {
-                final HttpServer http = vertx.createHttpServer();
-                http.setWebSocketSubProtocols(wsSubProtocolsArr);
-                http.setTCPKeepAlive(true);
-                http.setMaxWebSocketFrameSize(1024);
+                HttpServerOptions httpOpt = new HttpServerOptions()
+                        .setTcpKeepAlive(true)
+                        .setMaxWebsocketFrameSize(1024)
+                        .setWebsocketSubProtocol(wsSubProtocols)
+                        .setPort(wsPort);
+
+                final HttpServer http = vertx.createHttpServer(httpOpt);
                 http.websocketHandler(new Handler<ServerWebSocket>() {
                     @Override
                     public void handle(ServerWebSocket serverWebSocket) {
-                        MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, container, serverWebSocket);
+                        MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, serverWebSocket);
                         mqttWebSocket.start();
                     }
-                }).listen(wsPort);
-                container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
+                }).listen();
+                Container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
             }
 
 //            final MQTTStoreManager store = new MQTTStoreManager(vertx, "");
@@ -75,7 +89,7 @@ public class MQTTBroker extends Verticle {
 //                }
 //            });
         } catch(Exception e ) {
-            container.logger().error(e.getMessage(), e);
+            Container.logger().error(e.getMessage(), e);
         }
 
     }

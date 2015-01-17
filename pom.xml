@@ -36,7 +36,7 @@
         <mods.directory>target/mods</mods.directory>
 
         <!--Dependency versions-->
-        <vertx.version>2.1.2</vertx.version>
+        <vertx.version>3.0.0-SNAPSHOT</vertx.version>
         <vertx.testtools.version>2.0.3-final</vertx.testtools.version>
         <junit.version>4.11</junit.version>
 
@@ -51,6 +51,7 @@
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
     </properties>
+
 
     <repositories>
         <repository>
@@ -79,9 +80,12 @@
 
     </repositories>
 
+
+
+
     <dependencies>
         <!--Vertx provided dependencies-->
-        <dependency>
+        <!--<dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
@@ -98,7 +102,14 @@
             <artifactId>vertx-hazelcast</artifactId>
             <version>${vertx.version}</version>
             <scope>provided</scope>
+        </dependency>-->
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
         </dependency>
+
         <!--Test dependencies-->
         <dependency>
             <groupId>junit</groupId>
@@ -106,28 +117,7 @@
             <version>4.11</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>testtools</artifactId>
-            <version>${vertx.testtools.version}</version>
-            <scope>test</scope>
-        </dependency>
 
-        <!-- Add any other dependencies that you want packaged into your module (in the lib dir) here
-        as 'compile' dependencies. Here is an example
-        <dependency>
-          <groupId>org.hamcrest</groupId>
-          <artifactId>hamcrest-core</artifactId>
-          <version>1.3</version>
-          <scope>compile</scope>
-        </dependency>
-        -->
-
-        <!--<dependency>
-            <groupId>org.dna.mqtt</groupId>
-            <artifactId>moquette-parser-commons</artifactId>
-            <version>0.7-SNAPSHOT</version>
-        </dependency>-->
         <dependency>
             <groupId>org.eclipse.paho</groupId>
             <artifactId>mqtt-client</artifactId>
@@ -138,31 +128,37 @@
     </dependencies>
 
     <build>
+
+        <pluginManagement>
+            <plugins>
+                <!-- We specify the Maven compiler plugin as we need to set it to Java 1.8 -->
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
 
             <!-- The vert.x Maven plugin -->
-            <plugin>
+            <!--<plugin>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-maven-plugin</artifactId>
                 <version>${maven.vertx.plugin.version}</version>
-                <!--
-                You can specify extra config to the plugin as required here
-                <configuration>
-                   <configFile>/path/to/MyVerticle.conf</configFile>
-                   <instances>1</instances>
-                   <classpath>src/main/resources/:src/test/resources/:target/classes/:target/test-classes/</classpath>
-                </configuration>
-                -->
-                <!-- Make sure that the plugin uses the vert.x versions from this pom.xml not from its own pom.xml -->
                 <dependencies>
                     <dependency>
                         <groupId>io.vertx</groupId>
-                        <artifactId>vertx-platform</artifactId>
+                        <artifactId>vertx-core</artifactId>
                         <version>${vertx.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>io.vertx</groupId>
-                        <artifactId>vertx-core</artifactId>
+                        <artifactId>vertx-platform</artifactId>
                         <version>${vertx.version}</version>
                     </dependency>
                     <dependency>
@@ -180,7 +176,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
 
             <!-- Other plugins required by the build -->
             <plugin>
@@ -188,11 +184,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
-            <plugin>
+            <!--<plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>${maven.resources.plugin.version}</version>
                 <executions>
@@ -213,8 +209,8 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
+            </plugin>-->
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>${maven.dependency.plugin.version}</version>
@@ -242,8 +238,8 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
+            </plugin>-->
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
@@ -252,8 +248,8 @@
                         <include>**/unit/*Test*.java</include>
                     </includes>
                 </configuration>
-            </plugin>
-            <plugin>
+            </plugin>-->
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
@@ -276,8 +272,8 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
+            </plugin>-->
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <version>${maven.surefire.report.plugin.version}</version>
@@ -297,8 +293,8 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
+            </plugin>-->
+            <!--<plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptors>
@@ -314,10 +310,47 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>io.github.giovibal.mqtt.MQTTBroker</Main-Class>
+                                    </manifestEntries>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
+                                </transformer>
+                            </transformers>
+                            <artifactSet>
+                                <!-- By default all the deps go into the fat jar, but we don't need some so we can exclude them
+                                here -->
+                                <excludes>
+                                    <exclude>io.vertx:vertx-codegen</exclude>
+                                    <exclude>junit:junit</exclude>
+                                    <exclude>org.mvel:mvel2</exclude>
+                                    <exclude>log4j:log4j</exclude>
+                                    <exclude>org.slf4j:slf4j-api</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <outputFile>${project.build.directory}/${artifactId}-${version}-fat.jar</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
-    <reporting>
+    <!--<reporting>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -333,6 +366,6 @@
                 </configuration>
             </plugin>
         </plugins>
-    </reporting>
+    </reporting>-->
 
 </project>

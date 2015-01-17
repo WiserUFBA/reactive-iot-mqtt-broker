@@ -1,8 +1,8 @@
 package io.github.giovibal.mqtt;
 
+import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 import org.dna.mqtt.moquette.proto.messages.PublishMessage;
-import org.vertx.java.core.json.JsonObject;
 
 import java.nio.ByteBuffer;
 
@@ -14,9 +14,8 @@ public class MQTTJson {
 
     public boolean isDeserializable(JsonObject json) {
         boolean ret = (
-               json.getFieldNames().contains("topicName")
-//          && json.getFieldNames().contains("qos")
-            && json.getFieldNames().contains("payload")
+               json.containsKey("topicName")
+            && json.containsKey("payload")
         );
         return ret;
     }
@@ -24,11 +23,11 @@ public class MQTTJson {
     public JsonObject serializePublishMessage(PublishMessage publishMessage) {
         JsonObject ret = new JsonObject();
 
-        ret.putString("topicName", publishMessage.getTopicName());
-        ret.putString("qos", publishMessage.getQos().name());
-        ret.putBinary("payload", publishMessage.getPayload().array());
+        ret.put("topicName", publishMessage.getTopicName());
+        ret.put("qos", publishMessage.getQos().name());
+        ret.put("payload", publishMessage.getPayload().array());
         if(publishMessage.getQos() == AbstractMessage.QOSType.LEAST_ONE || publishMessage.getQos() == AbstractMessage.QOSType.EXACTLY_ONCE) {
-            ret.putNumber("messageID", publishMessage.getMessageID());
+            ret.put("messageID", publishMessage.getMessageID());
         }
         return ret;
     }
@@ -40,16 +39,16 @@ public class MQTTJson {
         byte[] payload = json.getBinary("payload");
         ret.setPayload(ByteBuffer.wrap(payload));
         if(qos == AbstractMessage.QOSType.LEAST_ONE || qos == AbstractMessage.QOSType.EXACTLY_ONCE) {
-            ret.setMessageID(json.getNumber("messageID").intValue());
+            ret.setMessageID(json.getInteger("messageID"));
         }
         return ret;
     }
 
     public JsonObject serializeWillMessage(String willMsg, byte willQos, String willTopic) {
         JsonObject wm = new JsonObject()
-                .putString("topicName",willTopic)
-                .putNumber("qos", new Integer(willQos))
-                .putString("message",willMsg);
+                .put("topicName", willTopic)
+                .put("qos", new Integer(willQos))
+                .put("message", willMsg);
         return wm;
     }
 
