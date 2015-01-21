@@ -132,7 +132,7 @@ public class MQTTSession {
                 if(ok) {
                     mqttSocket.sendMessageToClient(pm);
                 }
-                // delete will appen when publish end correctly.
+                // delete will happen when publish end correctly.
                 deleteMessage(pm);
             }
 //        }
@@ -179,6 +179,7 @@ public class MQTTSession {
 //        vertx.eventBus().registerHandler(toVertxTopic(topic), handler);
 //        topicsManager.addSubscribedTopic(topic);
         MessageConsumer consumer = vertx.eventBus().localConsumer(toVertxTopic(topic));
+//        MessageConsumer consumer = vertx.eventBus().consumer(toVertxTopic(topic));
         consumer.handler(handler);
         Set<MessageConsumer> messageConsumers = getClientHandlers(topic);
         messageConsumers.add(consumer);
@@ -244,7 +245,6 @@ public class MQTTSession {
             Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
             for(String tsub : topics) {
                 getStore().popMessage(tsub, clientID);
-//                getStore().deleteMessage(tsub);
             }
         } catch(Exception e) {
             Container.logger().error(e.getMessage(), e);

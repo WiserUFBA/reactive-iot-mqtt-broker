@@ -3,9 +3,11 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.LocalMap;
 import org.dna.mqtt.moquette.proto.messages.*;
 
@@ -199,22 +201,29 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
 
 
         boolean clientIDExists = clientIDExists(clientID);
-//        container.logger().info("Connect ClientID ==> "+ clientID);
         if(clientIDExists) {
             // Resume old session
             Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
         } else {
             addClientID(clientID);
+            session = new MQTTSession(vertx, MQTTSocket.this, clientID, cleanSession, tenant);
         }
-
-        session = new MQTTSession(vertx, this, clientID, cleanSession, tenant);
-
-        if(connect.isWillFlag()) {
-            String willMsg = connect.getWillMessage();
-            byte willQos = connect.getWillQos();
-            String willTopic = connect.getWillTopic();
-            session.storeWillMessage(willMsg, willQos, willTopic);
-        }
+//        clientIDExists(clientID, ar2 -> {
+//            if(ar2.failed() || ar2.result()==null) {
+//                // Resume old session
+//                Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
+//            }else {
+//                addClientID(clientID);
+//            }
+//            session = new MQTTSession(vertx, MQTTSocket.this, clientID, cleanSession, tenant);
+//
+//            if(connect.isWillFlag()) {
+//                String willMsg = connect.getWillMessage();
+//                byte willQos = connect.getWillQos();
+//                String willTopic = connect.getWillTopic();
+//                session.storeWillMessage(willMsg, willQos, willTopic);
+//            }
+//        });
     }
 
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
@@ -223,19 +232,40 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
         session = null;
     }
 
+
     private void addClientID(String clientID) {
-        LocalMap<String, Object> allClientIDs = vertx.sharedData().getLocalMap("clientIDs");
-        allClientIDs.put(clientID, new Object());
+        vertx.sharedData().getLocalMap("clientIDs").put(clientID, 1);
     }
     private boolean clientIDExists(String clientID) {
-        LocalMap<String, Object> allClientIDs = vertx.sharedData().getLocalMap("clientIDs");
-        boolean exists = allClientIDs.keySet().contains(clientID);
-        return exists;
+        LocalMap<String, Object> m = vertx.sharedData().getLocalMap("clientIDs");
+        if(m!=null)
+            return m.keySet().contains(clientID);
+        return false;
     }
 
     private void removeClientID(String clientID) {
-        LocalMap<String, Object> allClientIDs = vertx.sharedData().getLocalMap("clientIDs");
-        allClientIDs.remove(clientID);
+        vertx.sharedData().getLocalMap("clientIDs").remove(clientID);
     }
+    // async and shared version
+//    private void addClientID(String clientID) {
+//        vertx.sharedData().getClusterWideMap("clientIDs",
+//                ar1 -> ar1.result().put(clientID, new Object(),
+//                        ar2 -> Container.logger().info(clientID + " added: " + ar2.succeeded())
+//                )
+//        );
+//    }
+//    private void clientIDExists(String clientID, Handler<AsyncResult<Object>> h) {
+//        vertx.sharedData().getClusterWideMap("clientIDs",
+//                ar1 -> ar1.result().get(clientID, h)
+//        );
+//    }
+//
+//    private void removeClientID(String clientID) {
+//        vertx.sharedData().getClusterWideMap("clientIDs",
+//                ar1 -> ar1.result().remove(clientID,
+//                        ar2 -> Container.logger().info(clientID +" removed: "+ ar2.succeeded())
+//                )
+//        );
+//    }
 
 }

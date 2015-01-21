@@ -1,6 +1,7 @@
 package io.github.giovibal.mqtt;
 
 import io.vertx.core.*;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.ServerWebSocket;
@@ -17,16 +18,36 @@ public class MQTTBroker extends AbstractVerticle {
 
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
+        startup(vertx);
+
+//        VertxOptions options = new VertxOptions();
+//        options.setClustered(true);
+//        options.setClusterPingInterval(1000);
+//        Vertx.clusteredVertx(options, res -> {
+//            if (res.succeeded()) {
+//                Vertx vertx = res.result();
+//                EventBus eventBus = vertx.eventBus();
+//                System.out.println("We now have a clustered event bus: " + eventBus);
+//                startup(vertx);
+//            } else {
+//                System.out.println("Failed: " + res.cause());
+//            }
+//        });
+
+    }
+
+    private static void startup(Vertx vertx) {
+        int instances = Runtime.getRuntime().availableProcessors();
+        if(instances > 2) {
+            instances = instances - 2;
+        }
         vertx.deployVerticle(new MQTTBroker(),
-                new DeploymentOptions(),
-                new Handler<AsyncResult<String>>() {
-                    @Override
-                    public void handle(AsyncResult<String> stringAsyncResult) {
-                        if(stringAsyncResult.failed())
-                            stringAsyncResult.cause().printStackTrace();
-                        else {
-                            System.out.println(stringAsyncResult.result());
-                        }
+                new DeploymentOptions().setInstances(instances),
+                result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    } else {
+                        System.out.println(result.result());
                     }
                 }
         );

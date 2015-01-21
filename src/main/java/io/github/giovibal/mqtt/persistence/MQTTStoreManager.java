@@ -214,13 +214,13 @@ public class MQTTStoreManager {
         String key = topic;
         vertx.sharedData().getLocalMap(tenant).put(key, message);
     }
-    public void deleteMessage(String topic) {
-        String key = topic;
-        LocalMap<String, byte[]> map = vertx.sharedData().getLocalMap(tenant);
-        if(map.keySet().contains(key)) {
-            map.remove(key);
-        }
-    }
+//    public void deleteMessage(String topic) {
+//        String key = topic;
+//        LocalMap<String, byte[]> map = vertx.sharedData().getLocalMap(tenant);
+//        if(map.keySet().contains(key)) {
+//            map.remove(key);
+//        }
+//    }
 
     /** retrieve all stored messages by topic */
     public List<byte[]> getMessagesByTopic(String topic, String clientID) {
