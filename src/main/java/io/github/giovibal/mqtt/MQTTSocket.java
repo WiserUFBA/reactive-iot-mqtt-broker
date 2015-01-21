@@ -206,8 +206,12 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
             Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
         } else {
             addClientID(clientID);
+        }
+        if(session == null) {
+            // alloca comunque la sessione anche se l'id è riutilizzato
             session = new MQTTSession(vertx, MQTTSocket.this, clientID, cleanSession, tenant);
         }
+
 //        clientIDExists(clientID, ar2 -> {
 //            if(ar2.failed() || ar2.result()==null) {
 //                // Resume old session

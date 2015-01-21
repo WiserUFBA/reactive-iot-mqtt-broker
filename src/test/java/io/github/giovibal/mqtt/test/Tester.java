@@ -1,6 +1,7 @@
 package io.github.giovibal.mqtt.test;
 
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.*;
 
@@ -10,12 +11,24 @@ import java.util.*;
 public class Tester {
     static final String serverURL = "tcp://localhost:1883";
 //    static final String serverURL = "tcp://192.168.231.2:1883";
+
+    static boolean logEnabled=true;
+
     public static void main(String[] args) throws Exception {
 
 //        test1(10);
 //        test2(10);
 //        test3(10);
-        test4(10, 2);
+//        test4(10, 2);
+//        test4(100, 20);
+        logEnabled=false;
+        test4(1000, 200);
+    }
+
+    private static void log(String msg) {
+        if(logEnabled) {
+            System.out.println(msg);
+        }
     }
 
     public static void test1(int numClients) throws Exception {
@@ -29,7 +42,7 @@ public class Tester {
         c.subscribe(topic);
         c.publish(topic);
 
-//        System.out.println("Wait 10 seconds ...");
+//        log("Wait 10 seconds ...");
 //        Thread.sleep(10000);
 
         c.unsubcribe(topic);
@@ -39,7 +52,7 @@ public class Tester {
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
-        System.out.println("Time elapsed: "+ t3 +" millis.");
+        log("Time elapsed: " + t3 + " millis.");
     }
 
 
@@ -65,7 +78,7 @@ public class Tester {
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
-        System.out.println("Time elapsed: "+ t3 +" millis.");
+        log("Time elapsed: " + t3 + " millis.");
     }
 
     public static void test3(int numClients) throws Exception {
@@ -86,7 +99,7 @@ public class Tester {
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
-        System.out.println("Time elapsed: "+ t3 +" millis.");
+        log("Time elapsed: " + t3 + " millis.");
     }
 
     public static void test4(int numClients, int numTopics) throws Exception {
@@ -115,8 +128,10 @@ public class Tester {
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
-        System.out.println("Time elapsed: "+ t3 +" millis.");
+        log("Time elapsed: " + t3 + " millis.");
     }
+
+
 
 
     private List<IMqttClient> clients;
@@ -125,14 +140,14 @@ public class Tester {
         for(int i=1; i<=numClients; i++) {
             String clientID = clientIDPrefix+"_" + i;
 
-            MqttClient client = new MqttClient(serverURL, clientID);
+            MqttClient client = new MqttClient(serverURL, clientID, new MemoryPersistence());
             client.setCallback(new MQTTClientHandler(clientID));
             clients.add(client);
         }
 
     }
     public void connect() throws MqttException {
-        System.out.println("connet ...");
+        log("connet ...");
         for(IMqttClient client : clients) {
             MqttConnectOptions o = new MqttConnectOptions();
             o.setCleanSession(true);
@@ -141,20 +156,20 @@ public class Tester {
     }
 
     public void disconnect() throws MqttException {
-        System.out.println("disconnet ...");
+        log("disconnet ...");
         for(IMqttClient client : clients) {
             client.disconnect();
         }
     }
 
     public void subscribe(String topic) throws MqttException {
-        System.out.println("subscribe ...");
+        log("subscribe topic: " + topic + " ...");
         for (IMqttClient client : clients) {
             client.subscribe(topic, 2);
         }
     }
     public void unsubcribe(String topic) throws MqttException {
-        System.out.println("unsubscribe ...");
+        log("unsubscribe topic: " + topic + " ...");
         for (IMqttClient client : clients) {
             client.unsubscribe(topic);
         }
@@ -162,7 +177,7 @@ public class Tester {
 
     private static int sleep = 5000;
     public void publish(String topic) throws Exception {
-        System.out.println("publih ...");
+        log("publih ...");
         MqttMessage m;
         for(IMqttClient client : clients) {
 
@@ -170,14 +185,14 @@ public class Tester {
             m.setQos(2);
             m.setRetained(true);
             m.setPayload("prova qos=2 retained=true".getBytes("UTF-8"));
-            System.out.println(client.getClientId() + " publish >> sending qos=2 retained=true");
+            log(client.getClientId() + " publish >> sending qos=2 retained=true");
             client.publish(topic, m);
 
             m = new MqttMessage();
             m.setQos(1);
             m.setRetained(true);
             m.setPayload("prova qos=1 retained=true".getBytes("UTF-8"));
-            System.out.println(client.getClientId() + " publish >> sending qos=1 retained=true");
+            log(client.getClientId() + " publish >> sending qos=1 retained=true");
             client.publish(topic, m);
 
 
@@ -186,7 +201,7 @@ public class Tester {
             m.setQos(0);
             m.setRetained(true);
             m.setPayload("prova qos=0 retained=true".getBytes("UTF-8"));
-            System.out.println(client.getClientId() + " publish >> sending qos=0 retained=true");
+            log(client.getClientId() + " publish >> sending qos=0 retained=true");
             client.publish(topic, m);
 
 
@@ -194,7 +209,7 @@ public class Tester {
             m.setQos(2);
             m.setRetained(false);
             m.setPayload("prova qos=2 retained=false".getBytes("UTF-8"));
-            System.out.println(client.getClientId() + " publish >> sending qos=2 retained=false");
+            log(client.getClientId() + " publish >> sending qos=2 retained=false");
             client.publish(topic, m);
 
 
@@ -202,7 +217,7 @@ public class Tester {
             m.setQos(1);
             m.setRetained(false);
             m.setPayload("prova qos=1 retained=false".getBytes("UTF-8"));
-            System.out.println(client.getClientId() + " publish >> sending qos=1 retained=false");
+            log(client.getClientId() + " publish >> sending qos=1 retained=false");
             client.publish(topic, m);
 
 
@@ -210,7 +225,7 @@ public class Tester {
             m.setQos(0);
             m.setRetained(false);
             m.setPayload("prova qos=0 retained=false".getBytes("UTF-8"));
-            System.out.println(client.getClientId() + " publish >> sending qos=0 retained=false");
+            log(client.getClientId() + " publish >> sending qos=0 retained=false");
             client.publish(topic, m);
 
 
@@ -221,7 +236,7 @@ public class Tester {
         Set<String> keys = messaggiArrivatiByClient.keySet();
         for(String clientID : keys) {
             Integer count = messaggiArrivatiByClient.get(clientID);
-            System.out.println("Client: " + clientID + " messaggi arrivati: " + count);
+            log("Client: " + clientID + " messaggi arrivati: " + count);
         }
     }
 
@@ -237,23 +252,19 @@ public class Tester {
 
         @Override
         public void connectionLost(Throwable throwable) {
-            System.out.println(clientID+" connectionLost " + throwable.getMessage());
+            log(clientID + " connectionLost " + throwable.getMessage());
         }
 
         @Override
         public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
             messaggiArrivati++;
-            System.out.println(clientID +" messageArrived << "+ topic + " real qos: "+ mqttMessage.getQos() +" ==> " + new String(mqttMessage.getPayload(), "UTF-8") +" "+ messaggiArrivati);
+            log(clientID + " messageArrived << " + topic + " real qos: " + mqttMessage.getQos() + " ==> " + new String(mqttMessage.getPayload(), "UTF-8") + " " + messaggiArrivati);
             messaggiArrivatiByClient.put(clientID, messaggiArrivati);
         }
 
         @Override
         public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
-            System.out.println(clientID+" deliveryComplete ==> " + iMqttDeliveryToken.getMessageId()+" "+iMqttDeliveryToken.getClient().getClientId());
+            log(clientID + " deliveryComplete ==> " + iMqttDeliveryToken.getMessageId() + " " + iMqttDeliveryToken.getClient().getClientId());
         }
-
-
-
-
     }
 }

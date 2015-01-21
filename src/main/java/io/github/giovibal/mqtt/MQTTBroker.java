@@ -37,6 +37,12 @@ public class MQTTBroker extends AbstractVerticle {
     }
 
     private static void startup(Vertx vertx) {
+//        JsonObject conf = vertx.getOrCreateContext().config();
+//        System.out.println(conf.getInteger("tcp_port", 1883));
+//        System.out.println(conf.getInteger("websocket_port", 11883));
+//        System.out.println(conf.getBoolean("websocket_enabled", true));
+//        System.out.println(conf.getString("websocket_subprotocols", "mqtt,mqttv3.1"));
+        //TODO: capire come utilizzare la configurazione
         int instances = Runtime.getRuntime().availableProcessors();
         if(instances > 2) {
             instances = instances - 2;
@@ -68,12 +74,9 @@ public class MQTTBroker extends AbstractVerticle {
                     .setTcpKeepAlive(true)
                     .setPort(port);
             NetServer netServer = vertx.createNetServer(opt);
-            netServer.connectHandler(new Handler<NetSocket>() {
-                @Override
-                public void handle(final NetSocket netSocket) {
-                    MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, netSocket);
-                    mqttNetSocket.start();
-                }
+            netServer.connectHandler(netSocket -> {
+                MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, netSocket);
+                mqttNetSocket.start();
             }).listen();
             Container.logger().info("Startd MQTT TCP-Broker on port: "+ port);
 
@@ -86,12 +89,9 @@ public class MQTTBroker extends AbstractVerticle {
                         .setPort(wsPort);
 
                 final HttpServer http = vertx.createHttpServer(httpOpt);
-                http.websocketHandler(new Handler<ServerWebSocket>() {
-                    @Override
-                    public void handle(ServerWebSocket serverWebSocket) {
-                        MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, serverWebSocket);
-                        mqttWebSocket.start();
-                    }
+                http.websocketHandler(serverWebSocket -> {
+                    MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, serverWebSocket);
+                    mqttWebSocket.start();
                 }).listen();
                 Container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
             }
