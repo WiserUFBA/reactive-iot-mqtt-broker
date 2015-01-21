@@ -66,7 +66,8 @@ public class MQTTSession {
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
             String topic = publishMessage.getTopicName();
-            JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
+//            JsonObject msg = mqttJson.serializePublishMessage(publishMessage);
+            Buffer msg = encoder.enc(publishMessage);
             Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
 
             // retain
@@ -148,16 +149,28 @@ public class MQTTSession {
                     // Check if message is json and deserializable, otherwise try to construct a custom PublishMessage.
                     // Design from Paolo Iddas
                     Object body = message.body();
-                    if (body instanceof JsonObject && mqttJson.isDeserializable((JsonObject) body)) {
-                        JsonObject json = (JsonObject) body;
-                        PublishMessage pm = mqttJson.deserializePublishMessage(json);
+//                    if (body instanceof JsonObject && mqttJson.isDeserializable((JsonObject) body)) {
+//                        JsonObject json = (JsonObject) body;
+//                        PublishMessage pm = mqttJson.deserializePublishMessage(json);
+//                        // the qos is the max required ...
+//                        QOSType originalQos = pm.getQos();
+//                        int iSentQos = qosUtils.toInt(originalQos);
+//                        int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
+//                        pm.setQos(qosUtils.toQos(iOkQos));
+//                        pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
+//                        mqttSocket.sendMessageToClient(pm);
+//                    }
+                    if (body instanceof Buffer) {
+                        Buffer in = (Buffer)body;
+//                        PublishMessage pm = (PublishMessage)decoder.dec(in);
                         // the qos is the max required ...
-                        QOSType originalQos = pm.getQos();
-                        int iSentQos = qosUtils.toInt(originalQos);
-                        int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-                        pm.setQos(qosUtils.toQos(iOkQos));
-                        pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-                        mqttSocket.sendMessageToClient(pm);
+//                        QOSType originalQos = pm.getQos();
+//                        int iSentQos = qosUtils.toInt(originalQos);
+//                        int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
+//                        pm.setQos(qosUtils.toQos(iOkQos));
+//                        pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
+//                        mqttSocket.sendMessageToClient(pm);
+                        mqttSocket.sendMessageToClient(in);
                     }
                     else {
                         PublishMessage pm = new PublishMessage();

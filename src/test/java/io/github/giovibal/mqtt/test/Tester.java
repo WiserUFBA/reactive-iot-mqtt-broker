@@ -20,9 +20,9 @@ public class Tester {
 //        test2(10);
 //        test3(10);
 //        test4(10, 2);
-//        test4(100, 20);
-        logEnabled=false;
-        test4(1000, 200);
+        test4(100, 20);
+//        logEnabled=false;
+//        test4(1000, 200);
     }
 
     private static void log(String msg) {
