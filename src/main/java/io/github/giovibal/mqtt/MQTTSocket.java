@@ -3,11 +3,9 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.LocalMap;
 import org.dna.mqtt.moquette.proto.messages.*;
 
@@ -17,13 +15,13 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
  * Created by giovanni on 07/05/2014.
  * Base class for connection handling, 1 tcp connection corresponds to 1 instance of this class.
  */
-public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener, Handler<Buffer> {
+public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerListener, Handler<Buffer> {
 
     protected Vertx vertx;
 //    protected Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
-    protected MQTTTokenizer tokenizer;
+    protected MQTTPacketTokenizer tokenizer;
     private MQTTTopicsManager topicsManager;
     private String clientID;
     private boolean cleanSession;
@@ -34,7 +32,7 @@ public abstract class MQTTSocket implements MQTTTokenizer.MqttTokenizerListener,
     public MQTTSocket(Vertx vertx) {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
-        this.tokenizer = new MQTTTokenizer();
+        this.tokenizer = new MQTTPacketTokenizer();
         this.tokenizer.registerListener(this);
 
         this.vertx = vertx;

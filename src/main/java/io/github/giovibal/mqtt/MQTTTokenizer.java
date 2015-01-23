@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
  * Created by Paolo Iddas.
  * MQTT Protocol tokenizer.
  */
+@Deprecated
 public class MQTTTokenizer {
 	public static void main(String[] args) {
 		// byte[] data = new byte[]{0x00, 0x01};
@@ -35,7 +36,7 @@ public class MQTTTokenizer {
 
 	private final static int MAX_REMAINING_LENGTH = 4;
 	private int remainingLengthCounter = 0;
-	private int mulltiplier = 1;
+	private int multiplier = 1;
 	private int payloadLength = 0;
 	private int payloadCounter = 0;
 	private final ByteArrayOutputStream tokenContainer = new ByteArrayOutputStream();
@@ -63,8 +64,8 @@ public class MQTTTokenizer {
 				tokenizerState = MqttTokenizerState.WAITING_REMAINING_LENGTH;
 				tokenContainer.write(data);
 				/* check for continuation bit */
-				payloadLength += ((data & 127) * mulltiplier);
-				mulltiplier *= 128;
+				payloadLength += ((data & 127) * multiplier);
+				multiplier *= 128;
 				remainingLengthCounter++;
 //                System.out.println("payloadLength => " + payloadLength);
                 if ((data & 128) == 0 || remainingLengthCounter == MAX_REMAINING_LENGTH) {
@@ -98,7 +99,7 @@ public class MQTTTokenizer {
 		tokenizerState = MqttTokenizerState.WAITING_FIRST;
 
 		remainingLengthCounter = 0;
-		mulltiplier = 1;
+		multiplier = 1;
 		payloadLength = 0;
 		payloadCounter = 0;
 
