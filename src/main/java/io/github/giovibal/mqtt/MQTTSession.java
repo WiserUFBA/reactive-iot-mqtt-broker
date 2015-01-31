@@ -62,6 +62,9 @@ public class MQTTSession {
         this.store = new MQTTStoreManager(this.vertx, this.tenant);
     }
 
+    public String getClientID() {
+        return clientID;
+    }
 
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
@@ -162,15 +165,16 @@ public class MQTTSession {
 //                    }
                     if (body instanceof Buffer) {
                         Buffer in = (Buffer)body;
-//                        PublishMessage pm = (PublishMessage)decoder.dec(in);
-                        // the qos is the max required ...
-//                        QOSType originalQos = pm.getQos();
-//                        int iSentQos = qosUtils.toInt(originalQos);
-//                        int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-//                        pm.setQos(qosUtils.toQos(iOkQos));
-//                        pm.setRetainFlag(false);// server must send retain=false flag to subscribers ...
-//                        mqttSocket.sendMessageToClient(pm);
-                        mqttSocket.sendMessageToClient(in);
+                        PublishMessage pm = (PublishMessage)decoder.dec(in);
+                        /* the qos is the max required ... */
+                        QOSType originalQos = pm.getQos();
+                        int iSentQos = qosUtils.toInt(originalQos);
+                        int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
+                        pm.setQos(qosUtils.toQos(iOkQos));
+                        /* server must send retain=false flag to subscribers ...*/
+                        pm.setRetainFlag(false);
+                        mqttSocket.sendMessageToClient(pm);
+//                        mqttSocket.sendMessageToClient(in);
                     }
                     else {
                         PublishMessage pm = new PublishMessage();
@@ -223,7 +227,7 @@ public class MQTTSession {
     private Set<MessageConsumer> getClientHandlers(String topic) {
         String sessionID = topic;
         if(!handlers.containsKey(sessionID)) {
-            handlers.put(sessionID, new HashSet<MessageConsumer>());
+            handlers.put(sessionID, new HashSet<>());
         }
         Set<MessageConsumer> clientHandlers = handlers.get(sessionID);
         return clientHandlers;

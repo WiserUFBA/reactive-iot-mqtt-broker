@@ -51,7 +51,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         vertx = null;
     }
 
-
+    @Override
+    public void handle(Buffer buffer) {
+        tokenizer.process(buffer.getBytes());
+    }
 
     @Override
     public void onToken(byte[] token, boolean timeout) {
@@ -61,16 +64,9 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             onMessageFromClient(message);
         }
         catch (Exception e) {
-//            container.logger().error(e.getMessage(), e);
+            Container.logger().error(e.getMessage(), e);
         }
     }
-
-    @Override
-    public void handle(Buffer buffer) {
-//        System.out.println("handle "+ buffer.length());
-        tokenizer.process(buffer.getBytes());
-    }
-
 
     protected void onMessageFromClient(AbstractMessage msg) {
         try {
@@ -208,6 +204,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         if(session == null) {
             // alloca comunque la sessione anche se l'id è riutilizzato
             session = new MQTTSession(vertx, MQTTSocket.this, clientID, cleanSession, tenant);
+        } else {
+            System.out.println("Session alredy allocated with clientID: "+ session.getClientID() +". New session clientID: "+ clientID);
         }
 
 //        clientIDExists(clientID, ar2 -> {
