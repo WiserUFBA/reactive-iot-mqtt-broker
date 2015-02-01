@@ -15,14 +15,12 @@ public class MQTTTopicsManager {
 
     private Vertx vertx;
     private LocalMap<String, Integer> topicsSubscribed;
-//    private LocalMap<String, String> topicsToRegex;
     private String tenant;
 
     public MQTTTopicsManager(Vertx vertx, String tenant) {
         this.vertx = vertx;
         this.tenant = tenant;
         this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_subscribed_topics");
-//        this.topicsToRegex = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_topics_regex");
     }
 
     public Set<String> getSubscribedTopics() {
@@ -35,11 +33,6 @@ public class MQTTTopicsManager {
         }
         retain++;
         topicsSubscribed.put(topic, retain);
-
-//        /* pre-calculate regex for publish matching*/
-//        if(!topicsToRegex.keySet().contains(topic)) {
-//            topicsToRegex.put(topic, toPattern(topic));
-//        }
     }
 
     public void removeSubscribedTopic(String topic) {
@@ -49,8 +42,6 @@ public class MQTTTopicsManager {
         }
         if(retain <= 0) {
             topicsSubscribed.remove(topic);
-//            /* remove pre-calculated regex for this topic */
-//            topicsToRegex.remove(topic);
         }
         else {
             retain--;
@@ -78,48 +69,32 @@ public class MQTTTopicsManager {
     }
 
     public boolean match(String topic, String topicFilter) {
-        String tsub = topicFilter;
-        if(tsub.equals(topic)) {
+        if(topicFilter.equals(topic)) {
             return true;
         }
         else {
-            if (tsub.contains("+") && !tsub.endsWith("#")) {
+            if (topicFilter.contains("+") && !topicFilter.endsWith("#")) {
                 int topicSlashCount = countSlash(topic);
-                int tsubSlashCount = countSlash(tsub);
+                int tsubSlashCount = countSlash(topicFilter);
                 if (topicSlashCount == tsubSlashCount) {
-                    String pattern = toPattern(tsub);
+                    String pattern = toPattern(topicFilter);
                     if (topic.matches(pattern)) {
                         return true;
                     }
                 }
-            } else if (tsub.contains("+") || tsub.endsWith("#")) {
+            } else if (topicFilter.contains("+") || topicFilter.endsWith("#")) {
                 int topicSlashCount = countSlash(topic);
-                int tsubSlashCount = countSlash(tsub);
+                int tsubSlashCount = countSlash(topicFilter);
                 if (topicSlashCount >= tsubSlashCount) {
-                    String pattern = toPattern(tsub);
+                    String pattern = toPattern(topicFilter);
                     if (topic.matches(pattern)) {
                         return true;
                     }
                 }
             }
-//            String pattern;
-//            if(topicsToRegex.keySet().contains(tsub)) {
-//                pattern = topicsToRegex.get(tsub);
-//            } else {
-//                pattern = toPattern(tsub);
-//            }
-//            if (topic.matches(pattern)) {
-//                return true;
-//            }
         }
         return false;
     }
-
-//    private String toPattern(String subscribedTopic) {
-//        String pattern = subscribedTopic.replaceAll("\\+", ".+?");
-//        pattern = pattern.replaceAll("/#", "/.+");
-//        return pattern;
-//    }
 
     private String toPattern(String subscribedTopic) {
         String pattern = subscribedTopic;

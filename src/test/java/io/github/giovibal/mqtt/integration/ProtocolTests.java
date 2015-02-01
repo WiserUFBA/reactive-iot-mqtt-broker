@@ -37,19 +37,20 @@ public class ProtocolTests extends BaseTest {
             }
             c.disconnect();
 
-            Tester.stats();
+            c.stats();
 
             t2=System.currentTimeMillis();
             t3=t2-t1;
             System.out.println("Time elapsed: "+ t3 +" millis.");
 
 
-            Map<String, Integer> report = Tester.messaggiArrivatiByClient;
+            Map<String, Integer> report = c.getMessaggiArrivatiPerClient();
             Set<String> keys = report.keySet();
             for(String clientID : keys) {
                 int count = report.get(clientID);
 //                assertEquals(120, count);
             }
+
 
 //            testComplete();
         }
