@@ -202,10 +202,14 @@ public class MQTTStoreManager {
             List<Subscription> subscriptions = getSubscriptionsByClientID(clientID);
             for(Subscription s : subscriptions) {
                 if(s.getTopic().equals(topic)) {
-                    String key = clientID + topic;
+//                    String key = clientID + topic;
+//                    incrementID(key);
+//                    String k = "" + currentID(key);
+//                    vertx.sharedData().getLocalMap(tenant + key).put(k, message);
+                    String key = tenant + clientID + topic;
                     incrementID(key);
                     String k = "" + currentID(key);
-                    vertx.sharedData().getLocalMap(tenant + key).put(k, message);
+                    vertx.sharedData().getLocalMap(key).put(k, message);
                 }
             }
         }
@@ -251,5 +255,21 @@ public class MQTTStoreManager {
         MQTTJson mqttJson = new MQTTJson();
         JsonObject wm = mqttJson.serializeWillMessage(willMsg, willQos, willTopic);
         vertx.sharedData().getLocalMap("will_messages").put(willTopic, wm);
+    }
+
+
+
+
+    public void addClientID(String clientID) {
+        vertx.sharedData().getLocalMap("clientIDs").put(clientID, 1);
+    }
+    public boolean clientIDExists(String clientID) {
+        LocalMap<String, Object> m = vertx.sharedData().getLocalMap("clientIDs");
+        if(m!=null)
+            return m.keySet().contains(clientID);
+        return false;
+    }
+    public void removeClientID(String clientID) {
+        vertx.sharedData().getLocalMap("clientIDs").remove(clientID);
     }
 }

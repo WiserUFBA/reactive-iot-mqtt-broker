@@ -3,6 +3,7 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -22,11 +23,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
     protected MQTTPacketTokenizer tokenizer;
-    private MQTTTopicsManager topicsManager;
-    private String clientID;
-    private boolean cleanSession;
-    private MQTTStoreManager store;
-    private String tenant;
+//    private MQTTTopicsManager topicsManager;
+//    private String clientID;
+//    private boolean cleanSession;
+//    private MQTTStoreManager store;
+//    private String tenant;
     private MQTTSession session;
 
     public MQTTSocket(Vertx vertx) {
@@ -182,90 +183,58 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
     private void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
-        ConnectMessage connect = connectMessage;
+//        ConnectMessage connect = connectMessage;
 
-        clientID = connect.getClientID();
-        cleanSession = connect.isCleanSession();
+//        String clientID = connect.getClientID();
+//        boolean cleanSession = connect.isCleanSession();
+//
+//        // initialize tenant
+//        String tenant = getTenant(connectMessage);
 
-        // initialize tenant
-        tenant = getTenant(connectMessage);
+//        topicsManager = new MQTTTopicsManager(vertx, tenant);
+//        store = new MQTTStoreManager(vertx, tenant);
 
-        topicsManager = new MQTTTopicsManager(vertx, tenant);
-        store = new MQTTStoreManager(vertx, tenant);
-
-
-        boolean clientIDExists = clientIDExists(clientID);
-        if(clientIDExists) {
-            // Resume old session
-            Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
-        } else {
-            addClientID(clientID);
-        }
+//        boolean clientIDExists = clientIDExists(clientID);
+//        if(clientIDExists) {
+//            // Resume old session
+//            Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
+//        } else {
+//            addClientID(clientID);
+//        }
         if(session == null) {
             // alloca comunque la sessione anche se l'id è riutilizzato
-            session = new MQTTSession(vertx, MQTTSocket.this, clientID, cleanSession, tenant);
+            session = new MQTTSession(vertx, this);
+            session.handleConnectMessage(connectMessage);
         } else {
-            System.out.println("Session alredy allocated with clientID: "+ session.getClientID() +". New session clientID: "+ clientID);
+            System.out.println("Session alredy allocated with clientID: "+ session.getClientID() +".");
         }
 
-//        clientIDExists(clientID, ar2 -> {
-//            if(ar2.failed() || ar2.result()==null) {
-//                // Resume old session
-//                Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
-//            }else {
-//                addClientID(clientID);
-//            }
-//            session = new MQTTSession(vertx, MQTTSocket.this, clientID, cleanSession, tenant);
-//
-//            if(connect.isWillFlag()) {
-//                String willMsg = connect.getWillMessage();
-//                byte willQos = connect.getWillQos();
-//                String willTopic = connect.getWillTopic();
-//                session.storeWillMessage(willMsg, willQos, willTopic);
-//            }
-//        });
+//        if(connectMessage.isWillFlag()) {
+//            String willMsg = connectMessage.getWillMessage();
+//            byte willQos = connectMessage.getWillQos();
+//            String willTopic = connectMessage.getWillTopic();
+//            session.storeWillMessage(willMsg, willQos, willTopic);
+//        }
     }
 
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
-        removeClientID(clientID);
+//        removeClientID(clientID);
         session.shutdown();
         session = null;
     }
 
 
-    private void addClientID(String clientID) {
-        vertx.sharedData().getLocalMap("clientIDs").put(clientID, 1);
-    }
-    private boolean clientIDExists(String clientID) {
-        LocalMap<String, Object> m = vertx.sharedData().getLocalMap("clientIDs");
-        if(m!=null)
-            return m.keySet().contains(clientID);
-        return false;
-    }
-
-    private void removeClientID(String clientID) {
-        vertx.sharedData().getLocalMap("clientIDs").remove(clientID);
-    }
-    // async and shared version
 //    private void addClientID(String clientID) {
-//        vertx.sharedData().getClusterWideMap("clientIDs",
-//                ar1 -> ar1.result().put(clientID, new Object(),
-//                        ar2 -> Container.logger().info(clientID + " added: " + ar2.succeeded())
-//                )
-//        );
+//        vertx.sharedData().getLocalMap("clientIDs").put(clientID, 1);
 //    }
-//    private void clientIDExists(String clientID, Handler<AsyncResult<Object>> h) {
-//        vertx.sharedData().getClusterWideMap("clientIDs",
-//                ar1 -> ar1.result().get(clientID, h)
-//        );
+//    private boolean clientIDExists(String clientID) {
+//        LocalMap<String, Object> m = vertx.sharedData().getLocalMap("clientIDs");
+//        if(m!=null)
+//            return m.keySet().contains(clientID);
+//        return false;
 //    }
-//
 //    private void removeClientID(String clientID) {
-//        vertx.sharedData().getClusterWideMap("clientIDs",
-//                ar1 -> ar1.result().remove(clientID,
-//                        ar2 -> Container.logger().info(clientID +" removed: "+ ar2.succeeded())
-//                )
-//        );
+//        vertx.sharedData().getLocalMap("clientIDs").remove(clientID);
 //    }
 
 }

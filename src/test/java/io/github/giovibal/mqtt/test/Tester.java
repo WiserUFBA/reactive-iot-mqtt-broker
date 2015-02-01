@@ -4,6 +4,7 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by giovanni on 08/04/2014.
@@ -18,12 +19,18 @@ public class Tester {
     public static void main(String[] args) throws Exception {
 
 //        test1(10);
-//        test2(10);
-//        test3(10);
+//        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2
+//        test2(10, 60000, 2);// 10 client che pubblicano 60000 messaggi ciascuno con qos:2 (235177 millis.)
+//        test2(10, 60000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 (127789 millis. arrivati in media 248355 messaggi)
+        test2(10, 10000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 (8839 millis. arrivati in media 37760 messaggi)
+//        test2(10, 10000, 2);// 10 client che pubblicano 60000 messaggi ciascuno con qos:2 (36162 millis.)
+//        test2(10, 10000, 1);// 10 client che pubblicano 60000 messaggi ciascuno con qos:1 (22609 millis.)
+
+//        test3(100);
 //        test4(10, 2);
 //        test4(100, 20);
-        logEnabled=false;
-        test4(1000, 200);
+//        logEnabled=false;
+//        test4(1000, 200);
     }
 
     private static void log(String msg) {
@@ -49,7 +56,7 @@ public class Tester {
         c.unsubcribe(topic);
         c.disconnect();
 
-        stats();
+        c.stats();
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
@@ -57,25 +64,27 @@ public class Tester {
     }
 
 
-    public static void test2(int numClients) throws Exception {
+    public static void test2(int numClients, int numMessagesToPublishPerClient, int qos) throws Exception {
         String topic = "test/untopic";
 
         long t1,t2,t3;
         t1=System.currentTimeMillis();
 
-        Tester csubs = new Tester(numClients, "SUBS");
-        csubs.connect();
-        csubs.subscribe(topic);
+        Tester cSubs = new Tester(numClients, "SUBS");
+        cSubs.connect();
+        cSubs.subscribe(topic);
 
-        Tester c = new Tester(numClients, "PUBS");
-        c.connect();
-        c.publish(topic);
-        c.disconnect();
+        Tester cPubs = new Tester(numClients, "PUBS");
+        cPubs.connect();
 
-        csubs.unsubcribe(topic);
-        csubs.disconnect();
+        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
+        cPubs.disconnect();
 
-        stats();
+        cSubs.unsubcribe(topic);
+        cSubs.disconnect();
+
+        cPubs.publishStats();
+        cSubs.subscribeStats();
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
@@ -96,7 +105,7 @@ public class Tester {
         c.unsubcribe(topicSub);
         c.disconnect();
 
-        stats();
+        c.stats();
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
@@ -125,7 +134,7 @@ public class Tester {
         }
         c.disconnect();
 
-        stats();
+        c.stats();
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
@@ -135,20 +144,23 @@ public class Tester {
 
 
 
-    private List<IMqttClient> clients;
+    private List<IMqttClient> clients = new ArrayList<>();
+    private List<MQTTClientHandler> clientHandlers = new ArrayList<>();
+
     public Tester(int numClients, String clientIDPrefix) throws MqttException {
-        clients = new ArrayList<>();
         for(int i=1; i<=numClients; i++) {
             String clientID = clientIDPrefix+"_" + i;
 
             MqttClient client = new MqttClient(serverURL, clientID, new MemoryPersistence());
-            client.setCallback(new MQTTClientHandler(clientID));
-            clients.add(client);
-        }
+            MQTTClientHandler h = new MQTTClientHandler(clientID);
+            client.setCallback(h);
 
+            clients.add(client);
+            clientHandlers.add(h);
+        }
     }
     public void connect() throws MqttException {
-        log("connet ...");
+        log("connect ...");
         for(IMqttClient client : clients) {
             MqttConnectOptions o = new MqttConnectOptions();
             o.setCleanSession(true);
@@ -176,7 +188,6 @@ public class Tester {
         }
     }
 
-    private static int sleep = 5000;
     public void publish(String topic) throws Exception {
         log("publih ...");
         MqttMessage m;
@@ -196,15 +207,12 @@ public class Tester {
             log(client.getClientId() + " publish >> sending qos=1 retained=true");
             client.publish(topic, m);
 
-
-
             m = new MqttMessage();
             m.setQos(0);
             m.setRetained(true);
             m.setPayload("prova qos=0 retained=true".getBytes("UTF-8"));
             log(client.getClientId() + " publish >> sending qos=0 retained=true");
             client.publish(topic, m);
-
 
             m = new MqttMessage();
             m.setQos(2);
@@ -213,7 +221,6 @@ public class Tester {
             log(client.getClientId() + " publish >> sending qos=2 retained=false");
             client.publish(topic, m);
 
-
             m = new MqttMessage();
             m.setQos(1);
             m.setRetained(false);
@@ -221,34 +228,69 @@ public class Tester {
             log(client.getClientId() + " publish >> sending qos=1 retained=false");
             client.publish(topic, m);
 
-
             m = new MqttMessage();
             m.setQos(0);
             m.setRetained(false);
             m.setPayload("prova qos=0 retained=false".getBytes("UTF-8"));
             log(client.getClientId() + " publish >> sending qos=0 retained=false");
             client.publish(topic, m);
-
-
+        }
+    }
+    public void publish(int numMessages, String topic, int qos, boolean retained) throws Exception {
+        log("publih ...");
+        MqttMessage m;
+        for(IMqttClient client : clients) {
+            for(int i=0; i<numMessages; i++) {
+                String msg = "msg "+i+" qos="+qos+" retained="+ retained;
+                m = new MqttMessage();
+                m.setQos(qos);
+                m.setRetained(retained);
+                m.setPayload(msg.getBytes("UTF-8"));
+                log(client.getClientId() + " publish >> sending qos=" + qos + " retained=" + retained);
+                client.publish(topic, m);
+            }
         }
     }
 
-    public static void stats() {
-        Set<String> keys = messaggiArrivatiByClient.keySet();
-        for(String clientID : keys) {
-            Integer count = messaggiArrivatiByClient.get(clientID);
-            log("Client: " + clientID + " messaggi arrivati: " + count);
+    public void stats() {
+        log("-------------------------------S-T-A-T-S-------------------------------------------");
+        for(MQTTClientHandler h : clientHandlers) {
+            log("Client: " + h.clientID + " messaggi arrivati: " + h.messaggiArrivati + " messaggi spediti: " + h.messaggiSpediti);
         }
+        log("-------------------------------S-T-A-T-S-------------------------------------------");
+    }
+    public void publishStats() {
+        log("-------------------------------S-T-A-T-S-------------------------------------------");
+        for(MQTTClientHandler h : clientHandlers) {
+            log("Client: " + h.clientID + " messaggi spediti: " + h.messaggiSpediti);
+        }
+        log("-------------------------------S-T-A-T-S-------------------------------------------");
+    }
+    public void subscribeStats() {
+        log("-------------------------------S-T-A-T-S-------------------------------------------");
+        for(MQTTClientHandler h : clientHandlers) {
+            log("Client: " + h.clientID + " messaggi arrivati: " + h.messaggiArrivati);
+        }
+        log("-------------------------------S-T-A-T-S-------------------------------------------");
+    }
+    public Map<String, Integer> getMessaggiArrivatiPerClient() {
+        Map<String, Integer> ret = new HashMap<>();
+        for(MQTTClientHandler h : clientHandlers) {
+            ret.put(h.clientID,h.messaggiArrivati);
+        }
+        return ret;
     }
 
-    public static Map<String, Integer> messaggiArrivatiByClient = new HashMap<>();
     static class MQTTClientHandler implements MqttCallback {
 
         String clientID;
         int messaggiArrivati;
+        int messaggiSpediti;
+
         MQTTClientHandler(String clientID) {
             this.clientID = clientID;
             this.messaggiArrivati = 0;
+            this.messaggiSpediti = 0;
         }
 
         @Override
@@ -259,13 +301,16 @@ public class Tester {
         @Override
         public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
             messaggiArrivati++;
-            log(clientID + " messageArrived << " + topic + " real qos: " + mqttMessage.getQos() + " ==> " + new String(mqttMessage.getPayload(), "UTF-8") + " " + messaggiArrivati);
-            messaggiArrivatiByClient.put(clientID, messaggiArrivati);
+            log(clientID + " messageArrived <== " + topic + " real qos: " + mqttMessage.getQos() + " ==> " + new String(mqttMessage.getPayload(), "UTF-8") + " " + messaggiArrivati);
         }
 
         @Override
         public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+            messaggiSpediti++;
             log(clientID + " deliveryComplete ==> " + iMqttDeliveryToken.getMessageId() + " " + iMqttDeliveryToken.getClient().getClientId());
         }
+
     }
+
+
 }
