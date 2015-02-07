@@ -72,9 +72,17 @@ public class ConnectDecoder extends DemuxDecoder {
 //                versionAttr.set((int) Utils.VERSION_3_1_1);
                 System.out.println("Detected MQTT v. 3.1.1 "+ protoName);
                 break;
+
             default:
                 //protocol broken
-                throw new CorruptedFrameException("Invalid protoName size: " + protocolNameLen);
+                if (in.readableBytes() < 8) {
+                    in.resetReaderIndex();
+                    return;
+                }
+                encProtoName = new byte[protocolNameLen];
+                in.readBytes(encProtoName);
+                protoName = new String(encProtoName, "UTF-8");
+                throw new CorruptedFrameException("Invalid protoName size: " + protocolNameLen + " protoName: "+ protoName);
         }
 
         //ProtocolVersion 1 byte (value 0x03 for 3.1, 0x04 for 3.1.1)

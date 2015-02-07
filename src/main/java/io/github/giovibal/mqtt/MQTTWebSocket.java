@@ -47,4 +47,8 @@ public class MQTTWebSocket extends MQTTSocket {
         }
     }
 
+    protected void closeConnection() {
+        Container.logger().info("web-socket will be closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
+        netSocket.close();
+    }
 }

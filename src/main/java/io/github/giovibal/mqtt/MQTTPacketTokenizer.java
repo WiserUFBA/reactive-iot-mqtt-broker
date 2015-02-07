@@ -15,6 +15,11 @@ public class MQTTPacketTokenizer {
             public void onToken(byte[] token, boolean timeout) {
                 System.out.println("Token = " + ConversionUtility.toHexString(token, ":"));
             }
+
+            @Override
+            public void onError(Throwable e) {
+                e.printStackTrace();
+            }
         });
 
         // byte[] data = new byte[]{0x00, 0x01};
@@ -126,7 +131,8 @@ public class MQTTPacketTokenizer {
 
     /* listener */
     public interface MqttTokenizerListener {
-        public void onToken(byte[] token, boolean timeout);
+        public void onToken(byte[] token, boolean timeout) throws Exception;
+        public void onError(Throwable e);
     }
 
     private LinkedHashSet<MqttTokenizerListener> listenerCollection = new LinkedHashSet<MqttTokenizerListener>();
@@ -271,8 +277,10 @@ public class MQTTPacketTokenizer {
                 // System.out.println("T = " + ConversionUtility.toHexString(token, ":"));
 
                 l.onToken(token, timeout);
-            } catch (Exception e) {
-                e.printStackTrace();
+//            } catch (Exception e) {
+            } catch (Throwable e) {
+//                e.printStackTrace();
+                l.onError(e);
             }
         }
     }

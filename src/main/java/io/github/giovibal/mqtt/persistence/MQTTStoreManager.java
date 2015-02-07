@@ -121,8 +121,8 @@ public class MQTTStoreManager {
     /** append topic to session (for long persistence) */
     public void saveSubscription(Subscription subscription, String clientID) {
         String s = subscription.toString();
-        vertx.sharedData().getLocalMap(tenant + clientID).put(s, new Object());
-        vertx.sharedData().getLocalMap(tenant + "persistence.clients").put(clientID, new Object());
+        vertx.sharedData().getLocalMap(tenant + clientID).put(s, 1);
+        vertx.sharedData().getLocalMap(tenant + "persistence.clients").put(clientID, 1);
     }
 
     /** get subscribed topics by clientID from session*/
@@ -218,13 +218,13 @@ public class MQTTStoreManager {
         String key = topic;
         vertx.sharedData().getLocalMap(tenant).put(key, message);
     }
-//    public void deleteMessage(String topic) {
-//        String key = topic;
-//        LocalMap<String, byte[]> map = vertx.sharedData().getLocalMap(tenant);
-//        if(map.keySet().contains(key)) {
-//            map.remove(key);
-//        }
-//    }
+    public void deleteMessage(String topic) {
+        String key = topic;
+        LocalMap<String, byte[]> map = vertx.sharedData().getLocalMap(tenant);
+        if(map.keySet().contains(key)) {
+            map.remove(key);
+        }
+    }
 
     /** retrieve all stored messages by topic */
     public List<byte[]> getMessagesByTopic(String topic, String clientID) {

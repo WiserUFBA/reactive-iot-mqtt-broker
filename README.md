@@ -5,7 +5,7 @@ MQTT broker implementation as Vert.x module.
 
 Credits:
 <br/>
-Moquette <a href="https://code.google.com/p/moquette-mqtt/">https://code.google.com/p/moquette-mqtt/</a>
+Moquette <a href="https://github.com/andsel/moquette">https://github.com/andsel/moquette</a>
 for coder and decoder implementation of MQTT messages.
 <br/>
 

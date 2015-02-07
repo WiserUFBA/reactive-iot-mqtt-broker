@@ -47,13 +47,25 @@ public class MQTTBroker extends AbstractVerticle {
         if(instances > 2) {
             instances = instances - 2;
         }
+//        // autenticator
+//        vertx.deployVerticle(new AuthenticatorVerticle(),new DeploymentOptions().setInstances(instances),
+//                result -> {
+//                    if (result.failed()) {
+//                        result.cause().printStackTrace();
+//                    } else {
+//                        System.out.println(AuthenticatorVerticle.class.getSimpleName()+": "+result.result());
+//                    }
+//                }
+//        );
+
+        // broker
         vertx.deployVerticle(new MQTTBroker(),
-                new DeploymentOptions().setInstances(instances),
+                new DeploymentOptions().setInstances(/*instances*/1),
                 result -> {
                     if (result.failed()) {
                         result.cause().printStackTrace();
                     } else {
-                        System.out.println(result.result());
+                        System.out.println(MQTTBroker.class.getSimpleName()+": "+result.result());
                     }
                 }
         );

@@ -12,7 +12,8 @@ public class DisconnectEncoder extends DemuxEncoder<DisconnectMessage> {
 
     @Override
     protected void encode(DisconnectMessage msg, ByteBuf out) {
-        out.writeByte(AbstractMessage.DISCONNECT << 4).writeByte(0);
+        byte flags = Utils.encodeFlags(msg);
+        out.writeByte(AbstractMessage.DISCONNECT << 4 | flags).writeByte(0);
     }
     
 }

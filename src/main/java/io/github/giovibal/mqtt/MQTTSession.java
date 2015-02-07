@@ -4,11 +4,11 @@ import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
@@ -84,6 +84,25 @@ public class MQTTSession {
         clientID = connectMessage.getClientID();
         cleanSession = connectMessage.isCleanSession();
         tenant = getTenant(connectMessage);
+
+        // AUTHENTICATION START
+//        String username = connectMessage.getUsername();
+//        String password = connectMessage.getPassword();
+//
+//        String address = MQTTBroker.class.getName() + "_auth";
+//        JsonObject credentials = new JsonObject().put("username", username).put("password", password);
+//        MessageProducer<JsonObject> producer = vertx.eventBus().sender(address);
+//        producer.write(credentials);
+//
+//        vertx.eventBus().send(address, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
+//            if(messageAsyncResult.succeeded()) {
+//                JsonObject reply = messageAsyncResult.result().body();
+//                System.out.println(reply.toString());
+//                Boolean authenticated = reply.getBoolean("authenticated");
+//                System.out.println("authenticated ===> "+ authenticated );
+//            }
+//        });
+        // AUTHENTICATION END
 
         topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
         store = new MQTTStoreManager(this.vertx, this.tenant);
@@ -269,11 +288,17 @@ public class MQTTSession {
     private void storeAsLastMessage(PublishMessage publishMessage, String topicToPublish) {
         try {
             byte[] m = encoder.enc(publishMessage).getBytes();
-            store.saveMessage(m, topicToPublish);
+            if(m.length == 0) {
+                // remove retain message because payload is 0 length
+                store.deleteMessage(topicToPublish);
+            } else {
+                store.saveMessage(m, topicToPublish);
+            }
         } catch(Exception e) {
             Container.logger().error(e.getMessage(), e);
         }
     }
+
     private void deleteMessage(PublishMessage publishMessage) {
         try {
             String pubtopic = publishMessage.getTopicName();

@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by giovanni on 08/04/2014.
  */
 public class Tester {
-    static final String serverURL = "tcp://localhost:1883";
+    static final String serverURL = "tcp://iot.eimware.it:1883";
 //    static final String serverURL = "tcp://192.168.231.52:1883";
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
@@ -19,10 +19,11 @@ public class Tester {
     public static void main(String[] args) throws Exception {
 
 //        test1(10);
+        test2(3, 10, 0);
 //        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2
 //        test2(10, 60000, 2);// 10 client che pubblicano 60000 messaggi ciascuno con qos:2 (235177 millis.)
 //        test2(10, 60000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 (127789 millis. arrivati in media 248355 messaggi)
-        test2(10, 10000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 ( 8839 millis. arrivati in media 37000 messaggi)
+//        test2(10, 10000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 ( 8839 millis. arrivati in media 37000 messaggi)
 //                                                                           Con Hive 2.0.2 (21535 millis. arrivati in media 93000 messaggi)
 //        test2(10, 10000, 2);// 10 client che pubblicano 60000 messaggi ciascuno con qos:2 (36162 millis.)
 //                                                                           Con Hive 2.0.2 (45347 millis. ma arrivati 97446 messaggi per tutti i client - NullPointer sul server)

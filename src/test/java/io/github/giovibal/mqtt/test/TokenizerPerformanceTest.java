@@ -24,6 +24,11 @@ public class TokenizerPerformanceTest {
                     public void onToken(byte[] token, boolean timeout) {
                         //System.out.println("Token = " + ConversionUtility.toHexString(token, ":"));
                     }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                    }
                 });
 
                 Calendar start = Calendar.getInstance();
@@ -82,6 +87,11 @@ public class TokenizerPerformanceTest {
                     @Override
                     public void onToken(byte[] token, boolean timeout) {
                         //System.out.println("Token = " + ConversionUtility.toHexString(token, ":"));
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
                     }
                 });
 

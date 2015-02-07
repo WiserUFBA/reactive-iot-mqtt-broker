@@ -47,4 +47,9 @@ public class MQTTNetSocket extends MQTTSocket {
             Container.logger().error(e.getMessage());
         }
     }
+
+    protected void closeConnection() {
+        Container.logger().info("net-socket will be closed ... "+ netSocket.writeHandlerID());
+        netSocket.close();
+    }
 }

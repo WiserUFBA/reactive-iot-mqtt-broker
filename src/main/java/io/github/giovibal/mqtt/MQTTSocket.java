@@ -3,6 +3,7 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
+import io.netty.handler.codec.CorruptedFrameException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -38,6 +39,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
         this.vertx = vertx;
     }
+    abstract protected void sendMessageToClient(Buffer bytes);
+    abstract protected void closeConnection();
 
 
     public void shutdown() {
@@ -58,14 +61,23 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
     @Override
-    public void onToken(byte[] token, boolean timeout) {
+    public void onToken(byte[] token, boolean timeout) throws Exception {
         Buffer buffer = Buffer.buffer(token);
-        try {
+//        try {
             AbstractMessage message = decoder.dec(buffer);
             onMessageFromClient(message);
-        }
-        catch (Exception e) {
-            Container.logger().error(e.getMessage(), e);
+//        }
+//        catch (Exception e) {
+//            Container.logger().error(e.getMessage(), e);
+//        }
+    }
+
+    @Override
+    public void onError(Throwable e) {
+//        e.printStackTrace();
+        Container.logger().error(e.getMessage(), e);
+        if(e instanceof CorruptedFrameException) {
+            closeConnection();
         }
     }
 
@@ -80,6 +92,9 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     break;
                 case SUBSCRIBE:
                     SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
+                    if(subscribeMessage.getQos() != QOSType.LEAST_ONE) {
+                        System.out.println("SUBSCRIBE QoS != 1 !!");
+                    }
                     session.handleSubscribeMessage(subscribeMessage);
                     SubAckMessage subAck = new SubAckMessage();
                     subAck.setMessageID(subscribeMessage.getMessageID());
@@ -127,14 +142,21 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     break;
                 case PUBREC:
                     PubRecMessage pubRec = (PubRecMessage)msg;
+                    if(pubRec.getQos() != QOSType.MOST_ONE) {
+                        System.out.println("PUBREC QoS != 0 !!");
+                    }
                     PubRelMessage prelResp = new PubRelMessage();
                     prelResp.setMessageID(pubRec.getMessageID());
+                    prelResp.setQos(QOSType.LEAST_ONE);
                     sendMessageToClient(prelResp);
                     break;
                 case PUBCOMP:
                     break;
                 case PUBREL:
                     PubRelMessage pubRel = (PubRelMessage)msg;
+                    if(pubRel.getQos() != QOSType.LEAST_ONE) {
+                        System.out.println("PUBREL QoS != 1 !!");
+                    }
                     PubCompMessage pubComp = new PubCompMessage();
                     pubComp.setMessageID(pubRel.getMessageID());
                     sendMessageToClient(pubComp);
@@ -147,6 +169,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     // A PUBACK message is the response to a PUBLISH message with QoS level 1.
                     // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
                     // and by a subscriber in response to a PUBLISH message from the server.
+                    PubAckMessage pubAck = (PubAckMessage)msg;
+                    if(pubAck.getQos() != QOSType.MOST_ONE) {
+                        System.out.println("PUBACK QoS != 0 !!");
+                    }
                     break;
                 case PINGREQ:
                     PingRespMessage pingResp = new PingRespMessage();
@@ -170,7 +196,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             Container.logger().error(e.getMessage());
         }
     }
-    abstract protected void sendMessageToClient(Buffer bytes);
+
 
     private String getTenant(ConnectMessage connectMessage) {
         String tenant = "";
@@ -219,7 +245,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
 //        removeClientID(clientID);
-        session.shutdown();
+//        session.shutdown();
+        session.handleDisconnect(disconnectMessage);
         session = null;
     }
 
