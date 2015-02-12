@@ -86,9 +86,26 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             switch (msg.getMessageType()) {
                 case CONNECT:
                     ConnectMessage connect = (ConnectMessage)msg;
-                    handleConnectMessage(connect);
-                    ConnAckMessage connAck = new ConnAckMessage();
-                    sendMessageToClient(connAck);
+//                    handleConnectMessage(connect);
+                    if(session == null) {
+                        // alloca comunque la sessione anche se l'id è riutilizzato
+                        session = new MQTTSession(vertx, this);
+                    } else {
+                        System.out.println("Session alredy allocated with clientID: " + session.getClientID() + ".");
+                    }
+
+                    session.handleConnectMessage(connect, new Handler<Boolean>() {
+                        @Override
+                        public void handle(Boolean authenticated) {
+                            if (authenticated) {
+                                ConnAckMessage connAck = new ConnAckMessage();
+                                sendMessageToClient(connAck);
+                            } else {
+                                Container.logger().error("Authentication failed! clientID= "+connect.getClientID()+" username="+ connect.getUsername());
+                                closeConnection();
+                            }
+                        }
+                    });
                     break;
                 case SUBSCRIBE:
                     SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
@@ -208,40 +225,15 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         return tenant;
     }
 
-    private void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
-//        ConnectMessage connect = connectMessage;
-
-//        String clientID = connect.getClientID();
-//        boolean cleanSession = connect.isCleanSession();
-//
-//        // initialize tenant
-//        String tenant = getTenant(connectMessage);
-
-//        topicsManager = new MQTTTopicsManager(vertx, tenant);
-//        store = new MQTTStoreManager(vertx, tenant);
-
-//        boolean clientIDExists = clientIDExists(clientID);
-//        if(clientIDExists) {
-//            // Resume old session
-//            Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
+//    private void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
+//        if(session == null) {
+//            // alloca comunque la sessione anche se l'id è riutilizzato
+//            session = new MQTTSession(vertx, this);
+//            session.handleConnectMessage(connectMessage);
 //        } else {
-//            addClientID(clientID);
+//            System.out.println("Session alredy allocated with clientID: "+ session.getClientID() +".");
 //        }
-        if(session == null) {
-            // alloca comunque la sessione anche se l'id è riutilizzato
-            session = new MQTTSession(vertx, this);
-            session.handleConnectMessage(connectMessage);
-        } else {
-            System.out.println("Session alredy allocated with clientID: "+ session.getClientID() +".");
-        }
-
-//        if(connectMessage.isWillFlag()) {
-//            String willMsg = connectMessage.getWillMessage();
-//            byte willQos = connectMessage.getWillQos();
-//            String willTopic = connectMessage.getWillTopic();
-//            session.storeWillMessage(willMsg, willQos, willTopic);
-//        }
-    }
+//    }
 
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
 //        removeClientID(clientID);

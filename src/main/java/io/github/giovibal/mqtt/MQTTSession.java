@@ -80,48 +80,54 @@ public class MQTTSession {
         return tenant;
     }
 
-    public void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
+    public void handleConnectMessage(ConnectMessage connectMessage, Handler<Boolean> authHandler) throws Exception {
         clientID = connectMessage.getClientID();
         cleanSession = connectMessage.isCleanSession();
         tenant = getTenant(connectMessage);
 
         // AUTHENTICATION START
-//        String username = connectMessage.getUsername();
-//        String password = connectMessage.getPassword();
-//
-//        String address = MQTTBroker.class.getName() + "_auth";
-//        JsonObject credentials = new JsonObject().put("username", username).put("password", password);
-//        MessageProducer<JsonObject> producer = vertx.eventBus().sender(address);
-//        producer.write(credentials);
-//
-//        vertx.eventBus().send(address, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
-//            if(messageAsyncResult.succeeded()) {
-//                JsonObject reply = messageAsyncResult.result().body();
-//                System.out.println(reply.toString());
-//                Boolean authenticated = reply.getBoolean("authenticated");
-//                System.out.println("authenticated ===> "+ authenticated );
-//            }
-//        });
+        String username = connectMessage.getUsername();
+        String password = connectMessage.getPassword();
+
+        String address = MQTTBroker.class.getName() + "_auth";
+        JsonObject credentials = new JsonObject().put("username", username).put("password", password);
+        MessageProducer<JsonObject> producer = vertx.eventBus().sender(address);
+        producer.write(credentials);
+
+        vertx.eventBus().send(address, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
+            if(messageAsyncResult.succeeded()) {
+                JsonObject reply = messageAsyncResult.result().body();
+                System.out.println(reply.toString());
+                Boolean authenticated = reply.getBoolean("authenticated");
+                System.out.println("authenticated ===> "+ authenticated );
+                if(authenticated) {
+                    topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
+                    store = new MQTTStoreManager(this.vertx, this.tenant);
+
+                    // save clientID
+                    boolean clientIDExists = store.clientIDExists(this.clientID);
+                    if (clientIDExists) {
+                        // Resume old session
+                        Container.logger().info("Connect ClientID ==> " + clientID + " alredy exists !!");
+                    } else {
+                        store.addClientID(clientID);
+                    }
+
+                    if (connectMessage.isWillFlag()) {
+                        String willMsg = connectMessage.getWillMessage();
+                        byte willQos = connectMessage.getWillQos();
+                        String willTopic = connectMessage.getWillTopic();
+                        storeWillMessage(willMsg, willQos, willTopic);
+                    }
+                    authHandler.handle(Boolean.TRUE);
+                }
+                else {
+                    System.out.println("LOGIN FAILED !!");
+                    authHandler.handle(Boolean.FALSE);
+                }
+            }
+        });
         // AUTHENTICATION END
-
-        topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
-        store = new MQTTStoreManager(this.vertx, this.tenant);
-
-        // save clientID
-        boolean clientIDExists = store.clientIDExists(this.clientID);
-        if(clientIDExists) {
-            // Resume old session
-            Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
-        } else {
-            store.addClientID(clientID);
-        }
-
-        if(connectMessage.isWillFlag()) {
-            String willMsg = connectMessage.getWillMessage();
-            byte willQos = connectMessage.getWillQos();
-            String willTopic = connectMessage.getWillTopic();
-            storeWillMessage(willMsg, willQos, willTopic);
-        }
     }
 
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
@@ -330,11 +336,13 @@ public class MQTTSession {
                 messageConsumer.unregister();
                 topicsManager.removeSubscribedTopic(topic);
                 if (clientID != null && cleanSession) {
-                    store.deleteSubcription(topic, clientID);
+                    if(store!=null)
+                        store.deleteSubcription(topic, clientID);
                 }
             }
         }
-        store.removeClientID(clientID);
+        if(store!=null)
+            store.removeClientID(clientID);
         mqttSocket = null;
         vertx = null;
     }
