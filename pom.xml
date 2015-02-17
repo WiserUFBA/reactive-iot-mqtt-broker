@@ -146,7 +146,11 @@
             <artifactId>XmlSchema</artifactId>
             <version>1.4.7-wso2v2</version>
         </dependency>-->
-
+        <dependency>
+            <groupId>it.filippetti.smartplatform.auth</groupId>
+            <artifactId>wso2-token-validation-soap-client</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
 
 

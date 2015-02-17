@@ -5,6 +5,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.json.JsonObject;
+import it.filippetti.smartplatform.oauth2.Oauth2TokenValidator;
 
 import java.util.Base64;
 
@@ -38,11 +39,20 @@ import java.util.Base64;
  */
 
 public class AuthenticatorVerticle extends AbstractVerticle {
+    Oauth2TokenValidator oauth2Validator;
     @Override
     public void start() throws Exception {
 
+        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
+        String trustStorePassword="wso2carbon";
+        String identityURL = "https://is.eimware.it";
+        String idp_userName="admin";
+        String idp_password="d0_ut_d3s$";
+        oauth2Validator = new Oauth2TokenValidator(trustStorePath, trustStorePassword, identityURL, idp_userName, idp_password);
+
 //        String appKeySecret = "4pTqLUQL0IkWa7kWEdogaVsaKKoa:l4uabj4w2e_hWqndCE43tG02qbEa";
         String appKeySecret = "G_wdzI2fzCPB18cGqC25bssaruQa:njuYeh34S7cDiUKsH9AjyXRkxrQa";
+//        String appKeySecret = "IvogIPvV2rg3frp_mj6fTYJtAFEa:OkiTdiiR8h8WfBjhmGbGUDS7hHQa";
         String appKeySecretB64 = Base64.getEncoder().encodeToString(appKeySecret.getBytes("ASCII"));
 
 //        String url = "https://192.168.231.55:9443/oauth2/token";
@@ -51,12 +61,11 @@ public class AuthenticatorVerticle extends AbstractVerticle {
 
         String address = MQTTBroker.class.getName()+"_auth";
 
-        vertx.eventBus().consumer(address, (Message<JsonObject> msg) -> {
+        vertx.eventBus().localConsumer(address, (Message<JsonObject> msg) -> {
             JsonObject credentials = msg.body();
-            System.out.println(credentials.toString());
+//            System.out.println(credentials.toString());
             String username = credentials.getString("username");
             String password = credentials.getString("password");
-            System.out.println(username + " " + password);
 
 //            HttpClientOptions opt = new HttpClientOptions()
 //                    .setTrustAll(true)
@@ -75,12 +84,13 @@ public class AuthenticatorVerticle extends AbstractVerticle {
                     String access_token = json.getString("access_token");
 
                     // token validation
-//                    boolean tokanIsValid = false;
-//                    try {
-////                        HttpClientRequest validationReq = httpClient.getAbs("http://is.eimware.it:80/oauth2/userinfo?schema=openid");
-//                        HttpClientRequest validationReq = httpClient.get(80, "is.eimware.it", "/oauth2/userinfo?schema=openid");
+                    boolean tokanIsValid = false;
+                    try {
+//                        HttpClient httpClientUserinfo = vertx.createHttpClient();
+////                        HttpClientRequest validationReq = httpClientUserinfo.getAbs("http://is.eimware.it:80/oauth2/userinfo?schema=openid");
+//                        HttpClientRequest validationReq = httpClientUserinfo.get(80, "is.eimware.it", "/oauth2/userinfo?schema=openid");
 //                        validationReq.handler(validationResp -> {
-//                            System.out.println("validationResp.statusCode ===> "+ validationResp.statusCode());
+//                            System.out.println("validationResp.statusCode ===> " + validationResp.statusCode());
 //                            validationResp.bodyHandler(validationBuffer -> {
 //                                String validationBody = new String(validationBuffer.getBytes());
 //                                System.out.println("validationBody ===> " + validationBody);
@@ -91,18 +101,20 @@ public class AuthenticatorVerticle extends AbstractVerticle {
 //                            e.printStackTrace();
 //                        });
 //
-//                        validationReq.putHeader("Authorization", "Bearer "+ access_token);
-//                        System.out.printf("Bearer "+ access_token);
+//                        validationReq.putHeader("Authorization", "Bearer " + access_token);
+//                        System.out.println("Bearer " + access_token);
 //                        validationReq.end();
-//
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
 
-                    if(access_token!=null) {
-                        msg.reply(new JsonObject().put("authenticated", true).put("auth_info", json));
+                        Boolean isValid = oauth2Validator.tokenIsValid(access_token);
+                        System.out.println("" + isValid);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    else {
+
+                    if (access_token != null) {
+                        msg.reply(new JsonObject().put("authenticated", true).put("auth_info", json));
+                    } else {
                         msg.reply(new JsonObject().put("authenticated", false).put("auth_info", json));
                     }
                 });
@@ -114,7 +126,7 @@ public class AuthenticatorVerticle extends AbstractVerticle {
 
             request.putHeader("Authorization", "Basic " + appKeySecretB64);
             request.putHeader("Content-Type", "application/x-www-form-urlencoded");
-            String data = "grant_type=password&username="+username+"&password="+password+"&scope=openid";
+            String data = "grant_type=password&username=" + username + "&password=" + password + "&scope=openid";
             request.end(data);
 
 

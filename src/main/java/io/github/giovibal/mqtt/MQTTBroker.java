@@ -60,7 +60,7 @@ public class MQTTBroker extends AbstractVerticle {
 
         // broker
         vertx.deployVerticle(new MQTTBroker(),
-                new DeploymentOptions().setInstances(/*instances*/1),
+                new DeploymentOptions().setInstances(instances),
                 result -> {
                     if (result.failed()) {
                         result.cause().printStackTrace();
