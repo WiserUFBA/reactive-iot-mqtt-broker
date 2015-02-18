@@ -1,8 +1,10 @@
 package io.github.giovibal.mqtt.test;
 
+import io.github.giovibal.mqtt.SslUtil;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,9 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by giovanni on 08/04/2014.
  */
 public class Tester {
-    static final String serverURL = "tcp://iot.eimware.it:1883";
+//    static final String serverURL = "tcp://iot.eimware.it:1883";
 //    static final String serverURL = "tcp://192.168.231.52:1883";
 //    static final String serverURL = "tcp://192.168.231.2:1883";
+
+//    static final String serverURL = "tcp://127.0.0.1:1883";
+    static final String serverURL = "ssl://127.0.0.1:1883";
 
     static boolean logEnabled=true;
 
@@ -166,6 +171,19 @@ public class Tester {
         log("connect ...");
         for(IMqttClient client : clients) {
             MqttConnectOptions o = new MqttConnectOptions();
+            if(this.serverURL.startsWith("ssl")) {
+                try {
+                        SSLSocketFactory sslSocketFactory = SslUtil.getSocketFactory(
+                                "C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem",
+//                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1_CA1.crt",
+                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt",
+                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key",
+                                "");
+                        o.setSocketFactory(sslSocketFactory);
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
             o.setCleanSession(true);
             client.connect(o);
         }
