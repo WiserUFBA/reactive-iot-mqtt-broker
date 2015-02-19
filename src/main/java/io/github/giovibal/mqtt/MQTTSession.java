@@ -94,25 +94,25 @@ public class MQTTSession {
         MessageProducer<JsonObject> producer = vertx.eventBus().sender(address);
         producer.write(credentials);
 
-//        vertx.eventBus().send(address, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
-//            if(messageAsyncResult.succeeded()) {
-//                JsonObject reply = messageAsyncResult.result().body();
-//                System.out.println(reply.toString());
-//                Boolean authenticated = reply.getBoolean("authenticated");
-//                System.out.println("authenticated ===> "+ authenticated );
-//                if(authenticated) {
-//                    _handleConnectMessage(connectMessage);
-//                    authHandler.handle(Boolean.TRUE);
-//                }
-//                else {
-//                    System.out.println("LOGIN FAILED !!");
-//                    authHandler.handle(Boolean.FALSE);
-//                }
-//            }
-//        });
-        // AUTHENTICATION END
-        _handleConnectMessage(connectMessage);
-        authHandler.handle(Boolean.TRUE);
+        vertx.eventBus().send(address, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
+            if(messageAsyncResult.succeeded()) {
+                JsonObject reply = messageAsyncResult.result().body();
+                System.out.println(reply.toString());
+                Boolean authenticated = reply.getBoolean("authenticated");
+                System.out.println("authenticated ===> "+ authenticated );
+                if(authenticated) {
+                    _handleConnectMessage(connectMessage);
+                    authHandler.handle(Boolean.TRUE);
+                }
+                else {
+                    System.out.println("LOGIN FAILED !!");
+                    authHandler.handle(Boolean.FALSE);
+                }
+            }
+        });
+//        AUTHENTICATION END
+//        _handleConnectMessage(connectMessage);
+//        authHandler.handle(Boolean.TRUE);
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);

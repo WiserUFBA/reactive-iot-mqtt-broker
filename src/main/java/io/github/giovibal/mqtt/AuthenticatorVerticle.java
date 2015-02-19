@@ -39,16 +39,16 @@ import java.util.Base64;
  */
 
 public class AuthenticatorVerticle extends AbstractVerticle {
-    Oauth2TokenValidator oauth2Validator;
+//    Oauth2TokenValidator oauth2Validator;
     @Override
     public void start() throws Exception {
 
-        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
-        String trustStorePassword="wso2carbon";
-        String identityURL = "https://is.eimware.it";
-        String idp_userName="admin";
-        String idp_password="d0_ut_d3s$";
-        oauth2Validator = new Oauth2TokenValidator(trustStorePath, trustStorePassword, identityURL, idp_userName, idp_password);
+//        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
+//        String trustStorePassword="wso2carbon";
+//        String identityURL = "https://is.eimware.it";
+//        String idp_userName="admin";
+//        String idp_password="d0_ut_d3s$";
+//        oauth2Validator = new Oauth2TokenValidator(trustStorePath, trustStorePassword, identityURL, idp_userName, idp_password);
 
 //        String appKeySecret = "4pTqLUQL0IkWa7kWEdogaVsaKKoa:l4uabj4w2e_hWqndCE43tG02qbEa";
         String appKeySecret = "G_wdzI2fzCPB18cGqC25bssaruQa:njuYeh34S7cDiUKsH9AjyXRkxrQa";
@@ -58,6 +58,7 @@ public class AuthenticatorVerticle extends AbstractVerticle {
 //        String url = "https://192.168.231.55:9443/oauth2/token";
 //        String url = "http://192.168.231.55:9763/oauth2/token";
         String url = "http://is.eimware.it:80/oauth2/token";
+//        String url = "http://api.eimware.it:80/is/token";
 
         String address = MQTTBroker.class.getName()+"_auth";
 
@@ -84,8 +85,8 @@ public class AuthenticatorVerticle extends AbstractVerticle {
                     String access_token = json.getString("access_token");
 
                     // token validation
-                    boolean tokanIsValid = false;
-                    try {
+//                    boolean tokanIsValid = false;
+//                    try {
 //                        HttpClient httpClientUserinfo = vertx.createHttpClient();
 ////                        HttpClientRequest validationReq = httpClientUserinfo.getAbs("http://is.eimware.it:80/oauth2/userinfo?schema=openid");
 //                        HttpClientRequest validationReq = httpClientUserinfo.get(80, "is.eimware.it", "/oauth2/userinfo?schema=openid");
@@ -104,13 +105,13 @@ public class AuthenticatorVerticle extends AbstractVerticle {
 //                        validationReq.putHeader("Authorization", "Bearer " + access_token);
 //                        System.out.println("Bearer " + access_token);
 //                        validationReq.end();
-
-                        Boolean isValid = oauth2Validator.tokenIsValid(access_token);
-                        System.out.println("" + isValid);
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+//
+//                        Boolean isValid = oauth2Validator.tokenIsValid(access_token);
+//                        System.out.println("" + isValid);
+//
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
 
                     if (access_token != null) {
                         msg.reply(new JsonObject().put("authenticated", true).put("auth_info", json));

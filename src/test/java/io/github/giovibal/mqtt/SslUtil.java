@@ -1,21 +1,27 @@
 package io.github.giovibal.mqtt;
 
-import java.io.*;
-import java.nio.file.*;
-import java.security.*;
-import java.security.cert.*;
-import java.security.interfaces.RSAKey;
-import java.security.interfaces.RSAPrivateCrtKey;
-import javax.net.ssl.*;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
 
-import org.bouncycastle.jce.provider.*;
-import org.bouncycastle.openssl.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.cert.X509Certificate;
 
-public class SslUtil
-{
-	public static SSLSocketFactory getSocketFactory (final String caCrtFile, final String crtFile, final String keyFile,
-	                                          final String password) throws Exception
-	{
+public class SslUtil {
+	public static SSLSocketFactory getSocketFactory(
+            final String caCrtFile, final String crtFile, final String keyFile,
+	        final String password) throws Exception {
+        
 		Security.addProvider(new BouncyCastleProvider());
 
 		// load CA certificate
