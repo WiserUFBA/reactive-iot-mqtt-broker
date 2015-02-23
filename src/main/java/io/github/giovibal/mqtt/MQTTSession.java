@@ -37,6 +37,9 @@ public class MQTTSession {
     private String tenant;
     private MQTTSocket mqttSocket;
 
+    private boolean authenticationEnabled;
+    private boolean useOAuth2TokenValidation;
+
     public MQTTSession(Vertx vertx, MQTTSocket mqttSocket) {
 
         this.vertx = vertx;
@@ -64,18 +67,26 @@ public class MQTTSession {
 //        } else {
 //            store.addClientID(clientID);
 //        }
+
+        authenticationEnabled = false;
+        useOAuth2TokenValidation = true;
     }
 
     public String getClientID() {
         return clientID;
     }
 
-    private String getTenant(ConnectMessage connectMessage) {
+//    private String getTenant(ConnectMessage connectMessage) {
+//        String tenant = "";
+//        String clientID = connectMessage.getClientID();
+//        tenant = extractTenant(clientID);
+//        return tenant;
+//    }
+    private String extractTenant(String username) {
         String tenant = "";
-        String clientID = connectMessage.getClientID();
-        int idx = clientID.lastIndexOf('@');
+        int idx = username.lastIndexOf('@');
         if(idx > 0) {
-            tenant = clientID.substring(idx+1);
+            tenant = username.substring(idx+1);
         }
         return tenant;
     }
@@ -83,36 +94,66 @@ public class MQTTSession {
     public void handleConnectMessage(ConnectMessage connectMessage, Handler<Boolean> authHandler) throws Exception {
         clientID = connectMessage.getClientID();
         cleanSession = connectMessage.isCleanSession();
-        tenant = getTenant(connectMessage);
+//        tenant = getTenant(connectMessage);
 
         // AUTHENTICATION START
         String username = connectMessage.getUsername();
         String password = connectMessage.getPassword();
 
-        String address = MQTTBroker.class.getName() + "_auth";
-        JsonObject credentials = new JsonObject().put("username", username).put("password", password);
-        MessageProducer<JsonObject> producer = vertx.eventBus().sender(address);
-        producer.write(credentials);
-
-        vertx.eventBus().send(address, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
-            if(messageAsyncResult.succeeded()) {
-                JsonObject reply = messageAsyncResult.result().body();
-                System.out.println(reply.toString());
-                Boolean authenticated = reply.getBoolean("authenticated");
-                System.out.println("authenticated ===> "+ authenticated );
-                if(authenticated) {
-                    _handleConnectMessage(connectMessage);
-                    authHandler.handle(Boolean.TRUE);
-                }
-                else {
-                    System.out.println("LOGIN FAILED !!");
+        if(useOAuth2TokenValidation) {
+            String authorizationAddress = AuthorizationVerticle.class.getName();
+            JsonObject oauth2_token_info = new JsonObject().put("access_token", username).put("refresh_token", password);
+            vertx.eventBus().send(authorizationAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
+                if (res.succeeded()) {
+                    JsonObject validationInfo = res.result().body();
+//                    System.out.println(validationInfo);
+                    Container.logger().info(validationInfo);
+                    Boolean token_valid = validationInfo.getBoolean("token_valid", Boolean.FALSE);
+                    String authorized_user = validationInfo.getString("authorized_user");
+                    String error_msg = validationInfo.getString("error_msg");
+                    Container.logger().info("authenticated ===> " + token_valid);
+                    if (token_valid) {
+                        tenant = extractTenant(authorized_user);
+                        Container.logger().info("authorized_user ===> " + authorized_user +", tenant ===> "+ tenant);
+                        _handleConnectMessage(connectMessage);
+                        authHandler.handle(Boolean.TRUE);
+                    } else {
+                        Container.logger().info("authenticated error ===> "+ error_msg);
+                        authHandler.handle(Boolean.FALSE);
+                    }
+                } else {
+                    Container.logger().info("login failed !");
                     authHandler.handle(Boolean.FALSE);
                 }
-            }
-        });
-//        AUTHENTICATION END
-//        _handleConnectMessage(connectMessage);
-//        authHandler.handle(Boolean.TRUE);
+            });
+        }
+        else if (authenticationEnabled) {
+            String authenticationAddress = AuthenticatorVerticle.class.getName();
+            JsonObject credentials = new JsonObject().put("username", username).put("password", password);
+            vertx.eventBus().send(authenticationAddress, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
+                if (messageAsyncResult.succeeded()) {
+                    JsonObject reply = messageAsyncResult.result().body();
+                    Container.logger().info(reply.toString());
+                    Boolean authenticated = reply.getBoolean("authenticated");
+                    Container.logger().info("authenticated ===> " + authenticated);
+                    if (authenticated) {
+                        tenant = extractTenant(connectMessage.getClientID());// or username ??
+                        _handleConnectMessage(connectMessage);
+                        authHandler.handle(Boolean.TRUE);
+                    } else {
+                        Container.logger().info("LOGIN FAILED !!");
+                        authHandler.handle(Boolean.FALSE);
+                    }
+                } else {
+                    Container.logger().info("LOGIN FAILED !!");
+                    authHandler.handle(Boolean.FALSE);
+                }
+            });
+        }
+        else {
+            _handleConnectMessage(connectMessage);
+            authHandler.handle(Boolean.TRUE);
+        }
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);

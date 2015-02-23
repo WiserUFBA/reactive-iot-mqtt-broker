@@ -1,6 +1,13 @@
 {
-    "tcp_port": 1884,
-    "websocket_enabled": true,
-    "websocket_port": 11884,
-    "websocket_subprotocols": "mqtt,mqttv3.1"
+  "tcp_port": 1883,
+  "websocket_enabled": true,
+  "websocket_port": 11883,
+  "websocket_subprotocols": "mqtt,mqttv3.1",
+  "security": {
+    "enabled": false,
+    "authorized_clients": ["testing.*"],
+    "idp_url": "http://192.168.231.55:9763",
+    "idp_username": "admin",
+    "idp_password": "d0_ut_d3s$"
+  }
 }

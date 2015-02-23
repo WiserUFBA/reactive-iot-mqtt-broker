@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.gihub.giovibal.mqtt</groupId>
+    <groupId>io.github.giovibal.mqtt</groupId>
     <artifactId>vertx-mqtt-broker-mod</artifactId>
     <packaging>jar</packaging>
     <version>2.0-SNAPSHOT</version>
@@ -19,38 +19,12 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Set pullInDeps to true if you want any modules specified in the 'includes' and 'deploys' fields
-        in your mod.json to be automatically pulled in during packaging and added inside your module. Doing this means your
-        module won't download and install those dependencies at run-time when they're first requested. -->
-        <!--<vertx.pullInDeps>false</vertx.pullInDeps>-->
-
-        <!-- Set createFatJar to true if you want to create a fat executable jar which contains the Vert.x binaries
-        along with the module so it can be run with java -jar <jarname> -->
-        <!--<vertx.createFatJar>false</vertx.createFatJar>-->
-
-        <!--Vertx module name-->
-        <!--<module.name>${project.groupId}~${project.artifactId}~${project.version}</module.name>-->
-
-        <!-- The directory where the module will be assembled - you can override this on the command line
-        with -Dmods.directory=mydir -->
-        <!--<mods.directory>target/mods</mods.directory>-->
-
         <!--Dependency versions-->
-        <vertx.version>3.0.0-SNAPSHOT</vertx.version>
+        <!--<vertx.version>3.0.0-SNAPSHOT</vertx.version>-->
+        <vertx.version>3.0.0-milestone2</vertx.version>
         <!--<vertx.testtools.version>2.0.3-final</vertx.testtools.version>-->
         <junit.version>4.11</junit.version>
         <paho.version>1.0.1</paho.version>
-
-        <!--Plugin versions-->
-        <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
-        <!--<maven.resources.plugin.version>2.6</maven.resources.plugin.version>-->
-        <!--<maven.clean.plugin.version>2.5</maven.clean.plugin.version>-->
-        <!--<maven.vertx.plugin.version>2.0.6-final</maven.vertx.plugin.version>-->
-        <!--<maven.surefire.plugin.version>2.14</maven.surefire.plugin.version>-->
-        <!--<maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>-->
-        <!--<maven.surefire.report.plugin.version>2.14</maven.surefire.report.plugin.version>-->
-        <!--<maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>-->
-        <!--<maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>-->
     </properties>
 
 
@@ -78,10 +52,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-
     </repositories>
-
-
 
 
     <dependencies>
@@ -96,62 +67,11 @@
             <version>${vertx.version}</version>
         </dependency>-->
 
-        <!--<dependency>
-            <groupId>org.apache.axis2.wso2</groupId>
-            <artifactId>axis2</artifactId>
-            <version>1.6.1.wso2v10</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.core</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.utils</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ws.commons.axiom.wso2</groupId>
-            <artifactId>axiom</artifactId>
-            <version>1.2.11.wso2v4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.synapse</groupId>
-            <artifactId>synapse-core</artifactId>
-            <version>2.1.1-wso2v8</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.mediator.service</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.logging</artifactId>
-            <version>4.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>wsdl4j</groupId>
-            <artifactId>wsdl4j</artifactId>
-            <version>1.6.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ws.commons.schema</groupId>
-            <artifactId>XmlSchema</artifactId>
-            <version>1.4.7-wso2v2</version>
-        </dependency>-->
         <dependency>
             <groupId>it.filippetti.smartplatform.auth</groupId>
             <artifactId>wso2-token-validation-soap-client</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
 
 
         <!--Test dependencies-->
@@ -217,7 +137,9 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>io.github.giovibal.mqtt.MQTTBroker</Main-Class>
+                                        <!--<Main-Class>io.github.giovibal.mqtt.MQTTBroker</Main-Class>-->
+                                        <Main-Class>io.vertx.core.Starter</Main-Class>
+                                        <Main-Verticle>io.github.giovibal.mqtt.MQTTBroker</Main-Verticle>
                                     </manifestEntries>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">

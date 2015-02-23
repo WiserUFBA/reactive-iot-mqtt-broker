@@ -1,11 +1,16 @@
 package io.github.giovibal.mqtt;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import it.filippetti.smartplatform.oauth2.Oauth2TokenValidator;
+import it.filippetti.smartplatform.oauth2.TokenInfo;
 
 import java.util.Base64;
 
@@ -39,16 +44,8 @@ import java.util.Base64;
  */
 
 public class AuthenticatorVerticle extends AbstractVerticle {
-//    Oauth2TokenValidator oauth2Validator;
     @Override
     public void start() throws Exception {
-
-//        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
-//        String trustStorePassword="wso2carbon";
-//        String identityURL = "https://is.eimware.it";
-//        String idp_userName="admin";
-//        String idp_password="d0_ut_d3s$";
-//        oauth2Validator = new Oauth2TokenValidator(trustStorePath, trustStorePassword, identityURL, idp_userName, idp_password);
 
 //        String appKeySecret = "4pTqLUQL0IkWa7kWEdogaVsaKKoa:l4uabj4w2e_hWqndCE43tG02qbEa";
         String appKeySecret = "G_wdzI2fzCPB18cGqC25bssaruQa:njuYeh34S7cDiUKsH9AjyXRkxrQa";
@@ -60,60 +57,40 @@ public class AuthenticatorVerticle extends AbstractVerticle {
         String url = "http://is.eimware.it:80/oauth2/token";
 //        String url = "http://api.eimware.it:80/is/token";
 
-        String address = MQTTBroker.class.getName()+"_auth";
+        String address = AuthenticatorVerticle.class.getName();
 
         vertx.eventBus().localConsumer(address, (Message<JsonObject> msg) -> {
             JsonObject credentials = msg.body();
-//            System.out.println(credentials.toString());
             String username = credentials.getString("username");
             String password = credentials.getString("password");
 
-//            HttpClientOptions opt = new HttpClientOptions()
-//                    .setTrustAll(true)
-//                ;
-
-//            HttpClient httpClient = vertx.createHttpClient(opt);
-            HttpClient httpClient = vertx.createHttpClient();
-            HttpClientRequest request = httpClient.postAbs(url);
+            HttpClientOptions opt = new HttpClientOptions()
+                    .setTrustAll(true);
+            HttpClient httpClient = vertx.createHttpClient(opt);
+            HttpClientRequest request = httpClient.request(HttpMethod.POST, url);
             request.handler(response -> {
-                System.out.println(response.statusCode());
+//                System.out.println(response.statusCode());
                 response.bodyHandler(buffer -> {
                     String body = new String(buffer.getBytes());
-                    System.out.println(body);
                     JsonObject json = new JsonObject(body);
                     String refresh_token = json.getString("refresh_token");
                     String access_token = json.getString("access_token");
 
                     // token validation
-//                    boolean tokanIsValid = false;
-//                    try {
-//                        HttpClient httpClientUserinfo = vertx.createHttpClient();
-////                        HttpClientRequest validationReq = httpClientUserinfo.getAbs("http://is.eimware.it:80/oauth2/userinfo?schema=openid");
-//                        HttpClientRequest validationReq = httpClientUserinfo.get(80, "is.eimware.it", "/oauth2/userinfo?schema=openid");
-//                        validationReq.handler(validationResp -> {
-//                            System.out.println("validationResp.statusCode ===> " + validationResp.statusCode());
-//                            validationResp.bodyHandler(validationBuffer -> {
-//                                String validationBody = new String(validationBuffer.getBytes());
-//                                System.out.println("validationBody ===> " + validationBody);
-//                            });
-//                        });
-//                        validationReq.exceptionHandler(e -> {
-//                            System.out.println("Received exception: " + e.getMessage());
-//                            e.printStackTrace();
-//                        });
+//                    vertx.eventBus().send(AuthorizationVerticle.class.getName(), json, new AsyncResultHandler<Message<JsonObject>>() {
+//                        @Override
+//                        public void handle(AsyncResult<Message<JsonObject>> validationResult) {
+//                            if(validationResult.succeeded()) {
+//                                JsonObject validationInfo = validationResult.result().body();
+//                                System.out.println(validationInfo);
+//                                String authorized_user = validationInfo.getString("authorized_user");
 //
-//                        validationReq.putHeader("Authorization", "Bearer " + access_token);
-//                        System.out.println("Bearer " + access_token);
-//                        validationReq.end();
-//
-//                        Boolean isValid = oauth2Validator.tokenIsValid(access_token);
-//                        System.out.println("" + isValid);
-//
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-
-                    if (access_token != null) {
+//                            } else {
+//                                Container.logger().fatal(validationResult.cause().getMessage(), validationResult.cause());
+//                            }
+//                        }
+//                    });
+                    if(access_token != null && access_token.trim().length()>0) {
                         msg.reply(new JsonObject().put("authenticated", true).put("auth_info", json));
                     } else {
                         msg.reply(new JsonObject().put("authenticated", false).put("auth_info", json));
