@@ -13,8 +13,8 @@ public class MQTTWebSocket extends MQTTSocket {
 
     private ServerWebSocket netSocket;
 
-    public MQTTWebSocket(Vertx vertx, ServerWebSocket netSocket) {
-        super(vertx);
+    public MQTTWebSocket(Vertx vertx, ConfigParser config, ServerWebSocket netSocket) {
+        super(vertx, config);
         this.netSocket = netSocket;
     }
 

@@ -1,6 +1,5 @@
 package io.github.giovibal.mqtt;
 
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
@@ -13,20 +12,16 @@ public class MQTTNetSocket extends MQTTSocket {
 
     private NetSocket netSocket;
 
-    public MQTTNetSocket(Vertx vertx, NetSocket netSocket) {
-        super(vertx);
+    public MQTTNetSocket(Vertx vertx, ConfigParser config, NetSocket netSocket) {
+        super(vertx, config);
         this.netSocket = netSocket;
-
     }
 
     public void start() {
         netSocket.handler(this);
-        netSocket.closeHandler(new Handler<Void>() {
-            @Override
-            public void handle(Void aVoid) {
-                Container.logger().info("net-socket closed ... "+ netSocket.writeHandlerID());
-                shutdown();
-            }
+        netSocket.closeHandler(aVoid -> {
+            Container.logger().info("net-socket closed ... "+ netSocket.writeHandlerID());
+            shutdown();
         });
     }
 

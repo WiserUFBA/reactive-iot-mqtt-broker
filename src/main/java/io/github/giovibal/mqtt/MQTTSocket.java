@@ -30,14 +30,16 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 //    private MQTTStoreManager store;
 //    private String tenant;
     private MQTTSession session;
+    private ConfigParser config;
 
-    public MQTTSocket(Vertx vertx) {
+    public MQTTSocket(Vertx vertx, ConfigParser config) {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.tokenizer = new MQTTPacketTokenizer();
         this.tokenizer.registerListener(this);
 
         this.vertx = vertx;
+        this.config = config;
     }
     abstract protected void sendMessageToClient(Buffer bytes);
     abstract protected void closeConnection();
@@ -74,7 +76,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     @Override
     public void onError(Throwable e) {
-//        e.printStackTrace();
         Container.logger().error(e.getMessage(), e);
         if(e instanceof CorruptedFrameException) {
             closeConnection();
@@ -88,29 +89,31 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     ConnectMessage connect = (ConnectMessage)msg;
 //                    handleConnectMessage(connect);
                     if(session == null) {
-                        // alloca comunque la sessione anche se l'id è riutilizzato
                         session = new MQTTSession(vertx, this);
                     } else {
-                        System.out.println("Session alredy allocated with clientID: " + session.getClientID() + ".");
+                        Container.logger().info("Session alredy allocated with clientID: " + session.getClientID() + ".");
                     }
-
-                    session.handleConnectMessage(connect, new Handler<Boolean>() {
-                        @Override
-                        public void handle(Boolean authenticated) {
+                    boolean securityEnabled = config.isSecurityEnabled();
+                    boolean authorizedClient = config.isAuthorizedClient(connect.getClientID());
+                    if(!securityEnabled || authorizedClient) {
+                        ConnAckMessage connAck = new ConnAckMessage();
+                        sendMessageToClient(connAck);
+                    } else {
+                        session.handleConnectMessage(connect, authenticated -> {
                             if (authenticated) {
                                 ConnAckMessage connAck = new ConnAckMessage();
                                 sendMessageToClient(connAck);
                             } else {
-                                Container.logger().error("Authentication failed! clientID= "+connect.getClientID()+" username="+ connect.getUsername());
+                                Container.logger().error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
                                 closeConnection();
                             }
-                        }
-                    });
+                        });
+                    }
                     break;
                 case SUBSCRIBE:
                     SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
                     if(subscribeMessage.getQos() != QOSType.LEAST_ONE) {
-                        System.out.println("SUBSCRIBE QoS != 1 !!");
+                        Container.logger().info("SUBSCRIBE QoS != 1 !!");
                     }
                     session.handleSubscribeMessage(subscribeMessage);
                     SubAckMessage subAck = new SubAckMessage();
@@ -121,10 +124,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                     }
                     if(subscribeMessage.isRetainFlag()) {
                         /*
-                         When a new subscription is established on a topic,
-                         the last retained message on that topic should be sent to the subscriber with the Retain flag set.
-                         If there is no retained message, nothing is sent
-                         */
+                        When a new subscription is established on a topic,
+                        the last retained message on that topic should be sent to the subscriber with the Retain flag set.
+                        If there is no retained message, nothing is sent
+                        */
                     }
                     sendMessageToClient(subAck);
                     break;
