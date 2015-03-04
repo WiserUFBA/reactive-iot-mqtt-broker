@@ -178,6 +178,7 @@ public class MQTTSession {
                         storeMessage(publishMessage, tpub);
                         break;
                 }
+                System.out.printf("vertx.eventBus().publish ==> %s (%s)\n", tpub, toVertxTopic(tpub));
                 vertx.eventBus().publish(toVertxTopic(tpub), msg);
             }
         } catch(Throwable e) {
@@ -235,6 +236,7 @@ public class MQTTSession {
             @Override
             public void handle(Message<Buffer> message) {
                 try {
+
 //                    Object body = message.body();
 //                    if (body instanceof Buffer) {
 //                        Buffer in = (Buffer)body;
@@ -248,6 +250,7 @@ public class MQTTSession {
                         /* server must send retain=false flag to subscribers ...*/
                         pm.setRetainFlag(false);
                         mqttSocket.sendMessageToClient(pm);
+                    System.out.printf("sendMessageToClient ==> %s (%s)\n", pm.getTopicName(), message.address());
 //                        mqttSocket.sendMessageToClient(in);
 //                    }
 //                    else {
@@ -265,10 +268,12 @@ public class MQTTSession {
             }
         };
         MessageConsumer<Buffer> consumer = vertx.eventBus().localConsumer(toVertxTopic(topic));
+        System.out.println("vertx.eventBus().localConsumer => "+ topic +" vertx-address => "+ consumer.address());
         consumer.handler(handler);
         Set<MessageConsumer> messageConsumers = getClientHandlers(topic);
         messageConsumers.add(consumer);
         topicsManager.addSubscribedTopic(topic);
+        System.out.println("addSubscribedTopic => "+ topic);
     }
 
     public void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {

@@ -65,7 +65,7 @@ public class MQTTTopicsManager {
         if(t3>100) {
             System.out.println("calculateTopicsToPublish: "+ t3 +" millis.");
         }
-        System.out.println(topicsToPublish);
+
         return topicsToPublish;
     }
 
@@ -110,14 +110,7 @@ public class MQTTTopicsManager {
     }
 
     public String toVertxTopic(String mqttTopic) {
-//        String s = mqttTopic;
-//        if(mqttTopic.startsWith("/")) {
-//            s = tenant + mqttTopic;
-//        } else {
-//            s = tenant +"/"+ mqttTopic;
-//        }
-////        s = s.replaceAll("/+","/"); // remove multiple slashes
-//        return s;
-        return mqttTopic;
+        String s = tenant + mqttTopic;
+        return s;
     }
 }
