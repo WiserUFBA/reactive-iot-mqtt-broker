@@ -6,8 +6,11 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.Deployment;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+
+import java.util.Set;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -28,26 +31,6 @@ public class MQTTBroker extends AbstractVerticle {
         if(instances > 2) {
             instances = instances - 2;
         }
-//        // autenticator
-//        vertx.deployVerticle(new AuthenticatorVerticle(), new DeploymentOptions().setInstances(instances),
-//                result -> {
-//                    if (result.failed()) {
-//                        result.cause().printStackTrace();
-//                    } else {
-//                        System.out.println(AuthenticatorVerticle.class.getSimpleName()+": "+result.result());
-//                    }
-//                }
-//        );
-//        // authorization
-//        vertx.deployVerticle(new AuthorizationVerticle(), new DeploymentOptions().setWorker(true).setInstances(instances*5) ,
-//                result -> {
-//                    if (result.failed()) {
-//                        result.cause().printStackTrace();
-//                    } else {
-//                        System.out.println(AuthorizationVerticle.class.getSimpleName()+": "+result.result());
-//                    }
-//                }
-//        );
 
         // broker
         vertx.deployVerticle(new MQTTBroker(), new DeploymentOptions().setInstances(instances),
@@ -64,76 +47,82 @@ public class MQTTBroker extends AbstractVerticle {
     @Override
     public void start() {
         try {
-//            JsonObject conf = config();
-//            int port = conf.getInteger("tcp_port", 1883);
-//            int wsPort = conf.getInteger("websocket_port", 11883);
-//            boolean wsEnabled = conf.getBoolean("websocket_enabled", true);
-//            String wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
-//            JsonObject security = conf.getJsonObject("security", new JsonObject());
-//            boolean securityEnabled = security.getBoolean("enabled", false);
-//            String authorizedClients = security.getString("authorized_clients", null);
-//            String idpUrl = security.getString("idp_url", "http://is.eimware.it:80");
-//            String idpUsername = security.getString("idp_username", "admin");
-//            String idpPassword = security.getString("idp_password", "admin");
-
-            ConfigParser c = new ConfigParser(config());
-            int port = c.getPort();
-            int wsPort = c.getWsPort();
-            boolean wsEnabled = c.isWsEnabled();
-            String wsSubProtocols = c.getWsSubProtocols();
-            boolean securityEnabled = c.isSecurityEnabled();
-
-            if(securityEnabled) {
-                vertx.deployVerticle(new AuthorizationVerticle(), new DeploymentOptions().setWorker(true).setInstances(10),
-                    result -> {
-                        if (result.failed()) {
-                            result.cause().printStackTrace();
-                        } else {
-                            System.out.println(AuthorizationVerticle.class.getSimpleName()+": "+result.result());
-                        }
+            // deplying authorization worker verticle ...
+            vertx.deployVerticle(new AuthorizationVerticle(), new DeploymentOptions().setWorker(true).setInstances(10),
+                result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    } else {
+                        System.out.println(AuthorizationVerticle.class.getSimpleName()+": "+result.result());
                     }
-                );
-            }
+                }
+            );
+
+            JsonObject config = config();
+            JsonArray brokers = config.getJsonArray("brokers");
+            for(int i=0; i<brokers.size(); i++) {
+                JsonObject brokerConf = brokers.getJsonObject(i);
 
 
-            // MQTT over TCP
-            NetServerOptions opt = new NetServerOptions()
-                    .setTcpKeepAlive(true)
-                    .setPort(port);
-            // SSL setup
-//            opt
-//                    .setSsl(true)
-//                    .setPemKeyCertOptions(new PemKeyCertOptions()
-//                        .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key")
-//                        .setCertPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt")
-//                    )
-//                    .setClientAuthRequired(true)
-//                    .setPemTrustOptions(new PemTrustOptions()
-//                        .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                    )
-//                ;
-            NetServer netServer = vertx.createNetServer(opt);
-            netServer.connectHandler(netSocket -> {
-                Container.logger().info("IS SSL: "+ netSocket.isSsl());
-                MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
-                mqttNetSocket.start();
-            }).listen();
-            Container.logger().info("Startd MQTT TCP-Broker on port: "+ port);
+                ConfigParser c = new ConfigParser(brokerConf);
+                int port = c.getPort();
+                int wsPort = c.getWsPort();
+                boolean wsEnabled = c.isWsEnabled();
+                String wsSubProtocols = c.getWsSubProtocols();
+                boolean securityEnabled = c.isSecurityEnabled();
 
-            // MQTT over WebSocket
-            if(wsEnabled) {
-                HttpServerOptions httpOpt = new HttpServerOptions()
+
+                // MQTT over TCP
+                NetServerOptions opt = new NetServerOptions()
                         .setTcpKeepAlive(true)
-                        .setMaxWebsocketFrameSize(1024)
-                        .setWebsocketSubProtocol(wsSubProtocols)
-                        .setPort(wsPort);
-
-                final HttpServer http = vertx.createHttpServer(httpOpt);
-                http.websocketHandler(serverWebSocket -> {
-                    MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
-                    mqttWebSocket.start();
+                        .setPort(port);
+                // SSL setup
+                //            opt
+                //                    .setSsl(true)
+                //                    .setPemKeyCertOptions(new PemKeyCertOptions()
+                //                        .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key")
+                //                        .setCertPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt")
+                //                    )
+                //                    .setClientAuthRequired(true)
+                //                    .setPemTrustOptions(new PemTrustOptions()
+                //                        .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+                //                    )
+                //                ;
+                NetServer netServer = vertx.createNetServer(opt);
+                netServer.connectHandler(netSocket -> {
+                    Container.logger().info("IS SSL: " + netSocket.isSsl());
+                    MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
+                    mqttNetSocket.start();
                 }).listen();
-                Container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
+                Container.logger().info("Startd MQTT TCP-Broker on port: " + port);
+
+                // MQTT over WebSocket
+                if (wsEnabled) {
+                    HttpServerOptions httpOpt = new HttpServerOptions()
+                            .setTcpKeepAlive(true)
+                            .setMaxWebsocketFrameSize(1024)
+                            .setWebsocketSubProtocol(wsSubProtocols)
+                            .setPort(wsPort);
+                    //                httpOpt.setSsl(true).setKeyStoreOptions(new KeyStoreOptions() {
+                    //                    @Override
+                    //                    public KeyStoreOptions clone() {
+                    //                        return null;
+                    //                    }
+                    //                });
+                    //                httpOpt.setTrustStoreOptions(new TrustStoreOptions() {
+                    //                    @Override
+                    //                    public TrustStoreOptions clone() {
+                    //                        return null;
+                    //                    }
+                    //                });
+
+                    final HttpServer http = vertx.createHttpServer(httpOpt);
+                    http.websocketHandler(serverWebSocket -> {
+                        MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
+                        mqttWebSocket.start();
+                    }).listen();
+                    Container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
+                }
             }
 
 //            final MQTTStoreManager store = new MQTTStoreManager(vertx, "");

@@ -87,18 +87,17 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             switch (msg.getMessageType()) {
                 case CONNECT:
                     ConnectMessage connect = (ConnectMessage)msg;
-//                    handleConnectMessage(connect);
                     if(session == null) {
-                        session = new MQTTSession(vertx, this);
+                        session = new MQTTSession(vertx, this, config);
                     } else {
                         Container.logger().info("Session alredy allocated with clientID: " + session.getClientID() + ".");
                     }
-                    boolean securityEnabled = config.isSecurityEnabled();
-                    boolean authorizedClient = config.isAuthorizedClient(connect.getClientID());
-                    if(!securityEnabled || authorizedClient) {
-                        ConnAckMessage connAck = new ConnAckMessage();
-                        sendMessageToClient(connAck);
-                    } else {
+//                    boolean securityEnabled = config.isSecurityEnabled();
+//                    boolean authorizedClient = config.isAuthorizedClient(connect.getClientID());
+//                    if(!securityEnabled || authorizedClient) {
+//                        ConnAckMessage connAck = new ConnAckMessage();
+//                        sendMessageToClient(connAck);
+//                    } else {
                         session.handleConnectMessage(connect, authenticated -> {
                             if (authenticated) {
                                 ConnAckMessage connAck = new ConnAckMessage();
@@ -108,7 +107,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                                 closeConnection();
                             }
                         });
-                    }
+//                    }
                     break;
                 case SUBSCRIBE:
                     SubscribeMessage subscribeMessage = (SubscribeMessage)msg;

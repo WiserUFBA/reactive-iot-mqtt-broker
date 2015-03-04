@@ -27,7 +27,7 @@ public class MQTTSession {
 //    private Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
-    private MQTTJson mqttJson;
+//    private MQTTJson mqttJson;
     private QOSUtils qosUtils;
     private Map<String, Set<MessageConsumer>> handlers;
     private MQTTTopicsManager topicsManager;
@@ -37,51 +37,25 @@ public class MQTTSession {
     private String tenant;
     private MQTTSocket mqttSocket;
 
-    private boolean authenticationEnabled;
     private boolean useOAuth2TokenValidation;
 
-    public MQTTSession(Vertx vertx, MQTTSocket mqttSocket) {
+    public MQTTSession(Vertx vertx, MQTTSocket mqttSocket, ConfigParser config) {
 
         this.vertx = vertx;
-//        this.container = container;
-
         this.mqttSocket = mqttSocket;
-//        this.clientID = clientID;
-//        this.cleanSession = cleanSession;
-//        this.tenant = tenant;
 
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
-        this.mqttJson = new MQTTJson();
         this.qosUtils = new QOSUtils();
         this.handlers = new HashMap<>();
 
-//        this.topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
-//        this.store = new MQTTStoreManager(this.vertx, this.tenant);
-//
-//        // save clientID
-//        boolean clientIDExists = store.clientIDExists(this.clientID);
-//        if(clientIDExists) {
-//            // Resume old session
-//            Container.logger().info("Connect ClientID ==> "+ clientID +" alredy exists !!");
-//        } else {
-//            store.addClientID(clientID);
-//        }
-
-        authenticationEnabled = false;
-        useOAuth2TokenValidation = true;
+        this.useOAuth2TokenValidation = config.isSecurityEnabled();
     }
 
     public String getClientID() {
         return clientID;
     }
 
-//    private String getTenant(ConnectMessage connectMessage) {
-//        String tenant = "";
-//        String clientID = connectMessage.getClientID();
-//        tenant = extractTenant(clientID);
-//        return tenant;
-//    }
     private String extractTenant(String username) {
         String tenant = "";
         int idx = username.lastIndexOf('@');
@@ -127,30 +101,35 @@ public class MQTTSession {
                 }
             });
         }
-        else if (authenticationEnabled) {
-            String authenticationAddress = AuthenticatorVerticle.class.getName();
-            JsonObject credentials = new JsonObject().put("username", username).put("password", password);
-            vertx.eventBus().send(authenticationAddress, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
-                if (messageAsyncResult.succeeded()) {
-                    JsonObject reply = messageAsyncResult.result().body();
-                    Container.logger().info(reply.toString());
-                    Boolean authenticated = reply.getBoolean("authenticated");
-                    Container.logger().info("authenticated ===> " + authenticated);
-                    if (authenticated) {
-                        tenant = extractTenant(connectMessage.getClientID());// or username ??
-                        _handleConnectMessage(connectMessage);
-                        authHandler.handle(Boolean.TRUE);
-                    } else {
-                        Container.logger().info("LOGIN FAILED !!");
-                        authHandler.handle(Boolean.FALSE);
-                    }
-                } else {
-                    Container.logger().info("LOGIN FAILED !!");
-                    authHandler.handle(Boolean.FALSE);
-                }
-            });
-        }
+//        else if (authenticationEnabled) {
+//            String authenticationAddress = AuthenticatorVerticle.class.getName();
+//            JsonObject credentials = new JsonObject().put("username", username).put("password", password);
+//            vertx.eventBus().send(authenticationAddress, credentials, (AsyncResult<Message<JsonObject>> messageAsyncResult) -> {
+//                if (messageAsyncResult.succeeded()) {
+//                    JsonObject reply = messageAsyncResult.result().body();
+//                    Container.logger().info(reply.toString());
+//                    Boolean authenticated = reply.getBoolean("authenticated");
+//                    Container.logger().info("authenticated ===> " + authenticated);
+//                    if (authenticated) {
+//                        tenant = extractTenant(connectMessage.getClientID());// or username ??
+//                        _handleConnectMessage(connectMessage);
+//                        authHandler.handle(Boolean.TRUE);
+//                    } else {
+//                        Container.logger().info("LOGIN FAILED !!");
+//                        authHandler.handle(Boolean.FALSE);
+//                    }
+//                } else {
+//                    Container.logger().info("LOGIN FAILED !!");
+//                    authHandler.handle(Boolean.FALSE);
+//                }
+//            });
+//        }
         else {
+            String clientID = connectMessage.getClientID();
+            if(username == null || username.trim().length()==0)
+                tenant = extractTenant(clientID);
+            else
+                tenant = extractTenant(username);
             _handleConnectMessage(connectMessage);
             authHandler.handle(Boolean.TRUE);
         }
