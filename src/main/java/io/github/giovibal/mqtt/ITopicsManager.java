@@ -9,16 +9,12 @@ public interface ITopicsManager {
 
     void addSubscribedTopic(String topic);
 
-    @Deprecated
     Set<String> calculateTopicsToPublish(String topicOfPublishMessage);
 
 
     Set<String> getSubscribedTopics();
 
-    @Deprecated
     boolean match(String topic, String topicFilter);
-
-//        public SubscriptionTopic createSubscriptionTopic(String topic);
 
     void removeSubscribedTopic(String topic);
 

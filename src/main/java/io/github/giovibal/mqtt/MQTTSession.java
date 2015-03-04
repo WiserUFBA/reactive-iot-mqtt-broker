@@ -12,7 +12,6 @@ import io.vertx.core.eventbus.*;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType;
@@ -135,8 +134,8 @@ public class MQTTSession {
         }
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
-        topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
-//        topicsManager = new MQTTTopicsManager2(this.vertx, this.tenant);
+//        topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
+        topicsManager = new MQTTTopicsManagerOptimized(this.vertx, this.tenant);
         store = new MQTTStoreManager(this.vertx, this.tenant);
 
         // save clientID
@@ -179,7 +178,7 @@ public class MQTTSession {
                         storeMessage(publishMessage, tpub);
                         break;
                 }
-                System.out.printf("vertx.eventBus().publish ==> %s (%s)\n", tpub, toVertxTopic(tpub));
+//                System.out.printf("vertx.eventBus().publish ==> %s (%s)\n", tpub, toVertxTopic(tpub));
                 vertx.eventBus().publish(toVertxTopic(tpub), msg);
             }
         } catch(Throwable e) {
@@ -189,6 +188,7 @@ public class MQTTSession {
     private String toVertxTopic(String mqttTopic) {
         return topicsManager.toVertxTopic(mqttTopic);
     }
+
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) throws Exception {
         try {
@@ -251,7 +251,7 @@ public class MQTTSession {
                         /* server must send retain=false flag to subscribers ...*/
                         pm.setRetainFlag(false);
                         mqttSocket.sendMessageToClient(pm);
-                    System.out.printf("sendMessageToClient ==> %s (%s)\n", pm.getTopicName(), message.address());
+//                    System.out.printf("sendMessageToClient ==> %s (%s)\n", pm.getTopicName(), message.address());
 //                        mqttSocket.sendMessageToClient(in);
 //                    }
 //                    else {
@@ -269,12 +269,12 @@ public class MQTTSession {
             }
         };
         MessageConsumer<Buffer> consumer = vertx.eventBus().localConsumer(toVertxTopic(topic));
-        System.out.println("vertx.eventBus().localConsumer => "+ topic +" vertx-address => "+ consumer.address());
+//        System.out.println("vertx.eventBus().localConsumer => "+ topic +" vertx-address => "+ consumer.address());
         consumer.handler(handler);
         Set<MessageConsumer> messageConsumers = getClientHandlers(topic);
         messageConsumers.add(consumer);
         topicsManager.addSubscribedTopic(topic);
-        System.out.println("addSubscribedTopic => "+ topic);
+//        System.out.println("addSubscribedTopic => "+ topic);
     }
 
     public void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {

@@ -17,18 +17,19 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
 //    static final String serverURL = "tcp://127.0.0.1:1883";
-    static final String serverURL = "ssl://127.0.0.1:1883";
+    static final String serverURL = "tcp://127.0.0.1:1884";
+//    static final String serverURL = "ssl://127.0.0.1:1883";
 
     static boolean logEnabled=true;
 
     public static void main(String[] args) throws Exception {
 
 //        test1(10);
-        test2(3, 10, 0);
+//        test2(3, 10, 0);
 //        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2
 //        test2(10, 60000, 2);// 10 client che pubblicano 60000 messaggi ciascuno con qos:2 (235177 millis.)
 //        test2(10, 60000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 (127789 millis. arrivati in media 248355 messaggi)
-//        test2(10, 10000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 ( 8839 millis. arrivati in media 37000 messaggi)
+        test2(10, 10000, 0);// 10 client che pubblicano 60000 messaggi ciascuno con qos:0 ( 8839 millis. arrivati in media 37000 messaggi)
 //                                                                           Con Hive 2.0.2 (21535 millis. arrivati in media 93000 messaggi)
 //        test2(10, 10000, 2);// 10 client che pubblicano 60000 messaggi ciascuno con qos:2 (36162 millis.)
 //                                                                           Con Hive 2.0.2 (45347 millis. ma arrivati 97446 messaggi per tutti i client - NullPointer sul server)
@@ -73,14 +74,15 @@ public class Tester {
 
 
     public static void test2(int numClients, int numMessagesToPublishPerClient, int qos) throws Exception {
-        String topic = "test/untopic";
+        String topic = "test/untopic/a";
+        String topicFilter = "test/+/a";
 
         long t1,t2,t3;
         t1=System.currentTimeMillis();
 
         Tester cSubs = new Tester(numClients, "SUBS");
         cSubs.connect();
-        cSubs.subscribe(topic);
+        cSubs.subscribe(topicFilter);
 
         Tester cPubs = new Tester(numClients, "PUBS");
         cPubs.connect();

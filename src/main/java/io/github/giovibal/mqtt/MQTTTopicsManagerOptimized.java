@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 /**
  * Created by giovanni on 10/05/2014. Manages subscritpions and MQTT topic rules
  */
-public class MQTTTopicsManager2 implements ITopicsManager {
+public class MQTTTopicsManagerOptimized implements ITopicsManager {
     public static class SubscriptionTopic {
         private String topic;
         private String vertxTopic;
@@ -58,7 +58,7 @@ public class MQTTTopicsManager2 implements ITopicsManager {
     private Map<String, SubscriptionTopic> topicsSubscribedMap = new LinkedHashMap<String, SubscriptionTopic>();
     private String tenant;
 
-    public MQTTTopicsManager2(Vertx vertx, String tenant) {
+    public MQTTTopicsManagerOptimized(Vertx vertx, String tenant) {
         this.vertx = vertx;
         this.tenant = tenant;
         this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + ".mqtt_subscribed_topics");
@@ -133,38 +133,43 @@ public class MQTTTopicsManager2 implements ITopicsManager {
     // return topicsSubscribed.values();
     // }
 
-    @Deprecated
+//    @Deprecated
     public boolean match(String topic, String topicFilter) {
-        String tsub = topicFilter;
-        if (tsub.equals(topic)) {
-            return true;
-        }
-        else {
-            if (tsub.contains("+") && !tsub.endsWith("#")) {
-                String pattern = toPattern(tsub);
-                int topicSlashCount = countSlash(topic);
-                int tsubSlashCount = countSlash(tsub);
-                if (topicSlashCount == tsubSlashCount) {
-                    if (topic.matches(pattern)) {
-                        return true;
-                    }
-                }
-            }
-            else if (tsub.contains("+") || tsub.endsWith("#")) {
-                String pattern = toPattern(tsub);
-                int topicSlashCount = countSlash(topic);
-                int tsubSlashCount = countSlash(tsub);
-                if (topicSlashCount >= tsubSlashCount) {
-                    if (topic.matches(pattern)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+//        String tsub = topicFilter;
+//        if (tsub.equals(topic)) {
+//            return true;
+//        }
+//        else {
+//            if (tsub.contains("+") && !tsub.endsWith("#")) {
+//                String pattern = toPattern(tsub);
+//                int topicSlashCount = countSlash(topic);
+//                int tsubSlashCount = countSlash(tsub);
+//                if (topicSlashCount == tsubSlashCount) {
+//                    if (topic.matches(pattern)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//            else if (tsub.contains("+") || tsub.endsWith("#")) {
+//                String pattern = toPattern(tsub);
+//                int topicSlashCount = countSlash(topic);
+//                int tsubSlashCount = countSlash(tsub);
+//                if (topicSlashCount >= tsubSlashCount) {
+//                    if (topic.matches(pattern)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+        SubscriptionTopic st = createSubscriptionTopic(topicFilter);
+        Pattern tregex = st.getRegexPattern();
+
+        boolean match = tregex.matcher(topic).matches();
+        return match;
     }
 
-    public SubscriptionTopic createSubscriptionTopic(String topic) {
+    private SubscriptionTopic createSubscriptionTopic(String topic) {
         SubscriptionTopic st = topicsSubscribedMap.get(topic);
         if (st == null) {
             st = new SubscriptionTopic(topic);
@@ -228,11 +233,13 @@ public class MQTTTopicsManager2 implements ITopicsManager {
     public String toVertxTopic(String mqttTopic) {
         // String s = tenant +"/"+ mqttTopic;
         // s = s.replaceAll("/+","/"); // remove multiple slashes
-        String s = mqttTopic;
-        if (tenant != null && !tenant.isEmpty()) {
-            s = tenant + "/" + mqttTopic;
-            s = s.replaceAll("/+", "/"); // remove multiple slashes
-        }
+//        String s = mqttTopic;
+//        if (tenant != null && !tenant.isEmpty()) {
+//            s = tenant + "/" + mqttTopic;
+//            s = s.replaceAll("/+", "/"); // remove multiple slashes
+//        }
+//        return s;
+        String s = tenant + mqttTopic;
         return s;
     }
 
