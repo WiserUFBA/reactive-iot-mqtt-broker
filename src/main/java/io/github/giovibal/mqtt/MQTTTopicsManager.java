@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * Created by giovanni on 10/05/2014.
  * Manages subscritpions and MQTT topic rules
  */
-public class MQTTTopicsManager {
+public class MQTTTopicsManager implements ITopicsManager {
 
     private Vertx vertx;
     private LocalMap<String, Integer> topicsSubscribed;

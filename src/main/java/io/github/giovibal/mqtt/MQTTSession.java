@@ -30,7 +30,7 @@ public class MQTTSession {
 //    private MQTTJson mqttJson;
     private QOSUtils qosUtils;
     private Map<String, Set<MessageConsumer>> handlers;
-    private MQTTTopicsManager topicsManager;
+    private ITopicsManager topicsManager;
     private String clientID;
     private boolean cleanSession;
     private MQTTStoreManager store;
@@ -136,6 +136,7 @@ public class MQTTSession {
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
+//        topicsManager = new MQTTTopicsManager2(this.vertx, this.tenant);
         store = new MQTTStoreManager(this.vertx, this.tenant);
 
         // save clientID
