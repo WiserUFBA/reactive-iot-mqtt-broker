@@ -56,6 +56,8 @@ public class MQTTSession {
     }
 
     private String extractTenant(String username) {
+        if(username == null || username.trim().length()==0)
+            return "";
         String tenant = "";
         int idx = username.lastIndexOf('@');
         if(idx > 0) {
@@ -237,7 +239,7 @@ public class MQTTSession {
             @Override
             public void handle(Message<Buffer> message) {
                 try {
-
+                    System.out.printf("Message arrived from address: %s\n", message.address());
 //                    Object body = message.body();
 //                    if (body instanceof Buffer) {
 //                        Buffer in = (Buffer)body;
@@ -268,8 +270,8 @@ public class MQTTSession {
                 }
             }
         };
-        MessageConsumer<Buffer> consumer = vertx.eventBus().localConsumer(toVertxTopic(topic));
-//        System.out.println("vertx.eventBus().localConsumer => "+ topic +" vertx-address => "+ consumer.address());
+//        MessageConsumer<Buffer> consumer = vertx.eventBus().localConsumer(toVertxTopic(topic));
+        MessageConsumer<Buffer> consumer = vertx.eventBus().consumer(toVertxTopic(topic));
         consumer.handler(handler);
         Set<MessageConsumer> messageConsumers = getClientHandlers(topic);
         messageConsumers.add(consumer);
