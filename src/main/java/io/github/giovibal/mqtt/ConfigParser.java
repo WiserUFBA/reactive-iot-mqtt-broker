@@ -22,6 +22,9 @@ public class ConfigParser {
     private String idpUsername;
     private String idpPassword;
 
+    private String tlsKeyPath;
+    private String tlsCertPath;
+
     public ConfigParser() {
     }
     public ConfigParser(JsonObject conf) {
@@ -34,7 +37,7 @@ public class ConfigParser {
         wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
 
         JsonObject security = conf.getJsonObject("security", new JsonObject());
-        securityEnabled = security.getBoolean("enabled", true);
+        securityEnabled = security.getBoolean("enabled", false);
         JsonArray authorizedClientsArr = security.getJsonArray("authorized_clients", new JsonArray().add("testing.*"));
         if(authorizedClientsArr != null) {
             authorizedClients = new ArrayList<>();
@@ -46,6 +49,10 @@ public class ConfigParser {
         idpUrl = security.getString("idp_url", "http://192.168.231.55:9763");
         idpUsername = security.getString("idp_username", "admin");
         idpPassword = security.getString("idp_password", "d0_ut_d3s$");
+
+        JsonObject tls = conf.getJsonObject("tls", new JsonObject());
+        tlsKeyPath = tls.getString("keyPath");
+        tlsCertPath = tls.getString("certPath");
     }
 
     public int getPort() {
@@ -93,5 +100,21 @@ public class ConfigParser {
             }
         }
         return false;
+    }
+
+    public String getTlsKeyPath() {
+        return tlsKeyPath;
+    }
+
+    public String getTlsCertPath() {
+        return tlsCertPath;
+    }
+
+    public boolean isTlsEnabled() {
+        String keyPath = getTlsKeyPath();
+        String certPath = getTlsCertPath();
+        boolean ret = keyPath!=null && keyPath.trim().length()>0 && certPath!=null && certPath.trim().length()>0;
+        return ret;
+
     }
 }

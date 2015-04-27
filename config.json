@@ -14,6 +14,16 @@
       }
     },
     {
+      "tcp_port": 8883,
+      "websocket_enabled": true,
+      "websocket_port": 18883,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "tls": {
+        "keyPath": "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key",
+        "certPath": "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt"
+      }
+    },
+    {
       "tcp_port": 1884,
       "websocket_enabled": true,
       "websocket_port": 11884,

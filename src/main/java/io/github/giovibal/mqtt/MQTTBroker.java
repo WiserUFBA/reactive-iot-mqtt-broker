@@ -71,23 +71,26 @@ public class MQTTBroker extends AbstractVerticle {
                 String wsSubProtocols = c.getWsSubProtocols();
                 boolean securityEnabled = c.isSecurityEnabled();
 
-
                 // MQTT over TCP
                 NetServerOptions opt = new NetServerOptions()
                         .setTcpKeepAlive(true)
                         .setPort(port);
                 // SSL setup
-                //            opt
-                //                    .setSsl(true)
-                //                    .setPemKeyCertOptions(new PemKeyCertOptions()
-                //                        .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key")
-                //                        .setCertPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt")
-                //                    )
-                //                    .setClientAuthRequired(true)
-                //                    .setPemTrustOptions(new PemTrustOptions()
-                //                        .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-                //                    )
-                //                ;
+
+                String keyPath = c.getTlsKeyPath();
+                String certPath = c.getTlsCertPath();
+                boolean tlsEnabled = c.isTlsEnabled();
+                if(tlsEnabled) {
+                    opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
+                                    .setKeyPath(keyPath)
+                                    .setCertPath(certPath)
+                    )
+//                        .setClientAuthRequired(true)
+//                        .setPemTrustOptions(new PemTrustOptions()
+//                            .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+//                        )
+                    ;
+                }
                 NetServer netServer = vertx.createNetServer(opt);
                 netServer.connectHandler(netSocket -> {
                     Container.logger().info("IS SSL: " + netSocket.isSsl());
@@ -99,22 +102,16 @@ public class MQTTBroker extends AbstractVerticle {
                 // MQTT over WebSocket
                 if (wsEnabled) {
                     HttpServerOptions httpOpt = new HttpServerOptions()
-                            .setTcpKeepAlive(true)
-                            .setMaxWebsocketFrameSize(1024)
-                            .setWebsocketSubProtocol(wsSubProtocols)
-                            .setPort(wsPort);
-                    //                httpOpt.setSsl(true).setKeyStoreOptions(new KeyStoreOptions() {
-                    //                    @Override
-                    //                    public KeyStoreOptions clone() {
-                    //                        return null;
-                    //                    }
-                    //                });
-                    //                httpOpt.setTrustStoreOptions(new TrustStoreOptions() {
-                    //                    @Override
-                    //                    public TrustStoreOptions clone() {
-                    //                        return null;
-                    //                    }
-                    //                });
+                        .setTcpKeepAlive(true)
+                        .setMaxWebsocketFrameSize(1024)
+                        .setWebsocketSubProtocol(wsSubProtocols)
+                        .setPort(wsPort);
+                    if(tlsEnabled) {
+                        httpOpt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
+                            .setKeyPath(keyPath)
+                            .setCertPath(certPath)
+                        );
+                    }
 
                     final HttpServer http = vertx.createHttpServer(httpOpt);
                     http.websocketHandler(serverWebSocket -> {
