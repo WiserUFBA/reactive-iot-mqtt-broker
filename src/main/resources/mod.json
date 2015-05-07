@@ -1,5 +1,4 @@
 {
-
   // Java verticle
   "main":"io.github.giovibal.mqtt.MQTTBroker",
   "worker": false,

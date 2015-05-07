@@ -155,6 +155,17 @@ public class MQTTSession {
             String willTopic = connectMessage.getWillTopic();
             storeWillMessage(willMsg, willQos, willTopic);
         }
+
+        if(!cleanSession) {
+            Container.logger().info("cleanSession=false: resubscribe previous topics ...");
+            List<Subscription> subs = store.getSubscriptionsByClientID(clientID);
+            if(subs!=null) {
+                for (Subscription s : subs) {
+                    subscribeClientToTopic(s.getTopic(), s.getQos());
+                    Container.logger().info("cleanSession=false: resubscribed "+ s);
+                }
+            }
+        }
     }
 
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
@@ -198,8 +209,9 @@ public class MQTTSession {
             for (SubscribeMessage.Couple c : subs) {
                 byte requestedQosByte = c.getQos();
                 final QOSType requestedQos = qosUtils.toQos(requestedQosByte);
+                final int iRequestedQos = qosUtils.toInt(requestedQos);
                 String topic = c.getTopicFilter();
-                subscribeClientToTopic(topic, requestedQos);
+                subscribeClientToTopic(topic, iRequestedQos);
 
                 if(clientID!=null && !cleanSession) {
                     Subscription s = new Subscription();
@@ -233,8 +245,10 @@ public class MQTTSession {
         }
     }
 
-    private void subscribeClientToTopic(final String topic, QOSType requestedQos) {
-        final int iMaxQos = qosUtils.toInt(requestedQos);
+//    private void subscribeClientToTopic(final String topic, QOSType requestedQos) {
+    private void subscribeClientToTopic(final String topic, int requestedQos) {
+//        final int iMaxQos = qosUtils.toInt(requestedQos);
+        final int iMaxQos = requestedQos;
         Handler<Message<Buffer>> handler = new Handler<Message<Buffer>>() {
             @Override
             public void handle(Message<Buffer> message) {
