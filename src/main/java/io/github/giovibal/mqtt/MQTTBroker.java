@@ -18,26 +18,26 @@ import java.util.Set;
  */
 public class MQTTBroker extends AbstractVerticle {
 
-//    public static void main(String[] args) {
-//        Vertx vertx = Vertx.vertx();
-//
-//        //TODO: capire come utilizzare la configurazione
-//        int instances = Runtime.getRuntime().availableProcessors();
-//        if(instances > 2) {
-//            instances = instances - 2;
-//        }
-//
-//                // broker
-//        vertx.deployVerticle(new MQTTBroker(), new DeploymentOptions().setInstances(instances),
-//                result -> {
-//                    if (result.failed()) {
-//                        result.cause().printStackTrace();
-//                    } else {
-//                        System.out.println(MQTTBroker.class.getSimpleName()+": "+result.result());
-//                    }
-//                }
-//        );
-//    }
+    public static void main(String[] args) {
+        Vertx vertx = Vertx.vertx();
+
+        //TODO: capire come utilizzare la configurazione
+        int instances = Runtime.getRuntime().availableProcessors();
+        if(instances > 2) {
+            instances = instances - 2;
+        }
+
+                // broker
+        vertx.deployVerticle(new MQTTBroker(), new DeploymentOptions().setInstances(instances),
+                result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    } else {
+                        System.out.println(MQTTBroker.class.getSimpleName()+": "+result.result());
+                    }
+                }
+        );
+    }
 
     @Override
     public void start() {

@@ -21,9 +21,7 @@ mvn clean install
 ```
 use vertx command to start the service ...
 ```
-vertx run service:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT -conf config.json
-vertx run service:io.github.giovibal.mqtt.vertx-mqtt-broker-mod -conf config.json
-vertx run service:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json
+vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json
 ```
 or uber jar ...
 ```
