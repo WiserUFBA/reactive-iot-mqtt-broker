@@ -83,7 +83,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 } else {
                     Container.logger().info("Session alredy allocated with clientID: " + session.getClientID() + ".");
                 }
-                session.handleConnectMessage(connect, this, authenticated -> {
+                session.handleConnectMessage(connect, pm -> sendMessageToClient(pm), authenticated -> {
                     if (authenticated) {
                         ConnAckMessage connAck = new ConnAckMessage();
                         sendMessageToClient(connAck);
@@ -95,7 +95,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case SUBSCRIBE:
                 SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
-                session.handleSubscribeMessage(subscribeMessage, this);
+                session.handleSubscribeMessage(subscribeMessage, pm -> sendMessageToClient(pm));
                 SubAckMessage subAck = new SubAckMessage();
                 subAck.setMessageID(subscribeMessage.getMessageID());
                 for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
