@@ -131,8 +131,8 @@ public class MQTTPacketTokenizer {
 
     /* listener */
     public interface MqttTokenizerListener {
-        public void onToken(byte[] token, boolean timeout) throws Exception;
-        public void onError(Throwable e);
+        void onToken(byte[] token, boolean timeout) throws Exception;
+        void onError(Throwable e);
     }
 
     private LinkedHashSet<MqttTokenizerListener> listenerCollection = new LinkedHashSet<MqttTokenizerListener>();
@@ -146,21 +146,18 @@ public class MQTTPacketTokenizer {
         System.out.println("FIXED HEADER LENGTH = " + fixedHeaderLength);
         System.out.println("PAYLOAD POSITION = " + remainingCounter);
         System.out.println("PAYLOAD LENGTH = " + remainingTotalLength);
-
     }
 
     public void init() {
         tokenizerState = MqttTokenizerState.WAITING_FIRST;
         fixedHeader.clear();
         fixedHeaderLength = 0;
-
         multiplier = 1;
         remainingTotalLength = 0;
         remainingCounter = 0;
     }
 
     protected int process(byte data) {
-//        System.out.println(tokenizerState + " " + ConversionUtility.getHex(data) + "...");
         switch (tokenizerState) {
             case WAITING_FIRST:
 
@@ -176,7 +173,6 @@ public class MQTTPacketTokenizer {
                 /* check for continuation bit */
                 remainingTotalLength += ((data & 127) * multiplier);
                 multiplier *= 128;
-//                System.out.println("remainingTotalLength => " + remainingTotalLength);
                 if ((data & 128) == 0 || fixedHeaderLength == MAX_FIXED_HEADER_LENGTH) {
                     tokenizerState = MqttTokenizerState.WAITING_PAYLOAD;
                     tokenContainer = ByteBuffer.allocate(fixedHeaderLength + remainingTotalLength);
@@ -201,14 +197,11 @@ public class MQTTPacketTokenizer {
                 break;
         }
 
-        // System.out.println("..." + tokenizerState);
-
         return 1;
     }
 
     protected int process(byte[] data, int offset, int length) {
         int processed = -1;
-//        System.out.println("... " + (offset + 1) + " / " + length + " = " + ConversionUtility.getHex(data[offset]));
         switch (tokenizerState) {
             case WAITING_FIRST:
                 processed = process(data[offset]);
@@ -221,13 +214,9 @@ public class MQTTPacketTokenizer {
                 processed = length - offset;
                 int remaining = remainingTotalLength - remainingCounter;
                 processed = processed < remaining ? processed : remaining;
-
-                // System.out.println("... toProcess = " + processed + " remaining " + remaining);
-
                 if (remainingCounter + processed <= remainingTotalLength) {
                     tokenContainer.put(data, offset, processed);
                     remainingCounter += processed;
-
                     if (remainingCounter == remainingTotalLength) {
                         tokenizerState = MqttTokenizerState.WAITING_FIRST;
                         complete(false);
@@ -238,21 +227,16 @@ public class MQTTPacketTokenizer {
             default:
                 break;
         }
-
         return processed;
     }
 
     public MqttTokenizerState process(byte[] data) {
-        // System.out.println("Processing " + ConversionUtility.toHexString(data, ":") + "...");
-
         int processed = 0;
         while (processed < data.length) {
             int temp = process(data, processed, data.length);
             processed += temp;
             if (temp == -1) {
-//                throw new Exception();
                 break;
-
             }
         }
         return getTokenizerState();
@@ -274,12 +258,8 @@ public class MQTTPacketTokenizer {
 
         for (MqttTokenizerListener l : listenerCollection) {
             try {
-                // System.out.println("T = " + ConversionUtility.toHexString(token, ":"));
-
                 l.onToken(token, timeout);
-//            } catch (Exception e) {
             } catch (Throwable e) {
-//                e.printStackTrace();
                 l.onError(e);
             }
         }

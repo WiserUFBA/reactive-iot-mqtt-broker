@@ -20,15 +20,9 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerListener, Handler<Buffer> {
 
     protected Vertx vertx;
-//    protected Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
     protected MQTTPacketTokenizer tokenizer;
-//    private MQTTTopicsManager topicsManager;
-//    private String clientID;
-//    private boolean cleanSession;
-//    private MQTTStoreManager store;
-//    private String tenant;
     private MQTTSession session;
     private ConfigParser config;
 
@@ -37,13 +31,12 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         this.encoder = new MQTTEncoder();
         this.tokenizer = new MQTTPacketTokenizer();
         this.tokenizer.registerListener(this);
-
         this.vertx = vertx;
         this.config = config;
     }
+
     abstract protected void sendMessageToClient(Buffer bytes);
     abstract protected void closeConnection();
-
 
     public void shutdown() {
         if(tokenizer!=null) {
@@ -65,13 +58,12 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     @Override
     public void onToken(byte[] token, boolean timeout) throws Exception {
         Buffer buffer = Buffer.buffer(token);
-//        try {
-            AbstractMessage message = decoder.dec(buffer);
+        AbstractMessage message = decoder.dec(buffer);
+        try {
             onMessageFromClient(message);
-//        }
-//        catch (Exception e) {
-//            Container.logger().error(e.getMessage(), e);
-//        }
+        } catch (Exception ex) {
+            Container.logger().error("Bad error in processing the message", ex);
+        }
     }
 
     @Override
@@ -82,127 +74,101 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         }
     }
 
-    protected void onMessageFromClient(AbstractMessage msg) {
-        try {
-            switch (msg.getMessageType()) {
-                case CONNECT:
-                    ConnectMessage connect = (ConnectMessage)msg;
-                    if(session == null) {
-                        session = new MQTTSession(vertx, this, config);
+    private void onMessageFromClient(AbstractMessage msg) throws Exception {
+        switch (msg.getMessageType()) {
+            case CONNECT:
+                ConnectMessage connect = (ConnectMessage)msg;
+                if(session == null) {
+                    session = new MQTTSession(vertx, config);
+                } else {
+                    Container.logger().info("Session alredy allocated with clientID: " + session.getClientID() + ".");
+                }
+                session.handleConnectMessage(connect, this, authenticated -> {
+                    if (authenticated) {
+                        ConnAckMessage connAck = new ConnAckMessage();
+                        sendMessageToClient(connAck);
                     } else {
-                        Container.logger().info("Session alredy allocated with clientID: " + session.getClientID() + ".");
+                        Container.logger().error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
+                        closeConnection();
                     }
-//                    boolean securityEnabled = config.isSecurityEnabled();
-//                    boolean authorizedClient = config.isAuthorizedClient(connect.getClientID());
-//                    if(!securityEnabled || authorizedClient) {
-//                        ConnAckMessage connAck = new ConnAckMessage();
-//                        sendMessageToClient(connAck);
-//                    } else {
-                        session.handleConnectMessage(connect, authenticated -> {
-                            if (authenticated) {
-                                ConnAckMessage connAck = new ConnAckMessage();
-                                sendMessageToClient(connAck);
-                            } else {
-                                Container.logger().error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
-                                closeConnection();
-                            }
-                        });
-//                    }
-                    break;
-                case SUBSCRIBE:
-                    SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
-                    if(subscribeMessage.getQos() != QOSType.LEAST_ONE) {
-                        Container.logger().info("SUBSCRIBE QoS != 1 !!");
-                    }
-                    session.handleSubscribeMessage(subscribeMessage);
-                    SubAckMessage subAck = new SubAckMessage();
-                    subAck.setMessageID(subscribeMessage.getMessageID());
-                    for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
-                        QOSType qos = new QOSUtils().toQos(c.getQos());
-                        subAck.addType(qos);
-                    }
-                    if(subscribeMessage.isRetainFlag()) {
-                        /*
-                        When a new subscription is established on a topic,
-                        the last retained message on that topic should be sent to the subscriber with the Retain flag set.
-                        If there is no retained message, nothing is sent
-                        */
-                    }
-                    sendMessageToClient(subAck);
-                    break;
-                case UNSUBSCRIBE:
-                    UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage)msg;
-                    session.handleUnsubscribeMessage(unsubscribeMessage);
-                    UnsubAckMessage unsubAck = new UnsubAckMessage();
-                    unsubAck.setMessageID(unsubscribeMessage.getMessageID());
-                    sendMessageToClient(unsubAck);
-                    break;
-                case PUBLISH:
-                    PublishMessage publish = (PublishMessage)msg;
-                    switch (publish.getQos()) {
-                        case RESERVED:
-                            break;
-                        case MOST_ONE:
-                            session.handlePublishMessage(publish);
-                            break;
-                        case LEAST_ONE:
-                            session.handlePublishMessage(publish);
-                            PubAckMessage pubAck = new PubAckMessage();
-                            pubAck.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubAck);
-                            break;
-                        case EXACTLY_ONCE:
-                            session.handlePublishMessage(publish);
-                            PubRecMessage pubRec = new PubRecMessage();
-                            pubRec.setMessageID(publish.getMessageID());
-                            sendMessageToClient(pubRec);
-                            break;
-                    }
-                    break;
-                case PUBREC:
-                    PubRecMessage pubRec = (PubRecMessage)msg;
-                    if(pubRec.getQos() != QOSType.MOST_ONE) {
-                        System.out.println("PUBREC QoS != 0 !!");
-                    }
-                    PubRelMessage prelResp = new PubRelMessage();
-                    prelResp.setMessageID(pubRec.getMessageID());
-                    prelResp.setQos(QOSType.LEAST_ONE);
-                    sendMessageToClient(prelResp);
-                    break;
-                case PUBCOMP:
-                    break;
-                case PUBREL:
-                    PubRelMessage pubRel = (PubRelMessage)msg;
-                    if(pubRel.getQos() != QOSType.LEAST_ONE) {
-                        System.out.println("PUBREL QoS != 1 !!");
-                    }
-                    PubCompMessage pubComp = new PubCompMessage();
-                    pubComp.setMessageID(pubRel.getMessageID());
-                    sendMessageToClient(pubComp);
-                    break;
-                case DISCONNECT:
-                    DisconnectMessage disconnectMessage = (DisconnectMessage)msg;
-                    handleDisconnect(disconnectMessage);
-                    break;
-                case PUBACK:
-                    // A PUBACK message is the response to a PUBLISH message with QoS level 1.
-                    // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
-                    // and by a subscriber in response to a PUBLISH message from the server.
-                    PubAckMessage pubAck = (PubAckMessage)msg;
-                    if(pubAck.getQos() != QOSType.MOST_ONE) {
-                        System.out.println("PUBACK QoS != 0 !!");
-                    }
-                    break;
-                case PINGREQ:
-                    PingRespMessage pingResp = new PingRespMessage();
-                    sendMessageToClient(pingResp);
-                    break;
-                default:
-//                    container.logger().warn("type of message not known: "+ msg.getClass().getSimpleName());
-                    break;
-            }
-        } catch (Exception ex) {
-            Container.logger().error("Bad error in processing the message", ex);
+                });
+                break;
+            case SUBSCRIBE:
+                SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
+                session.handleSubscribeMessage(subscribeMessage, this);
+                SubAckMessage subAck = new SubAckMessage();
+                subAck.setMessageID(subscribeMessage.getMessageID());
+                for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
+                    QOSType qos = new QOSUtils().toQos(c.getQos());
+                    subAck.addType(qos);
+                }
+                if(subscribeMessage.isRetainFlag()) {
+                    /*
+                    When a new subscription is established on a topic,
+                    the last retained message on that topic should be sent to the subscriber with the Retain flag set.
+                    If there is no retained message, nothing is sent
+                    */
+                }
+                sendMessageToClient(subAck);
+                break;
+            case UNSUBSCRIBE:
+                UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage)msg;
+                session.handleUnsubscribeMessage(unsubscribeMessage);
+                UnsubAckMessage unsubAck = new UnsubAckMessage();
+                unsubAck.setMessageID(unsubscribeMessage.getMessageID());
+                sendMessageToClient(unsubAck);
+                break;
+            case PUBLISH:
+                PublishMessage publish = (PublishMessage)msg;
+                session.handlePublishMessage(publish);
+                switch (publish.getQos()) {
+                    case RESERVED:
+                        break;
+                    case MOST_ONE:
+                        break;
+                    case LEAST_ONE:
+                        PubAckMessage pubAck = new PubAckMessage();
+                        pubAck.setMessageID(publish.getMessageID());
+                        sendMessageToClient(pubAck);
+                        break;
+                    case EXACTLY_ONCE:
+                        PubRecMessage pubRec = new PubRecMessage();
+                        pubRec.setMessageID(publish.getMessageID());
+                        sendMessageToClient(pubRec);
+                        break;
+                }
+                break;
+            case PUBREC:
+                PubRecMessage pubRec = (PubRecMessage)msg;
+                PubRelMessage prelResp = new PubRelMessage();
+                prelResp.setMessageID(pubRec.getMessageID());
+                prelResp.setQos(QOSType.LEAST_ONE);
+                sendMessageToClient(prelResp);
+                break;
+            case PUBCOMP:
+                break;
+            case PUBREL:
+                PubRelMessage pubRel = (PubRelMessage)msg;
+                PubCompMessage pubComp = new PubCompMessage();
+                pubComp.setMessageID(pubRel.getMessageID());
+                sendMessageToClient(pubComp);
+                break;
+            case DISCONNECT:
+                DisconnectMessage disconnectMessage = (DisconnectMessage)msg;
+                handleDisconnect(disconnectMessage);
+                break;
+            case PUBACK:
+                // A PUBACK message is the response to a PUBLISH message with QoS level 1.
+                // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
+                // and by a subscriber in response to a PUBLISH message from the server.
+                break;
+            case PINGREQ:
+                PingRespMessage pingResp = new PingRespMessage();
+                sendMessageToClient(pingResp);
+                break;
+            default:
+                Container.logger().warn("type of message not known: "+ msg.getClass().getSimpleName());
+                break;
         }
     }
 

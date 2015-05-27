@@ -17,8 +17,8 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
 //    static final String serverURL = "tcp://127.0.0.1:1883";
-//    static final String serverURL = "tcp://127.0.0.1:1884";
-    static final String serverURL = "ssl://127.0.0.1:8883";
+    static final String serverURL = "tcp://127.0.0.1:1884";
+//    static final String serverURL = "ssl://127.0.0.1:8883";
 
     static boolean logEnabled=true;
 
