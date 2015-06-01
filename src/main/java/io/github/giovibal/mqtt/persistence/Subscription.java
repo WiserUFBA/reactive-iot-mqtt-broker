@@ -8,15 +8,15 @@ import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
  * Created by giovanni on 21/05/2014.
  */
 public class Subscription {
-    private String topic;
+    private String topicFilter;
     private int qos;
 
-    public String getTopic() {
-        return topic;
+    public String getTopicFilter() {
+        return topicFilter;
     }
 
-    public void setTopic(String topic) {
-        this.topic = topic;
+    public void setTopicFilter(String topicFilter) {
+        this.topicFilter = topicFilter;
     }
 
     public int getQos() {
@@ -29,7 +29,7 @@ public class Subscription {
 
     private JsonObject toJson() {
         JsonObject s = new JsonObject()
-                .put("topic", this.topic)
+                .put("topicFilter", this.topicFilter)
                 .put("qos", this.qos);
         return s;
     }
@@ -38,7 +38,7 @@ public class Subscription {
         int qos = json.getInteger("qos", 0);
         AbstractMessage.QOSType qosType = new QOSUtils().toQos(qos);
         this.qos = new QOSUtils().toByte(qosType);
-        this.topic = json.getString("topic");
+        this.topicFilter = json.getString("topicFilter");
     }
 
     public void fromString(String s) {

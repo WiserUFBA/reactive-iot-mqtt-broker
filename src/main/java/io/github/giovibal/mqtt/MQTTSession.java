@@ -2,19 +2,19 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
-import io.github.giovibal.mqtt.persistence.MQTTStoreManagerAsync;
 import io.github.giovibal.mqtt.persistence.Subscription;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.*;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
-import java.util.*;
-
-import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -27,32 +27,22 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private Vertx vertx;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
-    private QOSUtils qosUtils;
-    private Map<String, Set<MessageConsumer>> handlers;
     private ITopicsManager topicsManager;
     private String clientID;
     private boolean cleanSession;
-    private MQTTStoreManagerAsync store;
     private String tenant;
+    private boolean useOAuth2TokenValidation;
 
     private MessageConsumer<Buffer> messageConsumer;
     private Handler<PublishMessage> publishMessageHandler;
-    private List<SubscribeMessage.Couple> subscriptions;
-
-
-    private boolean useOAuth2TokenValidation;
+    private Map<String, Subscription> subscriptions;
 
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
-        this.qosUtils = new QOSUtils();
-        this.handlers = new HashMap<>();
         this.useOAuth2TokenValidation = config.isSecurityEnabled();
-    }
-
-    public String getClientID() {
-        return clientID;
+        this.subscriptions = new LinkedHashMap<>();
     }
 
     private String extractTenant(String username) {
@@ -66,8 +56,11 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         return tenant;
     }
 
+    public void setPublishMessageHandler(Handler<PublishMessage> publishMessageHandler) {
+        this.publishMessageHandler = publishMessageHandler;
+    }
+
     public void handleConnectMessage(ConnectMessage connectMessage,
-                                     final Handler<PublishMessage> handler,
                                      Handler<Boolean> authHandler)
             throws Exception {
         clientID = connectMessage.getClientID();
@@ -91,7 +84,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                     if (token_valid) {
                         tenant = extractTenant(authorized_user);
                         Container.logger().info("authorized_user ===> " + authorized_user +", tenant ===> "+ tenant);
-                        _handleConnectMessage(connectMessage, handler);
+                        _handleConnectMessage(connectMessage);
                         authHandler.handle(Boolean.TRUE);
                     } else {
                         Container.logger().info("authenticated error ===> "+ error_msg);
@@ -109,163 +102,69 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 tenant = extractTenant(clientID);
             else
                 tenant = extractTenant(username);
-            _handleConnectMessage(connectMessage, handler);
+            _handleConnectMessage(connectMessage);
             authHandler.handle(Boolean.TRUE);
         }
     }
-    private void _handleConnectMessage(ConnectMessage connectMessage, final Handler<PublishMessage> handler) {
+    private void _handleConnectMessage(ConnectMessage connectMessage) {
         topicsManager = new MQTTTopicsManagerOptimized(this.vertx, this.tenant);
-        store = new MQTTStoreManagerAsync(this.vertx, this.tenant);
 
-        // save clientID
-        store.clientIDExists(this.clientID, clientIDExists -> {
-            if (clientIDExists) {
-                // TODO: Resume old session
-                Container.logger().info("Connect ClientID ==> " + clientID + " alredy exists !!");
-            } else {
-                store.addClientID(clientID);
-            }
-
-            if (connectMessage.isWillFlag()) {
-                String willMsg = connectMessage.getWillMessage();
-                byte willQos = connectMessage.getWillQos();
-                String willTopic = connectMessage.getWillTopic();
-                storeWillMessage(willMsg, willQos, willTopic);
-            }
-
-            if (!cleanSession) {
-                Container.logger().info("cleanSession=false: resubscribe previous topics ...");
-                store.getSubscriptionsByClientID(clientID, subs -> {
-                    if (subs != null) {
-                        for (Subscription s : subs) {
-                            subscribeClientToTopic(s.getTopic(), s.getQos(), handler);
-                            Container.logger().info("cleanSession=false: resubscribed " + s);
-                        }
-                    }
-                });
-            }
-
-            // Subscribe to eventBus in case of publications
-            this.publishMessageHandler = handler;
-
-            messageConsumer = vertx.eventBus().consumer(ADDRESS);
-            messageConsumer.handler(this);
-        });
+        if (!cleanSession) {
+            Container.logger().info("cleanSession=false: restore old session state with subscriptions ...");
+        }
+        messageConsumer = vertx.eventBus().consumer(ADDRESS);
+        messageConsumer.handler(this);
     }
 
 
 
 
-    public void handleDisconnect(DisconnectMessage disconnectMessage) {
-        shutdown();
-    }
+
 
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
-//            String topic = publishMessage.getTopicName();
             Buffer msg = encoder.enc(publishMessage);
-//            Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
-//            // retain
-//            if(publishMessage.isRetainFlag()) {
-//                storeAsLastMessage(publishMessage, topic);
-//            }
-//            // QoS 1,2
-//            for (String tpub : topicsToPublish) {
-//                switch (publishMessage.getQos()) {
-//                    case LEAST_ONE:
-//                    case EXACTLY_ONCE:
-//                        storeMessage(publishMessage, tpub);
-//                        break;
-//                }
-//                vertx.eventBus().publish(toVertxTopic(tpub), msg);
-//            }
             vertx.eventBus().publish(ADDRESS, msg);
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
     }
-    private String toVertxTopic(String mqttTopic) {
-        return topicsManager.toVertxTopic(mqttTopic);
-    }
 
 
-    public void handleSubscribeMessage(SubscribeMessage subscribeMessage, Handler<PublishMessage> handler) {
+    public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
-            if(this.subscriptions==null)
-                this.subscriptions = new ArrayList<>();
-            this.subscriptions.addAll(subs);
-
-//            for (SubscribeMessage.Couple c : subs) {
-//                byte requestedQosByte = c.getQos();
-//                final QOSType requestedQos = qosUtils.toQos(requestedQosByte);
-//                final int iRequestedQos = qosUtils.toInt(requestedQos);
-//                String topic = c.getTopicFilter();
-//                subscribeClientToTopic(topic, iRequestedQos, handler);
-//                if (clientID != null && !cleanSession) {
-//                    Subscription s = new Subscription();
-//                    s.setQos(requestedQosByte);
-//                    s.setTopic(topic);
-//                    store.saveSubscription(s, clientID);
-//                }
-//                // replay saved messages
-//                republishPendingMessagesForSubscription(topic, handler);
-//            }
+            for(SubscribeMessage.Couple s : subs) {
+                Subscription sub = new Subscription();
+                sub.setQos(s.getQos());
+                sub.setTopicFilter(s.getTopicFilter());
+                this.subscriptions.put(sub.getTopicFilter(), sub);
+            }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
     }
 
-    private void republishPendingMessagesForSubscription(String topic, final Handler<PublishMessage> handler) {
-        // re-publish
-        store.getMessagesByTopic(topic, clientID, (List<byte[]> messages) -> {
-            for (byte[] message : messages) {
-                try {
-                    // publish message to this client
-                    PublishMessage pm = (PublishMessage) decoder.dec(Buffer.buffer(message));
-                    // send message directly to THIS client
-                    // check if message topic matches topicFilter of subscription
-                    boolean ok = topicsManager.match(pm.getTopicName(), topic);
-                    if (ok) {
-                        handler.handle(pm);
-                    }
-                    // delete will happen when publish end correctly.
-                    deleteMessage(pm);
-                } catch (Exception e) {
-                    Container.logger().error(e.getMessage(), e);
-                }
-            }
-        });
-    }
 
     @Override
     public void handle(Message<Buffer> message) {
         //filter messages in base of subscriptions of this client
-        if(subscriptions == null)
-            return;
         try {
             boolean publishMessageToThisClient = false;
             Buffer in = message.body();
             PublishMessage pm = (PublishMessage) decoder.dec(in);
             String topic = pm.getTopicName();
-            int iRequestedQos = 0;
 
-            // check if topic of published message pass any topicFilters
-            for (SubscribeMessage.Couple c : subscriptions) {
-                byte requestedQosByte = c.getQos();
-                QOSType requestedQos = qosUtils.toQos(requestedQosByte);
-                iRequestedQos = qosUtils.toInt(requestedQos);
+            // check if topic of published message pass at least one of the subscriptions
+            for (Subscription c : subscriptions.values()) {
                 String topicFilter = c.getTopicFilter();
-                publishMessageToThisClient = topicsManager.match(topic, topicFilter);
+                publishMessageToThisClient = topicsManager.match(topic, topicFilter)/* && isQosOk*/;
+                if(publishMessageToThisClient) {
+                    break;
+                }
             }
 
             if(publishMessageToThisClient) {
-                System.out.printf("Message arrived from address: %s\n", message.address());
-                /* the qos is the max required ... */
-                QOSType originalQos = pm.getQos();
-                int iSentQos = qosUtils.toInt(originalQos);
-                int iOkQos = qosUtils.calculatePublishQos(iSentQos, iRequestedQos);
-                pm.setQos(qosUtils.toQos(iOkQos));
                 /* server must send retain=false flag to subscribers ...*/
                 pm.setRetainFlag(false);
                 sendPublishMessage(pm);
@@ -281,130 +180,35 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
 
 
-    private void subscribeClientToTopic(final String topic, int requestedQos, final Handler<PublishMessage> subHandler) {
-        final int iMaxQos = requestedQos;
-        Set<MessageConsumer> messageConsumersAlredyDefinedFotThisClient = getClientHandlers(topic);
-        if(messageConsumersAlredyDefinedFotThisClient == null || messageConsumersAlredyDefinedFotThisClient.size()==0) {
-            Handler<Message<Buffer>> handler = message -> {
-                try {
-                    System.out.printf("Message arrived from address: %s\n", message.address());
-                    Buffer in = message.body();
-                    PublishMessage pm = (PublishMessage) decoder.dec(in);
-                    /* the qos is the max required ... */
-                    QOSType originalQos = pm.getQos();
-                    int iSentQos = qosUtils.toInt(originalQos);
-                    int iOkQos = qosUtils.calculatePublishQos(iSentQos, iMaxQos);
-                    pm.setQos(qosUtils.toQos(iOkQos));
-                    /* server must send retain=false flag to subscribers ...*/
-                    pm.setRetainFlag(false);
-                    subHandler.handle(pm);
-                } catch (Throwable e) {
-                    Container.logger().error(e.getMessage(), e);
-                }
-            };
-            MessageConsumer<Buffer> consumer = vertx.eventBus().consumer(toVertxTopic(topic));
-            consumer.handler(handler);
-            addClientHandler(topic, consumer);
-            topicsManager.addSubscribedTopic(topic);
-        }
-    }
 
     public void handleUnsubscribeMessage(UnsubscribeMessage unsubscribeMessage) {
         try {
-            List<String> topics = unsubscribeMessage.topicFilters();
-            for (String topic : topics) {
-                Set<MessageConsumer> clientHandlers = getClientHandlers(topic);
-                for (MessageConsumer messageConsumer : clientHandlers) {
-                    messageConsumer.unregister();
-                    topicsManager.removeSubscribedTopic(topic);
-                    // remove persistent subscriptions
-                    if(clientID!=null && cleanSession) {
-                        store.deleteSubcription(topic, clientID);
-                    }
+            List<String> topicFilterSet = unsubscribeMessage.topicFilters();
+            for (String topicFilter : topicFilterSet) {
+                if(subscriptions!=null) {
+                    subscriptions.remove(topicFilter);
                 }
-                clearClientHandlers(topic);
             }
         }
         catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
     }
-    private Set<MessageConsumer> getClientHandlers(String topic) {
-        String sessionID = topic;
-        if(!handlers.containsKey(sessionID)) {
-            handlers.put(sessionID, new HashSet<>());
-        }
-        Set<MessageConsumer> clientHandlers = handlers.get(sessionID);
-        return clientHandlers;
-    }
-    private void addClientHandler(String topic, MessageConsumer mc) {
-        Set<MessageConsumer> clientHandlers = getClientHandlers(topic);
-        clientHandlers.add(mc);
-    }
-    private void clearClientHandlers(String topic) {
-        String sessionID = topic;
-        if (handlers.containsKey(sessionID)) {
-            handlers.remove(sessionID);
-        }
-    }
 
-
-    private void storeMessage(PublishMessage publishMessage, String topicToPublish) {
-        try {
-            byte[] m = encoder.enc(publishMessage).getBytes();
-            store.pushMessage(m, topicToPublish);
-        } catch(Exception e) {
-            Container.logger().error(e.getMessage(), e);
-        }
+    public void handleDisconnect(DisconnectMessage disconnectMessage) {
+        Container.logger().info("Disconnect from "+ clientID +" ...");
+        /*
+        TODO: implement this behaviour
+        On receipt of DISCONNECT the Server:
+        - MUST discard any Will Message associated with the current connection without publishing it, as described in Section 3.1.2.5 [MQTT-3.14.4-3].
+        - SHOULD close the Network Connection if the Client has not already done so.
+         */
+        shutdown();
     }
-    private void storeAsLastMessage(PublishMessage publishMessage, String topicToPublish) {
-        try {
-            byte[] m = encoder.enc(publishMessage).getBytes();
-            if(m.length == 0) {
-                // remove retain message because payload is 0 length
-                store.deleteMessage(topicToPublish);
-            } else {
-                store.saveMessage(m, topicToPublish);
-            }
-        } catch(Exception e) {
-            Container.logger().error(e.getMessage(), e);
-        }
-    }
-
-    private void deleteMessage(PublishMessage publishMessage) {
-        try {
-            String pubtopic = publishMessage.getTopicName();
-            Set<String> topics = topicsManager.calculateTopicsToPublish(pubtopic);
-            for(String tsub : topics) {
-                store.popMessage(tsub, clientID, popped -> {});
-            }
-        } catch(Exception e) {
-            Container.logger().error(e.getMessage(), e);
-        }
-    }
-
-
-    public void storeWillMessage(String willMsg, byte willQos, String willTopic) {
-        store.storeWillMessage(willMsg, willQos, willTopic);
-    }
-
     public void shutdown() {
         //deallocate this instance ...
-        Set<String> topics = handlers.keySet();
-        for (String topic : topics) {
-            Set<MessageConsumer> clientHandlers = getClientHandlers(topic);
-            for (MessageConsumer messageConsumer : clientHandlers) {
-                messageConsumer.unregister();
-                topicsManager.removeSubscribedTopic(topic);
-                if (clientID != null && cleanSession) {
-                    if(store!=null) {
-                        store.deleteSubcription(topic, clientID);
-                    }
-                }
-            }
-        }
-        if(store!=null) {
-            store.removeClientID(clientID);
+        if(messageConsumer!=null && cleanSession) {
+            messageConsumer.unregister();
         }
         vertx = null;
     }

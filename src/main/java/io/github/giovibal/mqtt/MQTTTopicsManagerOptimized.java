@@ -68,16 +68,6 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
         Integer subscriptionCounter = topicsSubscribed.get(topic);
         subscriptionCounter = subscriptionCounter != null ? subscriptionCounter++ : 1;
         topicsSubscribed.put(topic, subscriptionCounter);
-
-		/* synchronize */
-//        Set<String> ks = topicsSubscribed.keySet();
-//        Iterator<String> ii = topicsSubscribedMap.keySet().iterator();
-//        while (ii.hasNext()) {
-//            String kk = ii.next();
-//            if (!ks.contains(kk)) {
-//                topicsSubscribedMap.remove(kk);
-//            }
-//        }
     }
 
     @Deprecated

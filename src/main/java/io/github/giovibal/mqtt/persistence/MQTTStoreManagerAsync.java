@@ -53,7 +53,7 @@ public class MQTTStoreManagerAsync {
         for(String item : copyOfSubscriptions) {
             Subscription s = new Subscription();
             s.fromString(item);
-            if(s.getTopic().equals(topic)) {
+            if(s.getTopicFilter().equals(topic)) {
                 subscriptions.remove(item);
             }
         }
@@ -99,13 +99,13 @@ public class MQTTStoreManagerAsync {
 
 
     /** store topic/message */
-    public void pushMessage(byte[] message, String topic) {
+    public void pushMessage(byte[] message, String topicFilter) {
         getClientIDs(clients -> {
             for (String clientID : clients) {
                 getSubscriptionsByClientID(clientID, subscriptions -> {
                     for (Subscription s : subscriptions) {
-                        if (s.getTopic().equals(topic)) {
-                            String key = tenant + clientID + topic;
+                        if (s.getTopicFilter().equals(topicFilter)) {
+                            String key = tenant + clientID + topicFilter;
                             incrementID(key);
                             String k = "" + currentID(key);
                             vertx.sharedData().getLocalMap(key).put(k, message);
@@ -127,16 +127,20 @@ public class MQTTStoreManagerAsync {
         }
     }
 
-    /** retrieve all stored messages by topic */
-    public void getMessagesByTopic(String topic, String clientID, Handler<List<byte[]>> handler) {
-        String key  = clientID+topic;
-        LocalMap<String, byte[]> set = vertx.sharedData().getLocalMap(tenant + key);
+    /** retrieve all stored messages by topicFilter */
+    public void getMessagesByTopic(String topicFilter, String clientID, Handler<List<byte[]>> handler) {
+        String key = tenant + clientID + topicFilter;
+        // qos 1 and 2 messages
+        LocalMap<String, byte[]> set = vertx.sharedData().getLocalMap(key);
+        // retained messages
         LocalMap<String, byte[]> set2 = vertx.sharedData().getLocalMap(tenant);
+        // union
         ArrayList<byte[]> ret = new ArrayList<>();
         ret.addAll(set.values());
         ret.addAll(set2.values());
         handler.handle( ret );
     }
+
 
     /** get and delete topic/message */
     public void popMessage(String topic, String clientID, Handler<byte[]> handler) {

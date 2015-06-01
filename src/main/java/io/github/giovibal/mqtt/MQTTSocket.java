@@ -2,13 +2,10 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
-import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
 import io.netty.handler.codec.CorruptedFrameException;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.shareddata.LocalMap;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
@@ -81,9 +78,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 if(session == null) {
                     session = new MQTTSession(vertx, config);
                 } else {
-                    Container.logger().info("Session alredy allocated with clientID: " + session.getClientID() + ".");
+                    Container.logger().warn("Session alredy allocated ...");
                 }
-                session.handleConnectMessage(connect, pm -> sendMessageToClient(pm), authenticated -> {
+                session.setPublishMessageHandler(pm -> sendMessageToClient(pm));
+                session.handleConnectMessage(connect, authenticated -> {
                     if (authenticated) {
                         ConnAckMessage connAck = new ConnAckMessage();
                         sendMessageToClient(connAck);
@@ -95,7 +93,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case SUBSCRIBE:
                 SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
-                session.handleSubscribeMessage(subscribeMessage, pm -> sendMessageToClient(pm));
+                session.handleSubscribeMessage(subscribeMessage);
                 SubAckMessage subAck = new SubAckMessage();
                 subAck.setMessageID(subscribeMessage.getMessageID());
                 for(SubscribeMessage.Couple c : subscribeMessage.subscriptions()) {
@@ -178,50 +176,15 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            Container.logger().error(e.getMessage(), e);
         }
     }
-
-
-    private String getTenant(ConnectMessage connectMessage) {
-        String tenant = "";
-        String clientID = connectMessage.getClientID();
-        int idx = clientID.lastIndexOf('@');
-        if(idx > 0) {
-            tenant = clientID.substring(idx+1);
-        }
-        return tenant;
-    }
-
-//    private void handleConnectMessage(ConnectMessage connectMessage) throws Exception {
-//        if(session == null) {
-//            // alloca comunque la sessione anche se l'id è riutilizzato
-//            session = new MQTTSession(vertx, this);
-//            session.handleConnectMessage(connectMessage);
-//        } else {
-//            System.out.println("Session alredy allocated with clientID: "+ session.getClientID() +".");
-//        }
-//    }
 
     private void handleDisconnect(DisconnectMessage disconnectMessage) {
-//        removeClientID(clientID);
-//        session.shutdown();
         session.handleDisconnect(disconnectMessage);
         session = null;
     }
 
 
-//    private void addClientID(String clientID) {
-//        vertx.sharedData().getLocalMap("clientIDs").put(clientID, 1);
-//    }
-//    private boolean clientIDExists(String clientID) {
-//        LocalMap<String, Object> m = vertx.sharedData().getLocalMap("clientIDs");
-//        if(m!=null)
-//            return m.keySet().contains(clientID);
-//        return false;
-//    }
-//    private void removeClientID(String clientID) {
-//        vertx.sharedData().getLocalMap("clientIDs").remove(clientID);
-//    }
 
 }

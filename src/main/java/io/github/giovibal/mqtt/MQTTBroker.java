@@ -117,19 +117,6 @@ public class MQTTBroker extends AbstractVerticle {
                 }
             }
 
-//            final MQTTStoreManager store = new MQTTStoreManager(vertx, "");
-//            // DEBUG
-//            vertx.setPeriodic(10000, new Handler<Long>() {
-//                @Override
-//                public void handle(Long aLong) {
-//                    container.logger().info("stats...");
-//                    Set<String> clients = store.getClientIDs();
-//                    for(String clientID : clients) {
-//                        int subscriptions = store.getSubscriptionsByClientID(clientID).size();
-//                        container.logger().info(clientID+" ----> "+ subscriptions);
-//                    }
-//                }
-//            });
         } catch(Exception e ) {
             Container.logger().error(e.getMessage(), e);
         }
