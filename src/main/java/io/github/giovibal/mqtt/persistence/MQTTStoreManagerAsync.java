@@ -101,10 +101,10 @@ public class MQTTStoreManagerAsync {
     /** store topic/message */
     public void pushMessage(byte[] message, String topic) {
         getClientIDs(clients -> {
-            for(String clientID : clients) {
+            for (String clientID : clients) {
                 getSubscriptionsByClientID(clientID, subscriptions -> {
-                    for(Subscription s : subscriptions) {
-                        if(s.getTopic().equals(topic)) {
+                    for (Subscription s : subscriptions) {
+                        if (s.getTopic().equals(topic)) {
                             String key = tenant + clientID + topic;
                             incrementID(key);
                             String k = "" + currentID(key);
@@ -136,32 +136,6 @@ public class MQTTStoreManagerAsync {
         ret.addAll(set.values());
         ret.addAll(set2.values());
         handler.handle( ret );
-
-//        JsonObject data = new JsonObject()
-//                .put("tenant", tenant)
-//                .put("topic", topic)
-//                .put("clientID", clientID);
-//
-//        vertx.eventBus().send("io.github.giovibal.mqtt.persistence",
-//                data,
-//                new DeliveryOptions()
-//                        .addHeader("action", "getMessagesByTopic")
-//                        .setSendTimeout(30 * 1000),
-//                new Handler<AsyncResult<Message<JsonObject>>>() {
-//                    @Override
-//                    public void handle(AsyncResult<Message<JsonObject>> event) {
-//                        ArrayList<byte[]> ret = new ArrayList<>();
-//
-//                        JsonObject result = event.result().body();
-//                        JsonArray array = result.getJsonArray("result");
-//                        for (int i = 0; i < array.size(); i++) {
-//                            byte[] item = array.getBinary(i);
-//                            ret.add(item);
-//                            handler.handle(ret);
-//                        }
-//                    }
-//                }
-//        );
     }
 
     /** get and delete topic/message */
@@ -173,8 +147,9 @@ public class MQTTStoreManagerAsync {
             byte[] removed = set.remove(k);
             decrementID(key);
             handler.handle( removed );
+        } else {
+            handler.handle(null);
         }
-        handler.handle( null );
     }
 
 
@@ -192,9 +167,11 @@ public class MQTTStoreManagerAsync {
     }
     public void clientIDExists(String clientID, Handler<Boolean> handler) {
         LocalMap<String, Object> m = vertx.sharedData().getLocalMap("clientIDs");
-        if(m!=null)
+        if(m!=null) {
             handler.handle(m.keySet().contains(clientID));
-        handler.handle( false );
+        } else {
+            handler.handle(false);
+        }
     }
     public void removeClientID(String clientID) {
         vertx.sharedData().getLocalMap("clientIDs").remove(clientID);
