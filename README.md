@@ -25,20 +25,27 @@ vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt
 ```
 or uber jar ...
 ```
-java -jar target\vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
+java -jar target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
 ```
 
 Features
 ----
 * Suport both QoS 0, 1 and 2 messages
 * Persistence and session management (cleanSession=false)
-* Multi-tenancy: isolation of topics and storage, just use client@tenant as ClientID
+* Multi-tenancy: isolation of topics and storage, just use username@tenant as username
 * MQTT over WebSocket
 * Retain flag
+* Oauth2 authentication integrated with <a href="http://wso2.com/products/identity-server/">WSO2 Identity Server</a>
+* TLS support over TCP and Websocket
+* Multiple endpoint configuration in the same broker instance  
+
+Work in progress
+----
+* Refactoring, new architecture
+* Clustering and Hign Availability
 
 Roadmap
 ----
-* Authentication with multi-tenancy association
-* Expose persistence SPI interfaces
+* Pluggable persistence 
 * Implement some out-of-the-box persistence managers: RAM, Cassandra, HBase, MongoDB
 * Implement will message support 
