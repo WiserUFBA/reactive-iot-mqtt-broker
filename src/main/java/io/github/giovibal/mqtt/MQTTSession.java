@@ -2,7 +2,6 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
-import io.github.giovibal.mqtt.persistence.MQTTStoreManager;
 import io.github.giovibal.mqtt.persistence.MQTTStoreManagerAsync;
 import io.github.giovibal.mqtt.persistence.Subscription;
 import io.vertx.core.AsyncResult;
@@ -21,21 +20,25 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.QOSType;
  * Created by giovanni on 07/05/2014.
  * Base class for connection handling, 1 tcp connection corresponds to 1 instance of this class.
  */
-public class MQTTSession {
+public class MQTTSession implements Handler<Message<Buffer>> {
+
+    static final String ADDRESS = "io.github.giovibal.mqtt";
 
     private Vertx vertx;
-//    private Container container;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
-//    private MQTTJson mqttJson;
     private QOSUtils qosUtils;
     private Map<String, Set<MessageConsumer>> handlers;
     private ITopicsManager topicsManager;
     private String clientID;
     private boolean cleanSession;
-//    private MQTTStoreManager store;
     private MQTTStoreManagerAsync store;
     private String tenant;
+
+    private MessageConsumer<Buffer> messageConsumer;
+    private Handler<PublishMessage> publishMessageHandler;
+    private List<SubscribeMessage.Couple> subscriptions;
+
 
     private boolean useOAuth2TokenValidation;
 
@@ -111,15 +114,13 @@ public class MQTTSession {
         }
     }
     private void _handleConnectMessage(ConnectMessage connectMessage, final Handler<PublishMessage> handler) {
-//        topicsManager = new MQTTTopicsManager(this.vertx, this.tenant);
         topicsManager = new MQTTTopicsManagerOptimized(this.vertx, this.tenant);
-//        store = new MQTTStoreManager(this.vertx, this.tenant);
         store = new MQTTStoreManagerAsync(this.vertx, this.tenant);
 
         // save clientID
         store.clientIDExists(this.clientID, clientIDExists -> {
             if (clientIDExists) {
-                // Resume old session
+                // TODO: Resume old session
                 Container.logger().info("Connect ClientID ==> " + clientID + " alredy exists !!");
             } else {
                 store.addClientID(clientID);
@@ -143,8 +144,17 @@ public class MQTTSession {
                     }
                 });
             }
+
+            // Subscribe to eventBus in case of publications
+            this.publishMessageHandler = handler;
+
+            messageConsumer = vertx.eventBus().consumer(ADDRESS);
+            messageConsumer.handler(this);
         });
     }
+
+
+
 
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
         shutdown();
@@ -152,23 +162,24 @@ public class MQTTSession {
 
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
-            String topic = publishMessage.getTopicName();
+//            String topic = publishMessage.getTopicName();
             Buffer msg = encoder.enc(publishMessage);
-            Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
-            // retain
-            if(publishMessage.isRetainFlag()) {
-                storeAsLastMessage(publishMessage, topic);
-            }
-            // QoS 1,2
-            for (String tpub : topicsToPublish) {
-                switch (publishMessage.getQos()) {
-                    case LEAST_ONE:
-                    case EXACTLY_ONCE:
-                        storeMessage(publishMessage, tpub);
-                        break;
-                }
-                vertx.eventBus().publish(toVertxTopic(tpub), msg);
-            }
+//            Set<String> topicsToPublish = topicsManager.calculateTopicsToPublish(topic);
+//            // retain
+//            if(publishMessage.isRetainFlag()) {
+//                storeAsLastMessage(publishMessage, topic);
+//            }
+//            // QoS 1,2
+//            for (String tpub : topicsToPublish) {
+//                switch (publishMessage.getQos()) {
+//                    case LEAST_ONE:
+//                    case EXACTLY_ONCE:
+//                        storeMessage(publishMessage, tpub);
+//                        break;
+//                }
+//                vertx.eventBus().publish(toVertxTopic(tpub), msg);
+//            }
+            vertx.eventBus().publish(ADDRESS, msg);
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
@@ -181,35 +192,25 @@ public class MQTTSession {
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage, Handler<PublishMessage> handler) {
         try {
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
-            for (SubscribeMessage.Couple c : subs) {
-                byte requestedQosByte = c.getQos();
-                final QOSType requestedQos = qosUtils.toQos(requestedQosByte);
-                final int iRequestedQos = qosUtils.toInt(requestedQos);
-                String topic = c.getTopicFilter();
-//                store.getSubscriptionsByClientID(clientID, new Handler<List<Subscription>>() {
-//                    @Override
-//                    public void handle(List<Subscription> subscriptions) {
-//                        boolean topicCollision = false;
-//                        // search for topic collision: es. /test/# with /test/+ in the same client
-//                        for (Subscription subscription : subscriptions) {
-//                            String alredySubscribedTopic = subscription.getTopic();
-//                            topicCollision = topicsManager.match(topic, alredySubscribedTopic)
-//                                    || topicsManager.match(alredySubscribedTopic, topic);
-//                        }
-//                        if (!topicCollision) {
-                            subscribeClientToTopic(topic, iRequestedQos, handler);
-                            if (clientID != null && !cleanSession) {
-                                Subscription s = new Subscription();
-                                s.setQos(requestedQosByte);
-                                s.setTopic(topic);
-                                store.saveSubscription(s, clientID);
-                            }
-//                        }
-//                    }
-//                });
-                // replay saved messages
-                republishPendingMessagesForSubscription(topic, handler);
-            }
+            if(this.subscriptions==null)
+                this.subscriptions = new ArrayList<>();
+            this.subscriptions.addAll(subs);
+
+//            for (SubscribeMessage.Couple c : subs) {
+//                byte requestedQosByte = c.getQos();
+//                final QOSType requestedQos = qosUtils.toQos(requestedQosByte);
+//                final int iRequestedQos = qosUtils.toInt(requestedQos);
+//                String topic = c.getTopicFilter();
+//                subscribeClientToTopic(topic, iRequestedQos, handler);
+//                if (clientID != null && !cleanSession) {
+//                    Subscription s = new Subscription();
+//                    s.setQos(requestedQosByte);
+//                    s.setTopic(topic);
+//                    store.saveSubscription(s, clientID);
+//                }
+//                // replay saved messages
+//                republishPendingMessagesForSubscription(topic, handler);
+//            }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
@@ -226,7 +227,6 @@ public class MQTTSession {
                     // check if message topic matches topicFilter of subscription
                     boolean ok = topicsManager.match(pm.getTopicName(), topic);
                     if (ok) {
-//                        mqttSocket.sendMessageToClient(pm);
                         handler.handle(pm);
                     }
                     // delete will happen when publish end correctly.
@@ -237,6 +237,49 @@ public class MQTTSession {
             }
         });
     }
+
+    @Override
+    public void handle(Message<Buffer> message) {
+        //filter messages in base of subscriptions of this client
+        if(subscriptions == null)
+            return;
+        try {
+            boolean publishMessageToThisClient = false;
+            Buffer in = message.body();
+            PublishMessage pm = (PublishMessage) decoder.dec(in);
+            String topic = pm.getTopicName();
+            int iRequestedQos = 0;
+
+            // check if topic of published message pass any topicFilters
+            for (SubscribeMessage.Couple c : subscriptions) {
+                byte requestedQosByte = c.getQos();
+                QOSType requestedQos = qosUtils.toQos(requestedQosByte);
+                iRequestedQos = qosUtils.toInt(requestedQos);
+                String topicFilter = c.getTopicFilter();
+                publishMessageToThisClient = topicsManager.match(topic, topicFilter);
+            }
+
+            if(publishMessageToThisClient) {
+                System.out.printf("Message arrived from address: %s\n", message.address());
+                /* the qos is the max required ... */
+                QOSType originalQos = pm.getQos();
+                int iSentQos = qosUtils.toInt(originalQos);
+                int iOkQos = qosUtils.calculatePublishQos(iSentQos, iRequestedQos);
+                pm.setQos(qosUtils.toQos(iOkQos));
+                /* server must send retain=false flag to subscribers ...*/
+                pm.setRetainFlag(false);
+                sendPublishMessage(pm);
+            }
+        } catch (Throwable e) {
+            Container.logger().error(e.getMessage(), e);
+        }
+    }
+
+    private void sendPublishMessage(PublishMessage pm) {
+        if(publishMessageHandler!=null)
+            publishMessageHandler.handle(pm);
+    }
+
 
     private void subscribeClientToTopic(final String topic, int requestedQos, final Handler<PublishMessage> subHandler) {
         final int iMaxQos = requestedQos;
@@ -254,7 +297,6 @@ public class MQTTSession {
                     pm.setQos(qosUtils.toQos(iOkQos));
                     /* server must send retain=false flag to subscribers ...*/
                     pm.setRetainFlag(false);
-                    //                mqttSocket.sendMessageToClient(pm);
                     subHandler.handle(pm);
                 } catch (Throwable e) {
                     Container.logger().error(e.getMessage(), e);
@@ -262,8 +304,7 @@ public class MQTTSession {
             };
             MessageConsumer<Buffer> consumer = vertx.eventBus().consumer(toVertxTopic(topic));
             consumer.handler(handler);
-            Set<MessageConsumer> messageConsumers = getClientHandlers(topic);
-            messageConsumers.add(consumer);
+            addClientHandler(topic, consumer);
             topicsManager.addSubscribedTopic(topic);
         }
     }
@@ -295,6 +336,10 @@ public class MQTTSession {
         }
         Set<MessageConsumer> clientHandlers = handlers.get(sessionID);
         return clientHandlers;
+    }
+    private void addClientHandler(String topic, MessageConsumer mc) {
+        Set<MessageConsumer> clientHandlers = getClientHandlers(topic);
+        clientHandlers.add(mc);
     }
     private void clearClientHandlers(String topic) {
         String sessionID = topic;
@@ -361,7 +406,7 @@ public class MQTTSession {
         if(store!=null) {
             store.removeClientID(clientID);
         }
-//        mqttSocket = null;
         vertx = null;
     }
+
 }
