@@ -119,7 +119,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             throw new IllegalStateException("Tenant cannot be null");
         this.tenant = tenant;
         this.topicsManager = new MQTTTopicsManagerOptimized(this.tenant);
-        this.storeManager = new StoreManager(this.tenant);
+        this.storeManager = new StoreManager(this.vertx, this.tenant, this.topicsManager);
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {
@@ -133,7 +133,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
             if(publishMessage.isRetainFlag()) {
-                storeManager.saveRetainMessage(publishMessage);
+                storeManager.saveRetainMessage(publishMessage, onComplete -> {});
             }
 
             Buffer msg = encoder.enc(publishMessage);
@@ -154,12 +154,13 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 this.subscriptions.put(sub.getTopicFilter(), sub);
 
                 // receive retained message by this topicFilter
-                List<PublishMessage> retainedMessages = storeManager.getRetainedMessagesByTopicFilter(topicFilter);
-                if(retainedMessages!=null) {
-                    for(PublishMessage retainedMessage : retainedMessages) {
-                        handlePublishMessageReceived(retainedMessage);
+                storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
+                    if(retainedMessages!=null) {
+                        for(PublishMessage retainedMessage : retainedMessages) {
+                            handlePublishMessageReceived(retainedMessage);
+                        }
                     }
-                }
+                });
             }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
