@@ -14,13 +14,13 @@ import java.util.regex.Pattern;
 public class MQTTTopicsManager implements ITopicsManager {
 
     private Vertx vertx;
-    private LocalMap<String, Integer> topicsSubscribed;
+//    private LocalMap<String, Integer> topicsSubscribed;
     private String tenant;
 
     public MQTTTopicsManager(Vertx vertx, String tenant) {
         this.vertx = vertx;
         this.tenant = tenant;
-        this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_subscribed_topics");
+//        this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_subscribed_topics");
     }
 
 //    public Set<String> getSubscribedTopics() {

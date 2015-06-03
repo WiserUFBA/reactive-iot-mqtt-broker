@@ -53,12 +53,10 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
         }
     }
 
-    private Vertx vertx;
     private Map<String, SubscriptionTopic> topicsSubscribedMap = new LinkedHashMap<String, SubscriptionTopic>();
     private String tenant;
 
-    public MQTTTopicsManagerOptimized(Vertx vertx, String tenant) {
-        this.vertx = vertx;
+    public MQTTTopicsManagerOptimized(String tenant) {
         this.tenant = tenant;
     }
 

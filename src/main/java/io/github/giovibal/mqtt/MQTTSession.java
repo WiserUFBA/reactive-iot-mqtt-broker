@@ -2,6 +2,7 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
+import io.github.giovibal.mqtt.persistence.StoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -36,6 +37,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private Map<String, Subscription> subscriptions;
 
     private QOSUtils qosUtils;
+    private StoreManager storeManager;
 
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
@@ -103,7 +105,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             String tenant = null;
             if(username == null || username.trim().length()==0) {
                 tenant = extractTenant(clientID);
-                _initTenant(tenant);
             }
             else {
                 tenant = extractTenant(username);
@@ -117,7 +118,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         if(tenant == null)
             throw new IllegalStateException("Tenant cannot be null");
         this.tenant = tenant;
-        this.topicsManager = new MQTTTopicsManagerOptimized(this.vertx, this.tenant);
+        this.topicsManager = new MQTTTopicsManagerOptimized(this.tenant);
+        this.storeManager = new StoreManager(this.tenant);
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {
@@ -130,6 +132,10 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
+            if(publishMessage.isRetainFlag()) {
+                storeManager.saveRetainMessage(publishMessage);
+            }
+
             Buffer msg = encoder.enc(publishMessage);
             vertx.eventBus().publish(ADDRESS, msg);
         } catch(Throwable e) {
@@ -141,10 +147,19 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         try {
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
             for(SubscribeMessage.Couple s : subs) {
+                String topicFilter = s.getTopicFilter();
                 Subscription sub = new Subscription();
                 sub.setQos(s.getQos());
-                sub.setTopicFilter(s.getTopicFilter());
+                sub.setTopicFilter(topicFilter);
                 this.subscriptions.put(sub.getTopicFilter(), sub);
+
+                // receive retained message by this topicFilter
+                List<PublishMessage> retainedMessages = storeManager.getRetainedMessagesByTopicFilter(topicFilter);
+                if(retainedMessages!=null) {
+                    for(PublishMessage retainedMessage : retainedMessages) {
+                        handlePublishMessageReceived(retainedMessage);
+                    }
+                }
             }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
@@ -157,56 +172,48 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         try {
             Buffer in = message.body();
             PublishMessage pm = (PublishMessage) decoder.dec(in);
-
-            boolean publishMessageToThisClient = false;
-            int maxQos = -1;
-
-            List<Subscription> subs = getAllMatchingSubscriptions(pm);
-            if(subs!=null && subs.size()>0) {
-                publishMessageToThisClient = true;
-                for (Subscription s : subs) {
-                    int itemQos = s.getQos();
-                    if (itemQos > maxQos) {
-                        maxQos = itemQos;
-                    }
-                }
-            }
-
-            if(publishMessageToThisClient) {
-                // "the Server MUST deliver the message to the Client respecting the maximum QoS of all the matching subscriptions"
-
-                /* the qos is the max required ... */
-                AbstractMessage.QOSType originalQos = pm.getQos();
-                int iSentQos = qosUtils.toInt(originalQos);
-                int iOkQos = qosUtils.calculatePublishQos(iSentQos, maxQos);
-                AbstractMessage.QOSType qos = qosUtils.toQos(iOkQos);
-                pm.setQos(qos);
-
-                /* server must send retain=false flag to subscribers ...*/
-                pm.setRetainFlag(false);
-                sendPublishMessage(pm);
-            }
+            handlePublishMessageReceived(pm);
         } catch (Throwable e) {
             Container.logger().error(e.getMessage(), e);
         }
     }
 
-//    /**
-//     * check if topic of published message pass at least one of the subscriptions
-//     */
-//    private boolean isMessageForThisClient(PublishMessage pm) {
-//        String topic = pm.getTopicName();
-//        boolean publishMessageToThisClient = false;
-//        // check if topic of published message pass at least one of the subscriptions
-//        for (Subscription c : subscriptions.values()) {
-//            String topicFilter = c.getTopicFilter();
-//            publishMessageToThisClient = topicsManager.match(topic, topicFilter);
-//            if(publishMessageToThisClient) {
-//                break;
-//            }
-//        }
-//        return publishMessageToThisClient;
-//    }
+    public void handlePublishMessageReceived(PublishMessage publishMessage) {
+        boolean publishMessageToThisClient = false;
+        int maxQos = -1;
+
+        List<Subscription> subs = getAllMatchingSubscriptions(publishMessage);
+        if(subs!=null && subs.size()>0) {
+            publishMessageToThisClient = true;
+            for (Subscription s : subs) {
+                int itemQos = s.getQos();
+                if (itemQos > maxQos) {
+                    maxQos = itemQos;
+                }
+            }
+        }
+
+        if(publishMessageToThisClient) {
+            // "the Server MUST deliver the message to the Client respecting the maximum QoS of all the matching subscriptions"
+
+            /* the qos is the max required ... */
+            AbstractMessage.QOSType originalQos = publishMessage.getQos();
+            int iSentQos = qosUtils.toInt(originalQos);
+            int iOkQos = qosUtils.calculatePublishQos(iSentQos, maxQos);
+            AbstractMessage.QOSType qos = qosUtils.toQos(iOkQos);
+            publishMessage.setQos(qos);
+
+            /* server must send retain=false flag to subscribers ...*/
+            publishMessage.setRetainFlag(false);
+            sendPublishMessage(publishMessage);
+
+            try {
+                String ss = new String(publishMessage.getPayload().array(), "UTF-8");
+                System.out.println("retain loaded 2 -> "+ ss);
+            } catch(Throwable e) {}
+        }
+    }
+
     private List<Subscription> getAllMatchingSubscriptions(PublishMessage pm) {
         List<Subscription> ret = new ArrayList<>();
         String topic = pm.getTopicName();
@@ -220,17 +227,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         }
         return ret;
     }
-//    private int getMaximumQosOfAllMatchingSubscriptions(PublishMessage pm) {
-//        List<Subscription> subs = getAllMatchingSubscriptions(pm);
-//        int qos = -1;
-//        for (Subscription s : subs) {
-//            int itemqos = s.getQos();
-//            if(itemqos > qos) {
-//                qos = itemqos;
-//            }
-//        }
-//        return qos;
-//    }
 
     private void sendPublishMessage(PublishMessage pm) {
         if(publishMessageHandler!=null)
