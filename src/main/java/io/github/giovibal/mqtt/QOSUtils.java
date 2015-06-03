@@ -60,4 +60,11 @@ public class QOSUtils {
             iOkQos = iMaxQos;
         return iOkQos;
     }
+    public AbstractMessage.QOSType calculatePublishQos(AbstractMessage.QOSType sentQos, AbstractMessage.QOSType maxQos) {
+        int iSentQos = toInt(sentQos);
+        int iMaxQos = toInt(maxQos);
+        int iOkQos = calculatePublishQos(iSentQos, iMaxQos);
+        AbstractMessage.QOSType okQos = toQos(iOkQos);
+        return okQos;
+    }
 }

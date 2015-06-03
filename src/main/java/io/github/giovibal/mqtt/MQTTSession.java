@@ -12,9 +12,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -22,7 +20,7 @@ import java.util.Map;
  */
 public class MQTTSession implements Handler<Message<Buffer>> {
 
-    static final String ADDRESS = "io.github.giovibal.mqtt";
+    public static final String ADDRESS = "io.github.giovibal.mqtt";
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -37,12 +35,15 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private Handler<PublishMessage> publishMessageHandler;
     private Map<String, Subscription> subscriptions;
 
+    private QOSUtils qosUtils;
+
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.useOAuth2TokenValidation = config.isSecurityEnabled();
         this.subscriptions = new LinkedHashMap<>();
+        this.qosUtils = new QOSUtils();
     }
 
     private String extractTenant(String username) {
@@ -82,7 +83,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                     String error_msg = validationInfo.getString("error_msg");
                     Container.logger().info("authenticated ===> " + token_valid);
                     if (token_valid) {
-                        tenant = extractTenant(authorized_user);
+                        String tenant = extractTenant(authorized_user);
+                        _initTenant(tenant);
                         Container.logger().info("authorized_user ===> " + authorized_user +", tenant ===> "+ tenant);
                         _handleConnectMessage(connectMessage);
                         authHandler.handle(Boolean.TRUE);
@@ -98,27 +100,32 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         }
         else {
             String clientID = connectMessage.getClientID();
-            if(username == null || username.trim().length()==0)
+            String tenant = null;
+            if(username == null || username.trim().length()==0) {
                 tenant = extractTenant(clientID);
-            else
+                _initTenant(tenant);
+            }
+            else {
                 tenant = extractTenant(username);
+            }
+            _initTenant(tenant);
             _handleConnectMessage(connectMessage);
             authHandler.handle(Boolean.TRUE);
         }
     }
+    private void _initTenant(String tenant) {
+        if(tenant == null)
+            throw new IllegalStateException("Tenant cannot be null");
+        this.tenant = tenant;
+        this.topicsManager = new MQTTTopicsManagerOptimized(this.vertx, this.tenant);
+    }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
-        topicsManager = new MQTTTopicsManagerOptimized(this.vertx, this.tenant);
-
         if (!cleanSession) {
             Container.logger().info("cleanSession=false: restore old session state with subscriptions ...");
         }
         messageConsumer = vertx.eventBus().consumer(ADDRESS);
         messageConsumer.handler(this);
     }
-
-
-
-
 
 
     public void handlePublishMessage(PublishMessage publishMessage) {
@@ -129,7 +136,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Container.logger().error(e.getMessage());
         }
     }
-
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
@@ -145,26 +151,37 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         }
     }
 
-
     @Override
     public void handle(Message<Buffer> message) {
         //filter messages in base of subscriptions of this client
         try {
-            boolean publishMessageToThisClient = false;
             Buffer in = message.body();
             PublishMessage pm = (PublishMessage) decoder.dec(in);
-            String topic = pm.getTopicName();
 
-            // check if topic of published message pass at least one of the subscriptions
-            for (Subscription c : subscriptions.values()) {
-                String topicFilter = c.getTopicFilter();
-                publishMessageToThisClient = topicsManager.match(topic, topicFilter)/* && isQosOk*/;
-                if(publishMessageToThisClient) {
-                    break;
+            boolean publishMessageToThisClient = false;
+            int maxQos = -1;
+
+            List<Subscription> subs = getAllMatchingSubscriptions(pm);
+            if(subs!=null && subs.size()>0) {
+                publishMessageToThisClient = true;
+                for (Subscription s : subs) {
+                    int itemQos = s.getQos();
+                    if (itemQos > maxQos) {
+                        maxQos = itemQos;
+                    }
                 }
             }
 
             if(publishMessageToThisClient) {
+                // "the Server MUST deliver the message to the Client respecting the maximum QoS of all the matching subscriptions"
+
+                /* the qos is the max required ... */
+                AbstractMessage.QOSType originalQos = pm.getQos();
+                int iSentQos = qosUtils.toInt(originalQos);
+                int iOkQos = qosUtils.calculatePublishQos(iSentQos, maxQos);
+                AbstractMessage.QOSType qos = qosUtils.toQos(iOkQos);
+                pm.setQos(qos);
+
                 /* server must send retain=false flag to subscribers ...*/
                 pm.setRetainFlag(false);
                 sendPublishMessage(pm);
@@ -173,6 +190,47 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Container.logger().error(e.getMessage(), e);
         }
     }
+
+//    /**
+//     * check if topic of published message pass at least one of the subscriptions
+//     */
+//    private boolean isMessageForThisClient(PublishMessage pm) {
+//        String topic = pm.getTopicName();
+//        boolean publishMessageToThisClient = false;
+//        // check if topic of published message pass at least one of the subscriptions
+//        for (Subscription c : subscriptions.values()) {
+//            String topicFilter = c.getTopicFilter();
+//            publishMessageToThisClient = topicsManager.match(topic, topicFilter);
+//            if(publishMessageToThisClient) {
+//                break;
+//            }
+//        }
+//        return publishMessageToThisClient;
+//    }
+    private List<Subscription> getAllMatchingSubscriptions(PublishMessage pm) {
+        List<Subscription> ret = new ArrayList<>();
+        String topic = pm.getTopicName();
+        // check if topic of published message pass at least one of the subscriptions
+        for (Subscription c : subscriptions.values()) {
+            String topicFilter = c.getTopicFilter();
+            boolean match = topicsManager.match(topic, topicFilter);
+            if(match) {
+                ret.add(c);
+            }
+        }
+        return ret;
+    }
+//    private int getMaximumQosOfAllMatchingSubscriptions(PublishMessage pm) {
+//        List<Subscription> subs = getAllMatchingSubscriptions(pm);
+//        int qos = -1;
+//        for (Subscription s : subs) {
+//            int itemqos = s.getQos();
+//            if(itemqos > qos) {
+//                qos = itemqos;
+//            }
+//        }
+//        return qos;
+//    }
 
     private void sendPublishMessage(PublishMessage pm) {
         if(publishMessageHandler!=null)

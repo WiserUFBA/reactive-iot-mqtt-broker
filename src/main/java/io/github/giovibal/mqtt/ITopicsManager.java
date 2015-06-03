@@ -7,21 +7,21 @@ import java.util.Set;
  */
 public interface ITopicsManager {
 
-    @Deprecated
-    void addSubscribedTopic(String topic);
+//    @Deprecated
+//    void addSubscribedTopic(String topic);
+//
+//    @Deprecated
+//    Set<String> calculateTopicsToPublish(String topicOfPublishMessage);
 
-    @Deprecated
-    Set<String> calculateTopicsToPublish(String topicOfPublishMessage);
-
-    @Deprecated
-    Set<String> getSubscribedTopics();
+//    @Deprecated
+//    Set<String> getSubscribedTopics();
 
     boolean match(String topic, String topicFilter);
 
-    @Deprecated
-    void removeSubscribedTopic(String topic);
+//    @Deprecated
+//    void removeSubscribedTopic(String topic);
 
-    @Deprecated
-    String toVertxTopic(String mqttTopic);
+//    @Deprecated
+//    String toVertxTopic(String mqttTopic);
 
 }

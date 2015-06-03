@@ -54,49 +54,13 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
     }
 
     private Vertx vertx;
-    private LocalMap<String, Integer> topicsSubscribed;
     private Map<String, SubscriptionTopic> topicsSubscribedMap = new LinkedHashMap<String, SubscriptionTopic>();
     private String tenant;
 
     public MQTTTopicsManagerOptimized(Vertx vertx, String tenant) {
         this.vertx = vertx;
         this.tenant = tenant;
-        this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + ".mqtt_subscribed_topics");
     }
-
-    public void addSubscribedTopic(String topic) {
-        Integer subscriptionCounter = topicsSubscribed.get(topic);
-        subscriptionCounter = subscriptionCounter != null ? subscriptionCounter++ : 1;
-        topicsSubscribed.put(topic, subscriptionCounter);
-    }
-
-    @Deprecated
-    public Set<String> calculateTopicsToPublish(String topicOfPublishMessage) {
-        long t1, t2, t3;
-        t1 = System.currentTimeMillis();
-        String topic = topicOfPublishMessage;
-        Set<String> subscribedTopics = getSubscribedTopics();
-        Set<String> topicsToPublish = new LinkedHashSet<>();
-        for (String tsub : subscribedTopics) {
-            boolean ok = match(topic, tsub);
-            if (ok) {
-                topicsToPublish.add(tsub);
-                // TODO: inserire la logica del publish effetivo per non fare il doppio for
-            }
-        }
-        t2 = System.currentTimeMillis();
-        t3 = t2 - t1;
-        if (t3 > 100) {
-            System.out.println("calculateTopicsToPublish: " + t3 + " millis.");
-        }
-        return topicsToPublish;
-    }
-
-
-    public Set<String> getSubscribedTopics() {
-        return topicsSubscribed.keySet();
-    }
-
 
     public boolean match(String topic, String topicFilter) {
         SubscriptionTopic st = createSubscriptionTopic(topicFilter);
@@ -118,38 +82,12 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
         return st;
     }
 
-    public void removeSubscribedTopic(String topic) {
-        Integer retain = topicsSubscribed.get(topic);
-
-        if (retain != null) {
-            retain--;
-            if (retain > 0) {
-                topicsSubscribed.put(topic, retain);
-            }
-            else {
-                topicsSubscribed.remove(topic);
-            }
-
-			/* synchronize */
-//            Set<String> ks = topicsSubscribed.keySet();
-//            Iterator<String> ii = topicsSubscribedMap.keySet().iterator();
-//            while (ii.hasNext()) {
-//                String kk = ii.next();
-//                if (!ks.contains(kk)) {
-//                    topicsSubscribedMap.remove(kk);
-//                }
-//            }
-
-        }
-    }
-
     private Pattern toRegexPattern(String subscribedTopic) {
         String regexPattern = subscribedTopic;
-        regexPattern = regexPattern.replaceAll("\\#", ".*");
+//        regexPattern = regexPattern.replaceAll("\\#", ".*");
+        regexPattern = regexPattern.replaceAll("#", ".*");
         regexPattern = regexPattern.replaceAll("\\+", "[^/]*");
-
         Pattern pattern = Pattern.compile(regexPattern);
-
         return pattern;
     }
 
@@ -157,6 +95,5 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
         String s = tenant + mqttTopic;
         return s;
     }
-
 }
 

@@ -27,7 +27,11 @@ public class Tester {
 //        test1(10);
 //        test2(3, 10, 0);
 //        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
-        test2(1000, 2, 2);// 10000 client che pubblicano 2 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
+//        test2(10, 2000, 2);// 10 client che pubblicano 2000 messaggi ciascuno con qos:2 (11218 millis. arrivati 20000 messaggi)
+//        test2(20, 1000, 2);// 20 client che pubblicano 1000 messaggi ciascuno con qos:2 (21217 millis. arrivati 20000 messaggi)
+        test2(40, 500, 2);// 40 client che pubblicano 500 messaggi ciascuno con qos:2 (40742 millis. arrivati 20000 messaggi)
+//        test2(40, 500, 0);// 40 client che pubblicano 500 messaggi ciascuno con qos:0 (4926 millis. arrivati circa 2320 messaggi)
+//        test2(1000, 2, 2);// 10000 client che pubblicano 2 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
 
 //        test2(10, 30000, 2);// 10 client che pubblicano 30000 messaggi ciascuno con qos:2 (??? millis. arrivati 300000 messaggi)
         // connectionLost Timed out waiting for a response from the server

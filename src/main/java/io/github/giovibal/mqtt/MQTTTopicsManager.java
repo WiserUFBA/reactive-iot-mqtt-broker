@@ -23,51 +23,51 @@ public class MQTTTopicsManager implements ITopicsManager {
         this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_subscribed_topics");
     }
 
-    public Set<String> getSubscribedTopics() {
-        return topicsSubscribed.keySet();
-    }
-    public void addSubscribedTopic(String topic) {
-        Integer retain = 0;
-        if(topicsSubscribed.keySet().contains(topic)) {
-            retain = topicsSubscribed.get(topic);
-        }
-        retain++;
-        topicsSubscribed.put(topic, retain);
-    }
+//    public Set<String> getSubscribedTopics() {
+//        return topicsSubscribed.keySet();
+//    }
+//    public void addSubscribedTopic(String topic) {
+//        Integer retain = 0;
+//        if(topicsSubscribed.keySet().contains(topic)) {
+//            retain = topicsSubscribed.get(topic);
+//        }
+//        retain++;
+//        topicsSubscribed.put(topic, retain);
+//    }
 
-    public void removeSubscribedTopic(String topic) {
-        Integer retain = 0;
-        if(topicsSubscribed.keySet().contains(topic)) {
-            retain = topicsSubscribed.get(topic);
-        }
-        if(retain <= 0) {
-            topicsSubscribed.remove(topic);
-        }
-        else {
-            retain--;
-            topicsSubscribed.put(topic, retain);
-        }
-    }
+//    public void removeSubscribedTopic(String topic) {
+//        Integer retain = 0;
+//        if(topicsSubscribed.keySet().contains(topic)) {
+//            retain = topicsSubscribed.get(topic);
+//        }
+//        if(retain <= 0) {
+//            topicsSubscribed.remove(topic);
+//        }
+//        else {
+//            retain--;
+//            topicsSubscribed.put(topic, retain);
+//        }
+//    }
 
-    public Set<String> calculateTopicsToPublish(String topicOfPublishMessage) {
-        long t1,t2,t3;
-        t1=System.currentTimeMillis();
-        Set<String> subscribedTopics = getSubscribedTopics();
-        Set<String> topicsToPublish = new LinkedHashSet<>();
-        for (String tsub : subscribedTopics) {
-            boolean ok = match(topicOfPublishMessage, tsub);
-            if(ok) {
-                topicsToPublish.add(tsub);
-            }
-        }
-        t2=System.currentTimeMillis();
-        t3=t2-t1;
-        if(t3>100) {
-            System.out.println("calculateTopicsToPublish: "+ t3 +" millis.");
-        }
-
-        return topicsToPublish;
-    }
+//    public Set<String> calculateTopicsToPublish(String topicOfPublishMessage) {
+//        long t1,t2,t3;
+//        t1=System.currentTimeMillis();
+//        Set<String> subscribedTopics = getSubscribedTopics();
+//        Set<String> topicsToPublish = new LinkedHashSet<>();
+//        for (String tsub : subscribedTopics) {
+//            boolean ok = match(topicOfPublishMessage, tsub);
+//            if(ok) {
+//                topicsToPublish.add(tsub);
+//            }
+//        }
+//        t2=System.currentTimeMillis();
+//        t3=t2-t1;
+//        if(t3>100) {
+//            System.out.println("calculateTopicsToPublish: "+ t3 +" millis.");
+//        }
+//
+//        return topicsToPublish;
+//    }
 
     public boolean match(String topic, String topicFilter) {
         if(topicFilter.equals(topic)) {
@@ -109,8 +109,8 @@ public class MQTTTopicsManager implements ITopicsManager {
         return count;
     }
 
-    public String toVertxTopic(String mqttTopic) {
-        String s = tenant + mqttTopic;
-        return s;
-    }
+//    public String toVertxTopic(String mqttTopic) {
+//        String s = tenant + mqttTopic;
+//        return s;
+//    }
 }
