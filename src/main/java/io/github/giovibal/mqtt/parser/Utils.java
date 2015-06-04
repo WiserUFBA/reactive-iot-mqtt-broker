@@ -160,7 +160,11 @@ public class Utils {
             flags |= 0x01;
         }
 
-        flags |= ((message.getQos().ordinal() & 0x03) << 1);
+        AbstractMessage.QOSType qos = message.getQos();
+        if(qos!=null) {
+            int qosOrdinal = qos.ordinal();
+            flags |= ((qosOrdinal & 0x03) << 1);
+        }
         return flags;
     }
 
