@@ -1,5 +1,6 @@
 package io.github.giovibal.mqtt;
 
+import io.github.giovibal.mqtt.persistence.StoreVerticle;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
@@ -43,12 +44,21 @@ public class MQTTBroker extends AbstractVerticle {
     public void start() {
         try {
             // deplying authorization worker verticle ...
-            vertx.deployVerticle(new AuthorizationVerticle(), new DeploymentOptions().setWorker(true),
+            vertx.deployVerticle(AuthorizationVerticle.class.getName(), new DeploymentOptions().setWorker(true).setInstances(10),
                 result -> {
                     if (result.failed()) {
                         result.cause().printStackTrace();
                     } else {
                         System.out.println(AuthorizationVerticle.class.getSimpleName()+": "+result.result());
+                    }
+                }
+            );
+            vertx.deployVerticle(StoreVerticle.class.getName(), new DeploymentOptions().setWorker(false).setInstances(1),
+                result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    } else {
+                        System.out.println(StoreVerticle.class.getSimpleName()+": "+result.result());
                     }
                 }
             );

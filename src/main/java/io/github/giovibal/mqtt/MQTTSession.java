@@ -13,7 +13,10 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -118,14 +121,14 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         if(tenant == null)
             throw new IllegalStateException("Tenant cannot be null");
         this.tenant = tenant;
-        this.topicsManager = new MQTTTopicsManagerOptimized(this.tenant);
+        this.topicsManager = new MQTTTopicsManagerOptimized();
         this.storeManager = new StoreManager(this.vertx, this.tenant, this.topicsManager);
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {
             Container.logger().info("cleanSession=false: restore old session state with subscriptions ...");
         }
-        messageConsumer = vertx.eventBus().consumer(ADDRESS);
+        messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
         messageConsumer.handler(this);
     }
 
@@ -137,7 +140,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             }
 
             Buffer msg = encoder.enc(publishMessage);
-            vertx.eventBus().publish(ADDRESS, msg);
+            vertx.eventBus().publish(ADDRESS + tenant, msg);
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }

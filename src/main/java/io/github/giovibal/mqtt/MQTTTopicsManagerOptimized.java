@@ -12,20 +12,10 @@ import java.util.regex.Pattern;
 public class MQTTTopicsManagerOptimized implements ITopicsManager {
     public static class SubscriptionTopic {
         private String topic;
-        private String vertxTopic;
-        private String tenant;
         private Pattern regexPattern;
 
         public SubscriptionTopic(String topic) {
             this.topic = topic;
-        }
-
-        public String getTenant() {
-            return tenant;
-        }
-
-        public void setTenant(String tenant) {
-            this.tenant = tenant;
         }
 
         public Pattern getRegexPattern() {
@@ -43,22 +33,9 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
         public void setTopic(String topic) {
             this.topic = topic;
         }
-
-        public String getVertxTopic() {
-            return vertxTopic;
-        }
-
-        public void setVertxTopic(String vertxTopic) {
-            this.vertxTopic = vertxTopic;
-        }
     }
 
     private Map<String, SubscriptionTopic> topicsSubscribedMap = new LinkedHashMap<String, SubscriptionTopic>();
-    private String tenant;
-
-    public MQTTTopicsManagerOptimized(String tenant) {
-        this.tenant = tenant;
-    }
 
     public boolean match(String topic, String topicFilter) {
         SubscriptionTopic st = createSubscriptionTopic(topicFilter);
@@ -72,7 +49,6 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
         SubscriptionTopic st = topicsSubscribedMap.get(topic);
         if (st == null) {
             st = new SubscriptionTopic(topic);
-            st.setVertxTopic(toVertxTopic(topic));
             st.setRegexPattern(toRegexPattern(topic));
 
             topicsSubscribedMap.put(topic, st);
@@ -82,16 +58,11 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
 
     private Pattern toRegexPattern(String subscribedTopic) {
         String regexPattern = subscribedTopic;
-//        regexPattern = regexPattern.replaceAll("\\#", ".*");
         regexPattern = regexPattern.replaceAll("#", ".*");
         regexPattern = regexPattern.replaceAll("\\+", "[^/]*");
         Pattern pattern = Pattern.compile(regexPattern);
         return pattern;
     }
 
-    public String toVertxTopic(String mqttTopic) {
-        String s = tenant + mqttTopic;
-        return s;
-    }
 }
 
