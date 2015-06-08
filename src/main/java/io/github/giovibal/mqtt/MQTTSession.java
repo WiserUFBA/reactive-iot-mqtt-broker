@@ -227,6 +227,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         boolean publishMessageToThisClient = false;
         int maxQos = -1;
 
+        /*
+         * the Server MUST deliver the message to the Client respecting the maximum QoS of all the matching subscriptions
+         */
         List<Subscription> subs = getAllMatchingSubscriptions(publishMessage);
         if(subs!=null && subs.size()>0) {
             publishMessageToThisClient = true;
@@ -238,8 +241,16 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             }
         }
 
+        /*
+         * When sending a PUBLISH Packet to a Client the Server MUST set the RETAIN flag to 1
+         * if a message is sent as a result of a new subscription being made by a Client [MQTT-3.3.1-8].
+         *
+         * It MUST set the RETAIN flag to 0 when a PUBLISH Packet is sent to a Client because it matches an established subscription
+         * regardless of how the flag was set in the message it received [MQTT-3.3.1-9].
+         */
+        publishMessage.setRetainFlag(false);
+
         if(publishMessageToThisClient) {
-            // "the Server MUST deliver the message to the Client respecting the maximum QoS of all the matching subscriptions"
 
             /* the qos is the max required ... */
             AbstractMessage.QOSType originalQos = publishMessage.getQos();
@@ -251,11 +262,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             /* server must send retain=false flag to subscribers ...*/
             publishMessage.setRetainFlag(false);
             sendPublishMessage(publishMessage);
-
-            try {
-                String ss = new String(publishMessage.getPayload().array(), "UTF-8");
-                System.out.println("retain loaded 2 -> "+ ss);
-            } catch(Throwable e) {}
         }
     }
 
