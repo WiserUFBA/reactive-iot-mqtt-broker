@@ -15,6 +15,7 @@
  */
 package org.dna.mqtt.moquette.proto.messages;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 /**
@@ -53,5 +54,10 @@ public class PublishMessage extends MessageIDMessage {
 
     public void setPayload(ByteBuffer payload) {
         this.m_payload = payload;
+    }
+
+    public void setPayload(String payload) throws UnsupportedEncodingException {
+        byte[] b = payload.getBytes("UTF-8");
+        this.m_payload = ByteBuffer.wrap(b);
     }
 }

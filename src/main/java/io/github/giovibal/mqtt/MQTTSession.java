@@ -13,6 +13,8 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,6 +43,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     private QOSUtils qosUtils;
     private StoreManager storeManager;
+
+    private PublishMessage willMessage;
 
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
@@ -128,6 +132,28 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         if (!cleanSession) {
             Container.logger().info("cleanSession=false: restore old session state with subscriptions ...");
         }
+        boolean isWillFlag = connectMessage.isWillFlag();
+        if(isWillFlag) {
+            String willMessageM = connectMessage.getWillMessage();
+            String willTopic = connectMessage.getWillTopic();
+            byte willQosByte = connectMessage.getWillQos();
+            AbstractMessage.QOSType willQos = qosUtils.toQos(willQosByte);
+
+//            JsonObject will = new JsonObject()
+//                    .put("topicName", willTopic)
+//                    .put("qos", willQos.ordinal())
+//                    .put("message", willMessage);
+
+            try {
+                willMessage = new PublishMessage();
+                willMessage.setPayload(willMessageM);
+                willMessage.setTopicName(willTopic);
+                willMessage.setQos(willQos);
+            } catch (UnsupportedEncodingException e) {
+                Container.logger().error(e.getMessage(), e);
+            }
+
+        }
         messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
         messageConsumer.handler(this);
     }
@@ -157,13 +183,28 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 this.subscriptions.put(sub.getTopicFilter(), sub);
 
                 // receive retained message by this topicFilter
-                storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
-                    if(retainedMessages!=null) {
-                        for(PublishMessage retainedMessage : retainedMessages) {
-                            handlePublishMessageReceived(retainedMessage);
+                boolean clientRefuseRetainMessages = false;
+                if(willMessage!=null && willMessage.getTopicName().equals("$SYS/config")) {
+                    try {
+                        String willConfig = new String( willMessage.getPayload().array(), "UTF-8" );
+                        JsonObject configJson = new JsonObject(willConfig);
+                        if(configJson.containsKey("retain")) {
+                            Boolean retainSupport = configJson.getBoolean("retain");
+                            clientRefuseRetainMessages = retainSupport != null && !retainSupport;
                         }
+                    } catch(Throwable e) {
+                        Container.logger().warn(e.getMessage(), e);
                     }
-                });
+                }
+                if(!clientRefuseRetainMessages) {
+                    storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
+                        if (retainedMessages != null) {
+                            for (PublishMessage retainedMessage : retainedMessages) {
+                                handlePublishMessageReceived(retainedMessage);
+                            }
+                        }
+                    });
+                }
             }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());

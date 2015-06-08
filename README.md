@@ -28,6 +28,11 @@ or uber jar ...
 java -jar target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
 ```
 
+cluster ...
+```
+vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json -cluster -cluster-host 192.168.1.188
+```
+
 Features
 ----
 * Suport both QoS 0, 1 and 2 messages

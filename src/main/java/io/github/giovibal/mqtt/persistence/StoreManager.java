@@ -41,22 +41,9 @@ public class StoreManager {
             String topic = pm.getTopicName();
             Buffer pmBytes = encoder.enc(pm);
 
-//            LocalMap<String, Buffer> retained = vertx.sharedData().getLocalMap("retained");
-//            retained.put(topic, pmBytes);
             JsonObject request = new JsonObject()
                     .put("topic", topic)
                     .put("message", pmBytes.getBytes());
-//            vertx.eventBus().send(
-//                    StoreVerticle.ADDRESS,
-//                    request,
-//                    new DeliveryOptions().addHeader("command", "saveRetainMessage"),
-//                    (AsyncResult<Message<JsonObject>> res) -> {
-//                        if (res.succeeded()) {
-//                            onComplete.handle(Boolean.TRUE);
-//                        } else {
-//                            onComplete.handle(Boolean.FALSE);
-//                        }
-//                    });
             vertx.eventBus().publish(
                     StoreVerticle.ADDRESS,
                     request,
@@ -69,7 +56,6 @@ public class StoreManager {
 
     public void getRetainedMessagesByTopicFilter(String topicFilter, Handler<List<PublishMessage>> handler) {
         List<PublishMessage> list = new ArrayList<>();
-//        LocalMap<String, Buffer> retained = vertx.sharedData().getLocalMap("retained");
 
         JsonObject request = new JsonObject()
                 .put("topicFilter", topicFilter);
@@ -89,10 +75,7 @@ public class StoreManager {
                                 byte[] message = item.getBinary("message");
                                 Buffer pmBytes = Buffer.buffer(message);
                                 PublishMessage pm = (PublishMessage) decoder.dec(pmBytes);
-//                                boolean topicMatch = topicsManager.match(pm.getTopicName(), topicFilter);
-//                                if (topicMatch) {
-                                    list.add(pm);
-//                                }
+                                list.add(pm);
                             } catch (Throwable e) {
                                 e.printStackTrace();
                             }
@@ -102,4 +85,5 @@ public class StoreManager {
                 });
 
     }
+
 }

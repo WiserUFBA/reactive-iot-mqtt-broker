@@ -15,6 +15,8 @@
  */
 package org.dna.mqtt.moquette.proto.messages;
 
+import java.nio.ByteBuffer;
+
 /**
  * The attributes Qos, Dup and Retain aren't used for Connect message
  * 
@@ -39,7 +41,7 @@ public class ConnectMessage extends AbstractMessage {
     String m_clientID;
     String m_willtopic;
     String m_willMessage;
-    
+
     public ConnectMessage() {
         m_messageType = AbstractMessage.CONNECT;
     }
@@ -155,5 +157,5 @@ public class ConnectMessage extends AbstractMessage {
     public void setWillMessage(String willMessage) {
         this.m_willMessage = willMessage;
     }
-    
+
 }
