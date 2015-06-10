@@ -51,17 +51,6 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-
-        <repository>
-            <id>fili-repo</id>
-            <url>http://rd.eimware.it/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
 
