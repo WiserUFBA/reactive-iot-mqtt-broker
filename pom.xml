@@ -71,19 +71,9 @@
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
         </dependency>
-        <!--<dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-service-proxy</artifactId>
-            <version>${vertx.version}</version>
-        </dependency>-->
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-codegen</artifactId>
-            <version>${vertx.version}</version>
-        </dependency>
 
         <dependency>
-            <groupId>it.filippetti.smartplatform.auth</groupId>
+            <groupId>io.github.giovibal.wso2</groupId>
             <artifactId>wso2-token-validation-soap-client</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>

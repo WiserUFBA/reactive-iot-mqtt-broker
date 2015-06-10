@@ -1,16 +1,12 @@
 package io.github.giovibal.mqtt;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.AsyncResultHandler;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
-import it.filippetti.smartplatform.oauth2.Oauth2TokenValidator;
-import it.filippetti.smartplatform.oauth2.TokenInfo;
 
 import java.util.Base64;
 
