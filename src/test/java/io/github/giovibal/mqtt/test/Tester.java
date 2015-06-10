@@ -25,7 +25,9 @@ public class Tester {
     public static void main(String[] args) throws Exception {
 
 //        test1(10);
-        test2(3, 10, 0);
+        test2(1, 5, 1, 2);
+//        test2(300, 100, 0, 20);
+
 //        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
 //        test2(10, 2000, 2);// 10 client che pubblicano 2000 messaggi ciascuno con qos:2 (11218 millis. arrivati 20000 messaggi)
 //        test2(20, 1000, 2);// 20 client che pubblicano 1000 messaggi ciascuno con qos:2 (21217 millis. arrivati 20000 messaggi)
@@ -81,7 +83,7 @@ public class Tester {
     }
 
 
-    public static void test2(int numClients, int numMessagesToPublishPerClient, int qos) throws Exception {
+    public static void test2(int numClients, int numMessagesToPublishPerClient, int qos, long sleepSeconds) throws Exception {
         String topic = "test/untopic/a";
         String topicFilter = "test/+/a";
 
@@ -97,6 +99,9 @@ public class Tester {
 
         cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
         cPubs.disconnect();
+
+        log("Sleep for "+ sleepSeconds + " seconds ...");
+        Thread.sleep(sleepSeconds*1000);
 
         cSubs.unsubcribe(topic);
         cSubs.disconnect();

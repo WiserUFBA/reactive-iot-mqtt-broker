@@ -154,8 +154,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             }
 
         }
-        messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
-        messageConsumer.handler(this);
+//        messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
+//        messageConsumer.handler(this);
     }
 
 
@@ -174,6 +174,11 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
+            if(this.messageConsumer==null) {
+                messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
+                messageConsumer.handler(this);
+            }
+
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
             for(SubscribeMessage.Couple s : subs) {
                 String topicFilter = s.getTopicFilter();
@@ -182,20 +187,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 sub.setTopicFilter(topicFilter);
                 this.subscriptions.put(sub.getTopicFilter(), sub);
 
-                // receive retained message by this topicFilter
-                boolean clientRefuseRetainMessages = false;
-                if(willMessage!=null && willMessage.getTopicName().equals("$SYS/config")) {
-                    try {
-                        String willConfig = new String( willMessage.getPayload().array(), "UTF-8" );
-                        JsonObject configJson = new JsonObject(willConfig);
-                        if(configJson.containsKey("retain")) {
-                            Boolean retainSupport = configJson.getBoolean("retain");
-                            clientRefuseRetainMessages = retainSupport != null && !retainSupport;
-                        }
-                    } catch(Throwable e) {
-                        Container.logger().warn(e.getMessage(), e);
-                    }
-                }
+                // check in client wants receive retained message by this topicFilter
+                boolean clientRefuseRetainMessages = clientRefuseRetainMessages();
                 if(!clientRefuseRetainMessages) {
                     storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
                         if (retainedMessages != null) {
@@ -209,6 +202,22 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
+    }
+    private boolean clientRefuseRetainMessages() {
+        boolean clientRefuseRetainMessages = false;
+        if(willMessage!=null && willMessage.getTopicName().equals("$SYS/config")) {
+            try {
+                String willConfig = new String( willMessage.getPayload().array(), "UTF-8" );
+                JsonObject configJson = new JsonObject(willConfig);
+                if(configJson.containsKey("retain")) {
+                    Boolean retainSupport = configJson.getBoolean("retain");
+                    clientRefuseRetainMessages = retainSupport != null && !retainSupport;
+                }
+            } catch(Throwable e) {
+                Container.logger().warn(e.getMessage(), e);
+            }
+        }
+        return clientRefuseRetainMessages;
     }
 
     @Override
@@ -314,6 +323,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         //deallocate this instance ...
         if(messageConsumer!=null && cleanSession) {
             messageConsumer.unregister();
+            messageConsumer = null;
         }
         vertx = null;
     }

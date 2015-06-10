@@ -18,7 +18,7 @@ class PubAckEncoder extends DemuxEncoder<PubAckMessage> {
         try {
 //            buff.writeByte(AbstractMessage.PUBACK << 4);
             byte flags = Utils.encodeFlags(msg);
-            out.writeByte(AbstractMessage.PUBREL << 4 | flags);
+            out.writeByte(AbstractMessage.PUBACK << 4 | flags);
             buff.writeBytes(Utils.encodeRemainingLength(2));
             buff.writeShort(msg.getMessageID());
             out.writeBytes(buff);

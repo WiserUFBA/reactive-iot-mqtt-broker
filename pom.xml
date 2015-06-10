@@ -51,6 +51,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+
+        <repository>
+            <id>fili-repo</id>
+            <url>http://rd.eimware.it/nexus/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
 
@@ -62,14 +73,9 @@
         </dependency>
         <!--<dependency>
             <groupId>io.vertx</groupId>
-            <artifactId>vertx-hazelcast</artifactId>
-            <version>${vertx.version}</version>
-        </dependency>-->
-        <dependency>
-            <groupId>io.vertx</groupId>
             <artifactId>vertx-service-proxy</artifactId>
             <version>${vertx.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-codegen</artifactId>
