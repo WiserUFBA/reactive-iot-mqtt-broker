@@ -25,8 +25,8 @@ public class Tester {
     public static void main(String[] args) throws Exception {
 
 //        test1(10);
-        test2(1, 5, 1, 2);
-//        test2(300, 100, 0, 20);
+//        test2(1, 5, 1, 2);
+        test2(300, 100, 0, 20);
 
 //        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
 //        test2(10, 2000, 2);// 10 client che pubblicano 2000 messaggi ciascuno con qos:2 (11218 millis. arrivati 20000 messaggi)

@@ -121,19 +121,15 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 session.handlePublishMessage(publish);
                 switch (publish.getQos()) {
                     case RESERVED:
-                        System.out.println(">>> PUBLISH RESERVED "+ publish.getMessageID());
                         break;
                     case MOST_ONE:
-                        System.out.println(">>> PUBLISH MOST_ONE "+ publish.getMessageID());
                         break;
                     case LEAST_ONE:
-                        System.out.println(">>> PUBLISH LEAST_ONE "+ publish.getMessageID());
                         PubAckMessage pubAck = new PubAckMessage();
                         pubAck.setMessageID(publish.getMessageID());
                         sendMessageToClient(pubAck);
                         break;
                     case EXACTLY_ONCE:
-                        System.out.println(">>> PUBLISH EXACTLY_ONCE "+ publish.getMessageID());
                         PubRecMessage pubRec = new PubRecMessage();
                         pubRec.setMessageID(publish.getMessageID());
                         sendMessageToClient(pubRec);
@@ -142,19 +138,15 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 break;
             case PUBREC:
                 PubRecMessage pubRec = (PubRecMessage)msg;
-                System.out.println(">>> PUBREC " + pubRec.getMessageID());
                 PubRelMessage prelResp = new PubRelMessage();
                 prelResp.setMessageID(pubRec.getMessageID());
                 prelResp.setQos(QOSType.LEAST_ONE);
                 sendMessageToClient(prelResp);
                 break;
             case PUBCOMP:
-                PubCompMessage pubCompFromClient = (PubCompMessage)msg;
-                System.out.println(">>> PUBCOMP " + pubCompFromClient.getMessageID());
                 break;
             case PUBREL:
                 PubRelMessage pubRel = (PubRelMessage)msg;
-                System.out.println(">>> PUBREL " + pubRel.getMessageID());
                 PubCompMessage pubComp = new PubCompMessage();
                 pubComp.setMessageID(pubRel.getMessageID());
                 sendMessageToClient(pubComp);
