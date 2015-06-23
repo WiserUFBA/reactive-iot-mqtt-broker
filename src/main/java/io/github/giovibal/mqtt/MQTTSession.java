@@ -247,28 +247,30 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 if (itemQos > maxQos) {
                     maxQos = itemQos;
                 }
+                // optimization: if qos==2 is alredy **the max** allowed
+                if(maxQos == 2)
+                    break;
             }
         }
 
-        /*
-         * When sending a PUBLISH Packet to a Client the Server MUST set the RETAIN flag to 1
-         * if a message is sent as a result of a new subscription being made by a Client [MQTT-3.3.1-8].
-         *
-         * It MUST set the RETAIN flag to 0 when a PUBLISH Packet is sent to a Client because it matches an established subscription
-         * regardless of how the flag was set in the message it received [MQTT-3.3.1-9].
-         */
-        publishMessage.setRetainFlag(false);
-
         if(publishMessageToThisClient) {
+            /*
+             * When sending a PUBLISH Packet to a Client the Server MUST set the RETAIN flag to 1
+             * if a message is sent as a result of a new subscription being made by a Client [MQTT-3.3.1-8].
+             *
+             * It MUST set the RETAIN flag to 0 when a PUBLISH Packet is sent to a Client because it matches an established subscription
+             * regardless of how the flag was set in the message it received [MQTT-3.3.1-9].
+             */
+            publishMessage.setRetainFlag(false);
 
-            /* the qos is the max required ... */
+            // the qos is the max required ...
             AbstractMessage.QOSType originalQos = publishMessage.getQos();
             int iSentQos = qosUtils.toInt(originalQos);
             int iOkQos = qosUtils.calculatePublishQos(iSentQos, maxQos);
             AbstractMessage.QOSType qos = qosUtils.toQos(iOkQos);
             publishMessage.setQos(qos);
 
-            /* server must send retain=false flag to subscribers ...*/
+            // server must send retain=false flag to subscribers ...
             publishMessage.setRetainFlag(false);
             sendPublishMessage(publishMessage);
         }
@@ -312,10 +314,10 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
         Container.logger().info("Disconnect from "+ clientID +" ...");
         /*
-        TODO: implement this behaviour
-        On receipt of DISCONNECT the Server:
-        - MUST discard any Will Message associated with the current connection without publishing it, as described in Section 3.1.2.5 [MQTT-3.14.4-3].
-        - SHOULD close the Network Connection if the Client has not already done so.
+         * TODO: implement this behaviour
+         * On receipt of DISCONNECT the Server:
+         * - MUST discard any Will Message associated with the current connection without publishing it, as described in Section 3.1.2.5 [MQTT-3.14.4-3].
+         * - SHOULD close the Network Connection if the Client has not already done so.
          */
         shutdown();
     }
