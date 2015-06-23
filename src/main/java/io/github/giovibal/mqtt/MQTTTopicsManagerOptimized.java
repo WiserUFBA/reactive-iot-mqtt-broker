@@ -37,6 +37,12 @@ public class MQTTTopicsManagerOptimized implements ITopicsManager {
 
     private Map<String, SubscriptionTopic> topicsSubscribedMap = new LinkedHashMap<String, SubscriptionTopic>();
 
+    /**
+     * jvisualvm 46millis cpu profile
+     * @param topic
+     * @param topicFilter
+     * @return
+     */
     public boolean match(String topic, String topicFilter) {
         SubscriptionTopic st = createSubscriptionTopic(topicFilter);
         Pattern tregex = st.getRegexPattern();

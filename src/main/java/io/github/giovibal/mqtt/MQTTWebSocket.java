@@ -32,14 +32,21 @@ public class MQTTWebSocket extends MQTTSocket {
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {
-            if (!netSocket.writeQueueFull()) {
-                netSocket.write(bytes);
-            } else {
+//            if (!netSocket.writeQueueFull()) {
+//                netSocket.write(bytes);
+//            } else {
+//                netSocket.pause();
+//                netSocket.drainHandler(new VoidHandler() {
+//                    public void handle() {
+//                        netSocket.resume();
+//                    }
+//                });
+//            }
+            netSocket.write(bytes);
+            if (netSocket.writeQueueFull()) {
                 netSocket.pause();
-                netSocket.drainHandler(new VoidHandler() {
-                    public void handle() {
-                        netSocket.resume();
-                    }
+                netSocket.drainHandler(done -> {
+                    netSocket.resume();
                 });
             }
         } catch(Throwable e) {
