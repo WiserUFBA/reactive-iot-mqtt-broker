@@ -10,6 +10,8 @@ import io.vertx.core.impl.Deployment;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.ext.dropwizard.DropwizardMetricsOptions;
+import io.vertx.ext.dropwizard.MetricsService;
 
 import java.util.Set;
 
@@ -20,16 +22,22 @@ import java.util.Set;
 public class MQTTBroker extends AbstractVerticle {
 
     public static void main(String[] args) {
-        Vertx vertx = Vertx.vertx();
+//        Vertx vertx = Vertx.vertx();
+        Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+            new DropwizardMetricsOptions().setJmxEnabled(true)
+        ));
+
 
         //TODO: capire come utilizzare la configurazione
+        Starter.main(args);
+
         int instances = Runtime.getRuntime().availableProcessors();
         if(instances > 2) {
             instances = instances - 2;
         }
 
-                // broker
-        vertx.deployVerticle(new MQTTBroker(), new DeploymentOptions().setInstances(instances),
+        // broker
+        vertx.deployVerticle(MQTTBroker.class.getName(), new DeploymentOptions().setInstances(instances),
                 result -> {
                     if (result.failed()) {
                         result.cause().printStackTrace();
@@ -38,6 +46,7 @@ public class MQTTBroker extends AbstractVerticle {
                     }
                 }
         );
+
     }
 
     @Override

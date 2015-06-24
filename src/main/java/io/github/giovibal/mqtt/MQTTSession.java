@@ -15,10 +15,7 @@ import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -36,15 +33,13 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private boolean cleanSession;
     private String tenant;
     private boolean useOAuth2TokenValidation;
-
     private MessageConsumer<Buffer> messageConsumer;
     private Handler<PublishMessage> publishMessageHandler;
     private Map<String, Subscription> subscriptions;
-
     private QOSUtils qosUtils;
     private StoreManager storeManager;
-
     private PublishMessage willMessage;
+    private Map<String, List<Subscription>> matchingSubscriptionsCache;
 
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
@@ -53,6 +48,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         this.useOAuth2TokenValidation = config.isSecurityEnabled();
         this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
+        this.matchingSubscriptionsCache = new HashMap<>();
     }
 
     private String extractTenant(String username) {
@@ -179,13 +175,16 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 messageConsumer.handler(this);
             }
 
+            // invalidate matching topic cache
+            matchingSubscriptionsCache.clear();
+
             List<SubscribeMessage.Couple> subs = subscribeMessage.subscriptions();
             for(SubscribeMessage.Couple s : subs) {
                 String topicFilter = s.getTopicFilter();
                 Subscription sub = new Subscription();
                 sub.setQos(s.getQos());
                 sub.setTopicFilter(topicFilter);
-                this.subscriptions.put(sub.getTopicFilter(), sub);
+                this.subscriptions.put(topicFilter, sub);
 
                 // check in client wants receive retained message by this topicFilter
                 boolean clientRefuseRetainMessages = clientRefuseRetainMessages();
@@ -254,16 +253,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         }
 
         if(publishMessageToThisClient) {
-            /*
-             * When sending a PUBLISH Packet to a Client the Server MUST set the RETAIN flag to 1
-             * if a message is sent as a result of a new subscription being made by a Client [MQTT-3.3.1-8].
-             *
-             * It MUST set the RETAIN flag to 0 when a PUBLISH Packet is sent to a Client because it matches an established subscription
-             * regardless of how the flag was set in the message it received [MQTT-3.3.1-9].
-             */
-            publishMessage.setRetainFlag(false);
-
-            // the qos is the max required ...
+            // the qos cannot be bigger than the subscribe requested qos ...
             AbstractMessage.QOSType originalQos = publishMessage.getQos();
             int iSentQos = qosUtils.toInt(originalQos);
             int iOkQos = qosUtils.calculatePublishQos(iSentQos, maxQos);
@@ -279,14 +269,18 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private List<Subscription> getAllMatchingSubscriptions(PublishMessage pm) {
         List<Subscription> ret = new ArrayList<>();
         String topic = pm.getTopicName();
+        if(matchingSubscriptionsCache.containsKey(topic)) {
+            return matchingSubscriptionsCache.get(topic);
+        }
         // check if topic of published message pass at least one of the subscriptions
         for (Subscription c : subscriptions.values()) {
             String topicFilter = c.getTopicFilter();
             boolean match = topicsManager.match(topic, topicFilter);
-            if(match) {
+            if (match) {
                 ret.add(c);
             }
         }
+        matchingSubscriptionsCache.put(topic, ret);
         return ret;
     }
 

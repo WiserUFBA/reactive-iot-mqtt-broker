@@ -1,0 +1,13 @@
+{
+  "_comment" : "FOR DETAILED FORMAT LOOK AT https://docs.docker.com/reference/api/docker_remote_api_v1.16/#create-a-container",
+  "Memory": 512000000,
+  "HostConfig": {
+    "PortBindings":{
+      "1883/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "1883" }],
+      "11883/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "11883" }],
+      "1884/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "1884" }],
+      "11884/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "11884" }],
+      "8000/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "8000" }]
+    }
+  }
+}

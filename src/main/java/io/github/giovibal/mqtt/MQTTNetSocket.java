@@ -18,6 +18,7 @@ public class MQTTNetSocket extends MQTTSocket {
     }
 
     public void start() {
+//        netSocket.setWriteQueueMaxSize(1000);
         netSocket.handler(this);
         netSocket.closeHandler(aVoid -> {
             Container.logger().info("net-socket closed ... "+ netSocket.writeHandlerID());
@@ -28,9 +29,8 @@ public class MQTTNetSocket extends MQTTSocket {
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {
-            if (!netSocket.writeQueueFull()) {
-                netSocket.write(bytes);
-            } else {
+            netSocket.write(bytes);
+            if (netSocket.writeQueueFull()) {
                 netSocket.pause();
                 netSocket.drainHandler(new VoidHandler() {
                     public void handle() {
