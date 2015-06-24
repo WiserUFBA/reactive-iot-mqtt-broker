@@ -13,62 +13,9 @@ import java.util.regex.Pattern;
  */
 public class MQTTTopicsManager implements ITopicsManager {
 
-    private Vertx vertx;
-//    private LocalMap<String, Integer> topicsSubscribed;
-    private String tenant;
+    public MQTTTopicsManager() {}
 
-    public MQTTTopicsManager(Vertx vertx, String tenant) {
-        this.vertx = vertx;
-        this.tenant = tenant;
-//        this.topicsSubscribed = this.vertx.sharedData().getLocalMap(this.tenant + "mqtt_subscribed_topics");
-    }
-
-//    public Set<String> getSubscribedTopics() {
-//        return topicsSubscribed.keySet();
-//    }
-//    public void addSubscribedTopic(String topic) {
-//        Integer retain = 0;
-//        if(topicsSubscribed.keySet().contains(topic)) {
-//            retain = topicsSubscribed.get(topic);
-//        }
-//        retain++;
-//        topicsSubscribed.put(topic, retain);
-//    }
-
-//    public void removeSubscribedTopic(String topic) {
-//        Integer retain = 0;
-//        if(topicsSubscribed.keySet().contains(topic)) {
-//            retain = topicsSubscribed.get(topic);
-//        }
-//        if(retain <= 0) {
-//            topicsSubscribed.remove(topic);
-//        }
-//        else {
-//            retain--;
-//            topicsSubscribed.put(topic, retain);
-//        }
-//    }
-
-//    public Set<String> calculateTopicsToPublish(String topicOfPublishMessage) {
-//        long t1,t2,t3;
-//        t1=System.currentTimeMillis();
-//        Set<String> subscribedTopics = getSubscribedTopics();
-//        Set<String> topicsToPublish = new LinkedHashSet<>();
-//        for (String tsub : subscribedTopics) {
-//            boolean ok = match(topicOfPublishMessage, tsub);
-//            if(ok) {
-//                topicsToPublish.add(tsub);
-//            }
-//        }
-//        t2=System.currentTimeMillis();
-//        t3=t2-t1;
-//        if(t3>100) {
-//            System.out.println("calculateTopicsToPublish: "+ t3 +" millis.");
-//        }
-//
-//        return topicsToPublish;
-//    }
-
+    // 286 millis
     public boolean match(String topic, String topicFilter) {
         if(topicFilter.equals(topic)) {
             return true;
@@ -97,6 +44,7 @@ public class MQTTTopicsManager implements ITopicsManager {
         return false;
     }
 
+    // 2 sec
     private String toPattern(String subscribedTopic) {
         String pattern = subscribedTopic;
         pattern = pattern.replaceAll("#", ".*");
@@ -104,13 +52,10 @@ public class MQTTTopicsManager implements ITopicsManager {
         return pattern;
     }
 
+    // 446 millis
     private int countSlash(String s) {
         int count = s.replaceAll("[^/]", "").length();
         return count;
     }
 
-//    public String toVertxTopic(String mqttTopic) {
-//        String s = tenant + mqttTopic;
-//        return s;
-//    }
 }

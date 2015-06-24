@@ -27,6 +27,7 @@ vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt
 or uber jar ...
 ```
 java -jar target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
+java -Dvertx.metrics.options.jmxEnabled=true -jar target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
 ```
 
 cluster ...

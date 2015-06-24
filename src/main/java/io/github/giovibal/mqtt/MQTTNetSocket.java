@@ -32,10 +32,8 @@ public class MQTTNetSocket extends MQTTSocket {
             netSocket.write(bytes);
             if (netSocket.writeQueueFull()) {
                 netSocket.pause();
-                netSocket.drainHandler(new VoidHandler() {
-                    public void handle() {
-                        netSocket.resume();
-                    }
+                netSocket.drainHandler(done -> {
+                    netSocket.resume();
                 });
             }
         } catch(Throwable e) {
