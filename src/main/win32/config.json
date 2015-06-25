@@ -1,0 +1,13 @@
+{
+  "brokers": [
+    {
+      "tcp_port": 1883,
+      "websocket_enabled": true,
+      "websocket_port": 11883,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "security": {
+        "enabled": false
+      }
+    }
+  ]
+}
