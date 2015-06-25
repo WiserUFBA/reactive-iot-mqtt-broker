@@ -54,8 +54,10 @@ public class AuthorizationVerticle extends AbstractVerticle {
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();
 
-        if(!securityEnabled)
+        if(!securityEnabled) {
+            Container.logger().info("MQTT Authorization disabled");
             return;
+        }
 
         oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
 

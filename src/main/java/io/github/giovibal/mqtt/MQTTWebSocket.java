@@ -20,34 +20,19 @@ public class MQTTWebSocket extends MQTTSocket {
 
     public void start() {
         netSocket.handler(this);
-        netSocket.closeHandler(new Handler<Void>() {
-            @Override
-            public void handle(Void aVoid) {
-                Container.logger().info("web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
-                shutdown();
-            }
+        netSocket.closeHandler(aVoid -> {
+            Container.logger().info("web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
+            shutdown();
         });
     }
 
     @Override
     protected void sendMessageToClient(Buffer bytes) {
         try {
-//            if (!netSocket.writeQueueFull()) {
-//                netSocket.write(bytes);
-//            } else {
-//                netSocket.pause();
-//                netSocket.drainHandler(new VoidHandler() {
-//                    public void handle() {
-//                        netSocket.resume();
-//                    }
-//                });
-//            }
             netSocket.write(bytes);
             if (netSocket.writeQueueFull()) {
                 netSocket.pause();
-                netSocket.drainHandler(done -> {
-                    netSocket.resume();
-                });
+                netSocket.drainHandler( done -> netSocket.resume() );
             }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());

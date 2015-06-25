@@ -8,6 +8,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.*;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 
 /**
@@ -77,10 +80,10 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 ConnectMessage connect = (ConnectMessage)msg;
                 if(session == null) {
                     session = new MQTTSession(vertx, config);
+                    session.setPublishMessageHandler(publishMessage -> sendMessageToClient(publishMessage));
                 } else {
                     Container.logger().warn("Session alredy allocated ...");
                 }
-                session.setPublishMessageHandler(pm -> sendMessageToClient(pm));
                 session.handleConnectMessage(connect, authenticated -> {
                     if (authenticated) {
                         ConnAckMessage connAck = new ConnAckMessage();

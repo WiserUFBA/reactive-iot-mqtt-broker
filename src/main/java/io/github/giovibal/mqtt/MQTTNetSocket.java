@@ -4,6 +4,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pump;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -32,9 +33,7 @@ public class MQTTNetSocket extends MQTTSocket {
             netSocket.write(bytes);
             if (netSocket.writeQueueFull()) {
                 netSocket.pause();
-                netSocket.drainHandler(done -> {
-                    netSocket.resume();
-                });
+                netSocket.drainHandler( done -> netSocket.resume() );
             }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());

@@ -6,7 +6,7 @@
       "websocket_port": 11883,
       "websocket_subprotocols": "mqtt,mqttv3.1",
       "security": {
-        "enabled": true,
+        "enabled": false,
         "authorized_clients": ["testing.*"],
         "idp_url": "http://192.168.231.55:9763",
         "idp_username": "admin",

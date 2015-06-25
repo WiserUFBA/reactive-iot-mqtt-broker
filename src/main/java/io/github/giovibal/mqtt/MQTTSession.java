@@ -5,17 +5,20 @@ import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.StoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.impl.FutureFactoryImpl;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.FutureFactory;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.function.BooleanSupplier;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -69,6 +72,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handleConnectMessage(ConnectMessage connectMessage,
                                      Handler<Boolean> authHandler)
             throws Exception {
+
         clientID = connectMessage.getClientID();
         cleanSession = connectMessage.isCleanSession();
 
@@ -77,8 +81,10 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         String password = connectMessage.getPassword();
 
         if(useOAuth2TokenValidation) {
-            String authorizationAddress = AuthorizationVerticle.class.getName();
-            JsonObject oauth2_token_info = new JsonObject().put("access_token", username).put("refresh_token", password);
+            String authorizationAddress = "io.github.giovibal.mqtt.AuthorizationVerticle";
+            JsonObject oauth2_token_info = new JsonObject()
+                    .put("access_token", username)
+                    .put("refresh_token", password);
             vertx.eventBus().send(authorizationAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
                 if (res.succeeded()) {
                     JsonObject validationInfo = res.result().body();
