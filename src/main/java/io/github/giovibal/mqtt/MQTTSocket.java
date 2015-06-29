@@ -171,6 +171,9 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 Container.logger().warn("type of message not known: "+ msg.getClass().getSimpleName());
                 break;
         }
+
+        // TODO: forward mqtt message to backup server
+
     }
 
 

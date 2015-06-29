@@ -171,6 +171,10 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.4</version>
+            </plugin>
         </plugins>
     </build>
 
@@ -191,27 +195,11 @@
                 </dependency>
             </dependencies>
         </profile>
-        <!--<profile>-->
-            <!--<id>wso2-idp-integration</id>-->
-            <!--<activation>-->
-                <!--<file>-->
-                    <!--<exists>${basedir}/.wso2</exists>-->
-                <!--</file>-->
-            <!--</activation>-->
-            <!--<dependencies>-->
-                <!--<dependency>-->
-                    <!--<groupId>io.github.giovibal.wso2</groupId>-->
-                    <!--<artifactId>wso2-token-validation-soap-client</artifactId>-->
-                    <!--<version>1.0-SNAPSHOT</version>-->
-                <!--</dependency>-->
-            <!--</dependencies>-->
-        <!--</profile>-->
+
         <profile>
             <id>docker</id>
             <activation>
-                <file>
-                    <exists>${basedir}/.docker</exists>
-                </file>
+                <activeByDefault>false</activeByDefault>
             </activation>
 
             <build>
@@ -220,20 +208,43 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-resources</id>
-                                <phase>validate</phase>
+                                <id>copy-resources-docker</id>
+                                <phase>package</phase>
                                 <goals>
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${basedir}/target</outputDirectory>
+                                    <outputDirectory>${basedir}/target/docker</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>src/main/docker</directory>
                                             <filtering>true</filtering>
                                         </resource>
+                                        <resource>
+                                            <directory>${basedir}/target</directory>
+                                            <includes>
+                                                <include>*-fat.jar</include>
+                                            </includes>
+                                            <filtering>false</filtering>
+                                        </resource>
                                     </resources>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <configuration>
+                                    <descriptor>src/main/assembly/docker.xml</descriptor>
+                                </configuration>
+                                <id>create-archive-docker</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
@@ -264,13 +275,11 @@
         <profile>
             <id>win32</id>
             <activation>
-                <file>
-                    <exists>${basedir}/.win32</exists>
-                </file>
+                <activeByDefault>false</activeByDefault>
             </activation>
-            <properties>
-                <idp.url>http://192.168.231.55:9763</idp.url>
-            </properties>
+            <!--<properties>-->
+                <!--<idp.url>http://192.168.231.55:9763</idp.url>-->
+            <!--</properties>-->
 
             <build>
                 <plugins>
@@ -278,7 +287,7 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-resources</id>
+                                <id>copy-resources-win32</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>copy-resources</goal>
@@ -316,13 +325,12 @@
 
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <version>2.5.4</version>
-                        <configuration>
-                            <descriptor>src/main/assembly/win32.xml</descriptor>
-                        </configuration>
                         <executions>
                             <execution>
-                                <id>create-archive</id>
+                                <configuration>
+                                    <descriptor>src/main/assembly/win32.xml</descriptor>
+                                </configuration>
+                                <id>create-archive-win32</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>single</goal>

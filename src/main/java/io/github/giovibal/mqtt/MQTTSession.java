@@ -9,6 +9,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.FutureFactoryImpl;
@@ -169,6 +170,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
             Buffer msg = encoder.enc(publishMessage);
             vertx.eventBus().publish(ADDRESS + tenant, msg);
+//            if(tenant!=null && tenant.trim().length()>0)
+//                vertx.eventBus().publish(ADDRESS, msg);
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }

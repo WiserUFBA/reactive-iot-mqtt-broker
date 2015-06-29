@@ -1,10 +1,8 @@
 package io.github.giovibal.mqtt;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.streams.Pump;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -44,4 +42,5 @@ public class MQTTNetSocket extends MQTTSocket {
         Container.logger().info("net-socket will be closed ... "+ netSocket.writeHandlerID());
         netSocket.close();
     }
+
 }

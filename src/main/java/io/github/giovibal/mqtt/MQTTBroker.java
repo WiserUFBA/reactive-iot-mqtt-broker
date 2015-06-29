@@ -8,9 +8,8 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.*;
+import io.vertx.core.streams.Pump;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,6 +112,13 @@ public class MQTTBroker extends AbstractVerticle {
             // 1 store for 1 broker
             deployStoreVerticle(1);
 
+            deployVerticle(SlaveBrokerVerticle.class,
+                    new DeploymentOptions().setWorker(false).setInstances(1)
+            );
+            deployVerticle(MqttProxyVerticle.class,
+                    new DeploymentOptions().setWorker(false).setInstances(1)
+            );
+
             JsonObject config = config();
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
@@ -151,12 +157,15 @@ public class MQTTBroker extends AbstractVerticle {
 //                        )
                     ;
                 }
+
+
                 NetServer netServer = vertx.createNetServer(opt);
                 netServer.connectHandler(netSocket -> {
                     Container.logger().info("IS SSL: " + netSocket.isSsl());
                     MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
                     mqttNetSocket.start();
                 }).listen();
+
                 Container.logger().info("Startd MQTT TCP-Broker on port: " + port);
 
                 // MQTT over WebSocket
