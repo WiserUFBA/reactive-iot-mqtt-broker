@@ -12,7 +12,7 @@ import org.dna.mqtt.moquette.proto.messages.ConnectMessage;
 /**
  * Created by giova_000 on 29/06/2015.
  */
-public class MqttProxyVerticle extends AbstractVerticle {
+public class RevProxyVerticle extends AbstractVerticle {
 
     @Override
     public void start() throws Exception {

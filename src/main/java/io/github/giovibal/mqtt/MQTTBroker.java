@@ -9,7 +9,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.streams.Pump;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +114,7 @@ public class MQTTBroker extends AbstractVerticle {
             deployVerticle(SlaveBrokerVerticle.class,
                     new DeploymentOptions().setWorker(false).setInstances(1)
             );
-            deployVerticle(MqttProxyVerticle.class,
+            deployVerticle(RevProxyVerticle.class,
                     new DeploymentOptions().setWorker(false).setInstances(1)
             );
 
