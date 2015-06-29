@@ -2,7 +2,7 @@ package io.github.giovibal.mqtt;
 
 
 import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.impl.LoggerFactory;
+import io.vertx.core.logging.LoggerFactory;
 
 /**
  * Created by giova_000 on 17/01/2015.
