@@ -26,13 +26,16 @@ public class RevProxyVerticle extends AbstractVerticle {
 
         NetServer netServer = vertx.createNetServer(new NetServerOptions().setPort(proxyPort));
         netServer.connectHandler(proxyNetSocket -> {
+            NetSocketWrapper proxySocket = new NetSocketWrapper(proxyNetSocket);
             proxyNetSocket.handler(buffer -> {
                 Container.logger().info("MQTT Proxy from-proxy-to-backend");
                 vertx.eventBus().send("from-proxy-to-backend", buffer);
             });
             vertx.eventBus().localConsumer("from-backend-to-proxy", (Message<Buffer> objectMessage) -> {
                 Container.logger().info("MQTT Proxy from-backend-to-proxy");
-                proxyNetSocket.write(objectMessage.body());
+                Buffer buff = objectMessage.body();
+//                proxyNetSocket.write(buff);
+                proxySocket.sendMessageToClient(buff);
             });
         });
         netServer.listen();
@@ -42,6 +45,7 @@ public class RevProxyVerticle extends AbstractVerticle {
         netClient.connect(backendPort, backendHost, netSocketAsyncResult -> {
             if (netSocketAsyncResult.succeeded()) {
                 NetSocket backendNetSocket = netSocketAsyncResult.result();
+                NetSocketWrapper backendSocket = new MQTTNetSocketWrapper(backendNetSocket);
                 backendNetSocket.handler(buffer -> {
                     Container.logger().info("MQTT Backend from-backend-to-proxy");
                     vertx.eventBus().send("from-backend-to-proxy", buffer);
@@ -49,7 +53,8 @@ public class RevProxyVerticle extends AbstractVerticle {
                 vertx.eventBus().localConsumer("from-proxy-to-backend", (Message<Buffer> objectMessage) -> {
                     Container.logger().info("MQTT Backend from-proxy-to-backend");
                     Buffer buff = objectMessage.body();
-                    backendNetSocket.write(buff);
+//                    backendNetSocket.write(buff);
+                    backendSocket.sendMessageToClient(buff);
                 });
             }
         });
