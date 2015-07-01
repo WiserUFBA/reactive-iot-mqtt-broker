@@ -1,12 +1,16 @@
 package io.github.giovibal.mqtt;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+
+import java.util.UUID;
 
 /**
  * Created by giova_000 on 29/06/2015.
@@ -15,6 +19,9 @@ public class RevProxyFrontendVerticle extends AbstractVerticle {
 
     @Override
     public void start() throws Exception {
+
+        // deploy backends....
+        deployBackend();
 
         // PROXY FRONTEND
         int proxyPort = config().getInteger("proxy.frontend.port", 1885);
@@ -34,7 +41,29 @@ public class RevProxyFrontendVerticle extends AbstractVerticle {
         });
         netServer.listen();
 
+    }
 
+
+    private void deployBackend() {
+        String managerTopic = UUID.randomUUID().toString();
+        System.out.println("Deploy Backend: managerTopic = "+ managerTopic);
+        DeploymentOptions optBackend = new DeploymentOptions().setConfig(config().put("manager.topic",managerTopic)).setInstances(2);
+        vertx.deployVerticle(RevProxyBackendVerticle.class.getName(), optBackend, stringAsyncResult -> {
+            String deplID = stringAsyncResult.result();
+            System.out.println("DeploymentID Backend: "+ deplID);
+
+            vertx.eventBus().consumer(managerTopic, new Handler<Message<String>>() {
+                @Override
+                public void handle(Message<String> deplIdFromBackend) {
+                    String did = deplIdFromBackend.body();
+                    System.out.println("Undeploy Backend: "+ did);
+                    vertx.undeploy(did);
+
+                    //recursion ...?
+                    deployBackend();
+                }
+            });
+        });
     }
 
 }
