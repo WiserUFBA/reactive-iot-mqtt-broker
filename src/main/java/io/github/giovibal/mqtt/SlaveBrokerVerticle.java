@@ -37,44 +37,6 @@ public class SlaveBrokerVerticle extends AbstractVerticle {
             }
         });
 
-
-        // PROXY TEST
-
-//        int backendPort = 1884;
-//        String backendHost = "192.168.231.53";
-//        int proxyPort = 1885;
-
-//        NetClient netClient = vertx.createNetClient();
-//        netClient.connect(backendPort, backendHost, netSocketAsyncResult -> {
-//            if (netSocketAsyncResult.succeeded()) {
-//                NetSocket backendNetSocket = netSocketAsyncResult.result();
-//                NetServer netServer = vertx.createNetServer(new NetServerOptions().setPort(proxyPort));
-//                netServer.connectHandler(proxyNetSocket -> {
-//                    Container.logger().info("MQTT Proxied: " + proxyNetSocket.writeHandlerID());
-//                    Pump.pump(proxyNetSocket, backendNetSocket).start();
-//                    Pump.pump(backendNetSocket,proxyNetSocket).start();
-//                }).listen();
-//            }
-//        });
-
-
-//        NetServer netServer = vertx.createNetServer(new NetServerOptions().setPort(proxyPort));
-//        netServer.connectHandler(proxyNetSocket -> {
-//            Container.logger().info("MQTT Proxied: " + proxyNetSocket.writeHandlerID());
-//
-//            NetClient netClient = vertx.createNetClient();
-//            netClient.connect(backendPort, backendHost, netSocketAsyncResult -> {
-//                if (netSocketAsyncResult.succeeded()) {
-//                    NetSocket backendNetSocket = netSocketAsyncResult.result();
-//
-//                    Pump.pump(proxyNetSocket, backendNetSocket).start();
-//                    Pump.pump(backendNetSocket, proxyNetSocket).start();
-//
-//                }
-//            });
-//
-//        }).listen();
-
     }
 
 }
