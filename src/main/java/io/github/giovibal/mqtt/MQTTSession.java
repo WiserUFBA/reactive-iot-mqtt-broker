@@ -18,6 +18,7 @@ import io.vertx.core.spi.FutureFactory;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 
@@ -165,10 +166,13 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
             if(publishMessage.isRetainFlag()) {
-                storeManager.saveRetainMessage(publishMessage, onComplete -> {});
+                storeManager.saveRetainMessage(publishMessage);
             }
 
+            int remLen = publishMessage.getRemainingLength();
             Buffer msg = encoder.enc(publishMessage);
+            Container.logger().debug( msg.getBytes().length +" "+ remLen +" fixed header length => "+ (msg.getBytes().length - remLen));
+
             vertx.eventBus().publish(ADDRESS + tenant, msg);
 //            if(tenant!=null && tenant.trim().length()>0)
 //                vertx.eventBus().publish(ADDRESS, msg);

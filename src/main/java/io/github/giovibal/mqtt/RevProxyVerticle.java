@@ -64,16 +64,16 @@ public class RevProxyVerticle extends AbstractVerticle {
 
         JsonObject conf = new JsonObject()
                 .put("proxy.frontend.port",1885)
+//                .put("proxy.backend.host","192.168.231.53")
                 .put("proxy.backend.host","localhost")
                 .put("proxy.backend.port", 1884)
                 ;
 
         DeploymentOptions optFrontend = new DeploymentOptions().setConfig(conf).setInstances(1);
-        DeploymentOptions optBackend = new DeploymentOptions().setConfig(conf).setInstances(2);
-
         vertx.deployVerticle(RevProxyFrontendVerticle.class.getName(), optFrontend, stringAsyncResult -> System.out.println(stringAsyncResult.result()));
 
-        vertx.deployVerticle(RevProxyBackendVerticle.class.getName(), optBackend, stringAsyncResult -> System.out.println(stringAsyncResult.result()));
+//        DeploymentOptions optBackend = new DeploymentOptions().setConfig(conf).setInstances(2);
+//        vertx.deployVerticle(RevProxyBackendVerticle.class.getName(), optBackend, stringAsyncResult -> System.out.println(stringAsyncResult.result()));
 
 
     }

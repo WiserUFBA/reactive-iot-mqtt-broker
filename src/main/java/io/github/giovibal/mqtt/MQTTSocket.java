@@ -80,7 +80,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 ConnectMessage connect = (ConnectMessage)msg;
                 if(session == null) {
                     session = new MQTTSession(vertx, config);
-                    session.setPublishMessageHandler(publishMessage -> sendMessageToClient(publishMessage));
+                    session.setPublishMessageHandler(this::sendMessageToClient);
                 } else {
                     Container.logger().warn("Session alredy allocated ...");
                 }

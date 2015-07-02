@@ -17,8 +17,8 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
 //    static final String serverURL = "tcp://127.0.0.1:1883";
-//    static final String serverURL = "tcp://127.0.0.1:1884";
-    static final String serverURL = "tcp://192.168.0.14:1884";
+    static final String serverURL = "tcp://127.0.0.1:1884";
+//    static final String serverURL = "tcp://192.168.0.14:1884";
 //    static final String serverURL = "ssl://127.0.0.1:8883";
 
     static boolean logEnabled=true;
@@ -35,7 +35,7 @@ public class Tester {
 //        test2(10, 2000, 2);// 10 client che pubblicano 2000 messaggi ciascuno con qos:2 (11218 millis. arrivati 20000 messaggi)
 //        test2(20, 1000, 2);// 20 client che pubblicano 1000 messaggi ciascuno con qos:2 (21217 millis. arrivati 20000 messaggi)
 //        test2(40, 500, 2);// 40 client che pubblicano 500 messaggi ciascuno con qos:2 (40742 millis. arrivati 20000 messaggi)
-        test2(40, 50000, 0, 1);// 40 client che pubblicano 500 messaggi ciascuno con qos:0 (4926 millis. arrivati circa 2320 messaggi)
+//        test2(40, 50000, 0, 1);// 40 client che pubblicano 500 messaggi ciascuno con qos:0 (4926 millis. arrivati circa 2320 messaggi)
 //        test2(1000, 2, 2);// 10000 client che pubblicano 2 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
 
 //        test2(10, 30000, 2);// 10 client che pubblicano 30000 messaggi ciascuno con qos:2 (??? millis. arrivati 300000 messaggi)
@@ -100,7 +100,8 @@ public class Tester {
         Tester cPubs = new Tester(numClients, "PUBS");
         cPubs.connect();
 
-        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
+//        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
+        cPubs.publish(numMessagesToPublishPerClient, topic, qos, true);
         cPubs.disconnect();
 
         log("Sleep for "+ sleepSeconds + " seconds ...");
@@ -284,6 +285,8 @@ public class Tester {
         for(IMqttClient client : clients) {
             for(int i=0; i<numMessages; i++) {
                 String msg = "msg "+i+" qos="+qos+" retained="+ retained;
+                for( int ix=0; ix<100; ix++)
+                    msg += " messaggio più lungo ";
                 m = new MqttMessage();
                 m.setQos(qos);
                 m.setRetained(retained);
