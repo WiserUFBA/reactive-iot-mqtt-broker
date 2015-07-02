@@ -223,7 +223,7 @@
                                         <resource>
                                             <directory>${basedir}/target</directory>
                                             <includes>
-                                                <include>*-fat.jar</include>
+                                                <include>*.jar</include>
                                             </includes>
                                             <filtering>false</filtering>
                                         </resource>
