@@ -49,7 +49,7 @@ public class StoreVerticle extends AbstractVerticle {
                     response = doDefault(request);
                     break;
             }
-            System.out.println("instance => "+ this + "db.size => "+ db.size());
+//            System.out.println("instance => "+ this + "db.size => "+ db.size());
             message.reply(response);
         });
 

@@ -1,6 +1,6 @@
 # A simple example showing how the vertx image can be used.
 
-FROM vertx/vertx3
+FROM vertx/vertx3:3.0.0
 
 # Set the location of the verticles
 ENV VERTICLE_HOME /usr/verticles
@@ -18,7 +18,7 @@ ENV VERTX_OPTS="-agentlib:jdwp=transport=dt_socket,address=8000,suspend=n,server
 # The rest of the file should be fine.
 ###
 
-COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT.jar $VERTICLE_HOME/vertx-mqtt-broker-mod-2.0-SNAPSHOT.jar
+COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/vertx-mqtt-broker-mod-2.0-SNAPSHOT.jar
 COPY config.json $VERTICLE_HOME/config.json
 
 # Expose ports

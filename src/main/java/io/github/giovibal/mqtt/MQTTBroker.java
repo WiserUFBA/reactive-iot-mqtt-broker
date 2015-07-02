@@ -111,12 +111,12 @@ public class MQTTBroker extends AbstractVerticle {
             // 1 store for 1 broker
             deployStoreVerticle(1);
 
-            deployVerticle(SlaveBrokerVerticle.class,
-                    new DeploymentOptions().setWorker(false).setInstances(1)
-            );
-            deployVerticle(RevProxyVerticle.class,
-                    new DeploymentOptions().setWorker(false).setInstances(1)
-            );
+//            deployVerticle(SlaveBrokerVerticle.class,
+//                    new DeploymentOptions().setWorker(false).setInstances(1)
+//            );
+//            deployVerticle(RevProxyVerticle.class,
+//                    new DeploymentOptions().setWorker(false).setInstances(1)
+//            );
 
             JsonObject config = config();
             JsonArray brokers = config.getJsonArray("brokers");

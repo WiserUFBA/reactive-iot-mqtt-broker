@@ -13,6 +13,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.FutureFactoryImpl;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.FutureFactory;
 import org.dna.mqtt.moquette.proto.messages.*;
@@ -171,7 +172,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
             int remLen = publishMessage.getRemainingLength();
             Buffer msg = encoder.enc(publishMessage);
-            Container.logger().debug( msg.getBytes().length +" "+ remLen +" fixed header length => "+ (msg.getBytes().length - remLen));
+            Container.logger().debug(msg.getBytes().length + " " + remLen + " fixed header length => " + (msg.getBytes().length - remLen));
 
             vertx.eventBus().publish(ADDRESS + tenant, msg);
 //            if(tenant!=null && tenant.trim().length()>0)
@@ -310,6 +311,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             for (String topicFilter : topicFilterSet) {
                 if(subscriptions!=null) {
                     subscriptions.remove(topicFilter);
+                    matchingSubscriptionsCache.clear();
                 }
             }
         }
