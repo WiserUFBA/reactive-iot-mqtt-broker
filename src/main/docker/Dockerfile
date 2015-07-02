@@ -14,10 +14,7 @@ ENV VERTX_OPTIONS "-conf $VERTICLE_HOME/config.json"
 # Set Vertx/Java Opts
 ENV VERTX_OPTS="-agentlib:jdwp=transport=dt_socket,address=8000,suspend=n,server=y"
 
-###
-# The rest of the file should be fine.
-###
-
+# Copy resources
 COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/vertx-mqtt-broker-mod-2.0-SNAPSHOT.jar
 COPY config.json $VERTICLE_HOME/config.json
 
