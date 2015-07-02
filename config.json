@@ -28,6 +28,7 @@
       "websocket_enabled": true,
       "websocket_port": 11884,
       "websocket_subprotocols": "mqtt,mqttv3.1",
+      "retain_support":false,
       "security": {
         "enabled": false,
         "authorized_clients": ["testing.*"],

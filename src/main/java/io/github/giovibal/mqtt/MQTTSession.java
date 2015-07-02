@@ -30,6 +30,7 @@ import java.util.function.BooleanSupplier;
 public class MQTTSession implements Handler<Message<Buffer>> {
 
     public static final String ADDRESS = "io.github.giovibal.mqtt";
+    public static final String TENANT_HEADER = "tenant";
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -39,6 +40,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private boolean cleanSession;
     private String tenant;
     private boolean useOAuth2TokenValidation;
+    private boolean retainSupport;
     private MessageConsumer<Buffer> messageConsumer;
     private Handler<PublishMessage> publishMessageHandler;
     private Map<String, Subscription> subscriptions;
@@ -52,6 +54,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
         this.useOAuth2TokenValidation = config.isSecurityEnabled();
+        this.retainSupport = config.isRetainSupport();
         this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
         this.matchingSubscriptionsCache = new HashMap<>();
@@ -169,9 +172,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Buffer msg = encoder.enc(publishMessage);
             Container.logger().debug(msg.getBytes().length + " " + remLen + " fixed header length => " + (msg.getBytes().length - remLen));
 
-            vertx.eventBus().publish(ADDRESS + tenant, msg);
-//            if(tenant!=null && tenant.trim().length()>0)
-//                vertx.eventBus().publish(ADDRESS, msg);
+            DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, tenant);
+            vertx.eventBus().publish(ADDRESS, msg, opt);
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
@@ -180,7 +182,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
             if(this.messageConsumer==null) {
-                messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
+                messageConsumer = vertx.eventBus().consumer(ADDRESS);
                 messageConsumer.handler(this);
             }
 
@@ -196,8 +198,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 this.subscriptions.put(topicFilter, sub);
 
                 // check in client wants receive retained message by this topicFilter
-                boolean clientRefuseRetainMessages = clientRefuseRetainMessages();
-                if(!clientRefuseRetainMessages) {
+                if(retainSupport) {
                     storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
                         if (retainedMessages != null) {
                             for (PublishMessage retainedMessage : retainedMessages) {
@@ -211,30 +212,45 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Container.logger().error(e.getMessage());
         }
     }
-    private boolean clientRefuseRetainMessages() {
-        boolean clientRefuseRetainMessages = false;
-        if(willMessage!=null && willMessage.getTopicName().equals("$SYS/config")) {
-            try {
-                String willConfig = new String( willMessage.getPayload().array(), "UTF-8" );
-                JsonObject configJson = new JsonObject(willConfig);
-                if(configJson.containsKey("retain")) {
-                    Boolean retainSupport = configJson.getBoolean("retain");
-                    clientRefuseRetainMessages = retainSupport != null && !retainSupport;
-                }
-            } catch(Throwable e) {
-                Container.logger().warn(e.getMessage(), e);
-            }
-        }
-        return clientRefuseRetainMessages;
-    }
+//    private boolean clientRefuseRetainMessages() {
+//        boolean clientRefuseRetainMessages = false;
+//        if(willMessage!=null && willMessage.getTopicName().equals("$SYS/config")) {
+//            try {
+//                String willConfig = new String( willMessage.getPayload().array(), "UTF-8" );
+//                JsonObject configJson = new JsonObject(willConfig);
+//                if(configJson.containsKey("retain")) {
+//                    Boolean retainSupport = configJson.getBoolean("retain");
+//                    clientRefuseRetainMessages = retainSupport != null && !retainSupport;
+//                }
+//            } catch(Throwable e) {
+//                Container.logger().warn(e.getMessage(), e);
+//            }
+//        }
+//        return clientRefuseRetainMessages;
+//    }
 
     @Override
     public void handle(Message<Buffer> message) {
-        //filter messages in base of subscriptions of this client
         try {
-            Buffer in = message.body();
-            PublishMessage pm = (PublishMessage) decoder.dec(in);
-            handlePublishMessageReceived(pm);
+            boolean tenantMatch;
+            boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
+            if(containsTenantHeader) {
+                String tenantHeaderValue = message.headers().get(TENANT_HEADER);
+                tenantMatch = tenant != null && tenantHeaderValue != null && tenant.equals(tenantHeaderValue);
+            }
+            else {
+                // if message doesn't contains header, is a "all-tenant" message
+                tenantMatch = true;
+            }
+
+            if(tenantMatch) {
+                Buffer in = message.body();
+                PublishMessage pm = (PublishMessage) decoder.dec(in);
+                // filter messages by tenant header
+
+                // filter messages by of subscriptions of this client
+                handlePublishMessageReceived(pm);
+            }
         } catch (Throwable e) {
             Container.logger().error(e.getMessage(), e);
         }

@@ -15,6 +15,7 @@ public class ConfigParser {
     private int wsPort;
     private boolean wsEnabled;
     private String wsSubProtocols;
+    private boolean retainSupport;
 
     private boolean securityEnabled;
     private List<String> authorizedClients;
@@ -24,6 +25,7 @@ public class ConfigParser {
 
     private String tlsKeyPath;
     private String tlsCertPath;
+
 
     public ConfigParser() {
     }
@@ -35,6 +37,7 @@ public class ConfigParser {
         wsPort = conf.getInteger("websocket_port", 11883);
         wsEnabled = conf.getBoolean("websocket_enabled", true);
         wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
+        retainSupport = conf.getBoolean("retain_support", true);
 
         JsonObject security = conf.getJsonObject("security", new JsonObject());
         securityEnabled = security.getBoolean("enabled", false);
@@ -116,5 +119,9 @@ public class ConfigParser {
         boolean ret = keyPath!=null && keyPath.trim().length()>0 && certPath!=null && certPath.trim().length()>0;
         return ret;
 
+    }
+
+    public boolean isRetainSupport() {
+        return retainSupport;
     }
 }
