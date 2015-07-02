@@ -23,6 +23,8 @@ use vertx command to start the service ...
 ```
 vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json
 vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -Dvertx.metrics.options.jmxEnabled=true -conf config.json
+
+vertx run io.github.giovibal.mqtt.MQTTBroker -cp target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf conf.json
 ```
 or uber jar ...
 ```
@@ -32,7 +34,8 @@ java -Dvertx.metrics.options.jmxEnabled=true -jar target/vertx-mqtt-broker-mod-2
 
 cluster ...
 ```
-vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json -cluster -cluster-host 192.168.1.188
+vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json -cluster -cluster-host <IP>
+vertx run io.github.giovibal.mqtt.MQTTBroker -cp target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config1.json -cluster -cluster-host <IP>
 ```
 
 Features

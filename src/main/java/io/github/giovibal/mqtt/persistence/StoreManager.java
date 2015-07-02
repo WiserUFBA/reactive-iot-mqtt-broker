@@ -70,9 +70,11 @@ public class StoreManager {
                         JsonObject response = msg.body();
                         JsonArray results = response.getJsonArray("results");
                         List<JsonObject> retained = (List<JsonObject>) results.getList();
-                        for (JsonObject item : retained) {
+                        int size = results.size();
+                        for(int i=0; i<size; i++) {
                             try {
-                                String topic = item.getString("topic");
+                                JsonObject item = results.getJsonObject(i);
+//                                String topic = item.getString("topic");
                                 byte[] message = item.getBinary("message");
                                 Buffer pmBytes = Buffer.buffer(message);
                                 PublishMessage pm = (PublishMessage) decoder.dec(pmBytes);

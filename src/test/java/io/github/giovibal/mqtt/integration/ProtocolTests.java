@@ -21,7 +21,8 @@ public class ProtocolTests extends BaseTest {
             long t1,t2,t3;
             t1=System.currentTimeMillis();
 
-            Tester c = new Tester(numClients, "Paho");
+            String serverURL = "tcp://localhost:1883";
+            Tester c = new Tester(numClients, "Paho", serverURL);
             c.connect();
             for(int i=0; i<numTopics; i++) {
                 String topic = topicPrefix + "/" + i;

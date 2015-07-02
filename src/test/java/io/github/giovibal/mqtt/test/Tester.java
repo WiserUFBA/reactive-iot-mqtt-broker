@@ -19,6 +19,8 @@ public class Tester {
 //    static final String serverURL = "tcp://127.0.0.1:1883";
 //    static final String serverURL = "tcp://127.0.0.1:1884";
     static final String serverURL = "tcp://192.168.231.53:1884";
+    static final String serverURLSubscribers = "tcp://192.168.231.51:1886";
+    static final String serverURLPublishers = "tcp://192.168.231.52:1886";
 //    static final String serverURL = "tcp://192.168.0.14:1884";
 //    static final String serverURL = "ssl://127.0.0.1:8883";
 
@@ -32,9 +34,10 @@ public class Tester {
 //        test2(30, 100, 2, 0);
 
         stats("Num Clients / Num Messages Tests");
-        test2(30, 100, 0, 0);
-        test2(100, 30, 0, 0);
-        test2(3, 1000, 0, 0);
+        test2(30, 100, 0, 1);
+        test2(100, 30, 0, 1);
+        test2(3, 1000, 0, 1);
+//        test2(30, 10000, 0, 1);
 
 //        test2(30, 200, 0, 0);
 //        test2(30, 500, 0, 0);
@@ -82,7 +85,7 @@ public class Tester {
         long t1,t2,t3;
         t1=System.currentTimeMillis();
 
-        Tester c = new Tester(numClients, "Paho");
+        Tester c = new Tester(numClients, "Paho", serverURL);
         c.connect();
         c.subscribe(topic);
         c.publish(topic);
@@ -112,11 +115,11 @@ public class Tester {
         long t1,t2,t3;
         t1=System.currentTimeMillis();
 
-        Tester cSubs = new Tester(numClients, "SUBS");
+        Tester cSubs = new Tester(numClients, "SUBS", serverURLSubscribers);
         cSubs.connect();
         cSubs.subscribe(topicFilter);
 
-        Tester cPubs = new Tester(numClients, "PUBS");
+        Tester cPubs = new Tester(numClients, "PUBS", serverURLPublishers);
         cPubs.connect();
 
 //        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
@@ -155,7 +158,7 @@ public class Tester {
         long t1,t2,t3;
         t1=System.currentTimeMillis();
 
-        Tester c = new Tester(numClients, "Paho");
+        Tester c = new Tester(numClients, "Paho", serverURL);
         c.connect();
         c.subscribe(topicSub);
         c.publish(topicPub);
@@ -175,7 +178,7 @@ public class Tester {
         long t1,t2,t3;
         t1=System.currentTimeMillis();
 
-        Tester c = new Tester(numClients, "Paho");
+        Tester c = new Tester(numClients, "Paho", serverURL);
         c.connect();
         for(int i=0; i<numTopics; i++) {
             String topic = topicPrefix + "/" + i;
@@ -204,7 +207,7 @@ public class Tester {
     private List<IMqttClient> clients = new ArrayList<>();
     private List<MQTTClientHandler> clientHandlers = new ArrayList<>();
 
-    public Tester(int numClients, String clientIDPrefix) throws MqttException {
+    public Tester(int numClients, String clientIDPrefix, String serverURL) throws MqttException {
         for(int i=1; i<=numClients; i++) {
             String clientID = clientIDPrefix+"_" + i;
 
