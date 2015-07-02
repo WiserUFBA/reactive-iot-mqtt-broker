@@ -17,19 +17,31 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
 //    static final String serverURL = "tcp://127.0.0.1:1883";
-    static final String serverURL = "tcp://127.0.0.1:1884";
+//    static final String serverURL = "tcp://127.0.0.1:1884";
+    static final String serverURL = "tcp://192.168.231.53:1884";
 //    static final String serverURL = "tcp://192.168.0.14:1884";
 //    static final String serverURL = "ssl://127.0.0.1:8883";
 
-    static boolean logEnabled=true;
+    static boolean logEnabled=false;
 
     public static void main(String[] args) throws Exception {
 
-//        test1(10);
-//        test2(1, 5, 1, 2);
-//        test2(30, 100, 0, 10);
+//        stats("Qos Tests");
+//        test2(30, 100, 0, 0);
+//        test2(30, 100, 1, 0);
+//        test2(30, 100, 2, 0);
+
+        stats("Num Clients / Num Messages Tests");
+        test2(30, 100, 0, 0);
+        test2(100, 30, 0, 0);
+        test2(3, 1000, 0, 0);
+
+//        test2(30, 200, 0, 0);
+//        test2(30, 500, 0, 0);
+//        test2(30, 800, 0, 0);
+//        test2(30, 1000, 0, 0);
 //        test2(30, 100, 1, 1);
-        test2(30, 100, 2, 1);
+//        test2(30, 100, 2, 1);
 
 //        test2(2, 10000, 2);// 2 client che pubblicano 10000 messaggi ciascuno con qos:2 (4368 millis. arrivati 20000 messaggi)
 //        test2(10, 2000, 2);// 10 client che pubblicano 2000 messaggi ciascuno con qos:2 (11218 millis. arrivati 20000 messaggi)
@@ -60,6 +72,9 @@ public class Tester {
             System.out.println(msg);
         }
     }
+    private static void stats(String msg) {
+        System.out.println(msg);
+    }
 
     public static void test1(int numClients) throws Exception {
         String topic = "test/untopic";
@@ -87,6 +102,10 @@ public class Tester {
 
 
     public static void test2(int numClients, int numMessagesToPublishPerClient, int qos, long sleepSeconds) throws Exception {
+        stats("");
+        stats("------------------------------------------------------------------");
+        stats("Test clients: "+ numClients +" num msg: "+ numMessagesToPublishPerClient +" qos: "+ qos);
+        stats("------------------------------------------------------------------");
         String topic = "test/untopic/a";
         String topicFilter = "test/+/a";
 
@@ -104,7 +123,7 @@ public class Tester {
         cPubs.publish(numMessagesToPublishPerClient, topic, qos, true);
         cPubs.disconnect();
 
-        log("Sleep for "+ sleepSeconds + " seconds ...");
+        log("Sleep for " + sleepSeconds + " seconds ...");
         Thread.sleep(sleepSeconds*1000);
 
         cSubs.unsubcribe(topic);
@@ -115,7 +134,18 @@ public class Tester {
 
         t2=System.currentTimeMillis();
         t3=t2-t1;
-        log("Time elapsed: " + t3 + " millis.");
+
+        stats("Time elapsed: " + t3 + " millis.");
+        float seconds = (t3/1000);
+        if(seconds > 0) {
+            float throughputPub = cPubs.getMessaggiSpeditiInMedia() / (seconds);
+            float throughputSub = cSubs.getMessaggiArrivatiInMedia() / (seconds);
+            float throughput = throughputPub + throughputSub;
+            stats("Throughput Published: " + throughputPub + " msg/sec.");
+            stats("Throughput Received: " + throughputSub + " msg/sec.");
+            stats("Throughput Total: " + throughput + " msg/sec.");
+        }
+        stats("------------------------------------------------------------------");
     }
 
     public static void test3(int numClients) throws Exception {
@@ -285,8 +315,6 @@ public class Tester {
         for(IMqttClient client : clients) {
             for(int i=0; i<numMessages; i++) {
                 String msg = "msg "+i+" qos="+qos+" retained="+ retained;
-                for( int ix=0; ix<100; ix++)
-                    msg += " messaggio più lungo ";
                 m = new MqttMessage();
                 m.setQos(qos);
                 m.setRetained(retained);
@@ -324,6 +352,20 @@ public class Tester {
             ret.put(h.clientID,h.messaggiArrivati);
         }
         return ret;
+    }
+    public int getMessaggiArrivatiInMedia() {
+        int sum=0;
+        for(MQTTClientHandler h : clientHandlers) {
+            sum += h.messaggiArrivati;
+        }
+        return sum;
+    }
+    public int getMessaggiSpeditiInMedia() {
+        int sum=0;
+        for(MQTTClientHandler h : clientHandlers) {
+            sum += h.messaggiSpediti;
+        }
+        return sum;
     }
 
     static class MQTTClientHandler implements MqttCallback {

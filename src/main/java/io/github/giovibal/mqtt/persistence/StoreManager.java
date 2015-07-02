@@ -54,22 +54,6 @@ public class StoreManager {
             e.printStackTrace();
         }
     }
-    public void saveRetainMessage(String topic, Buffer pm) {
-        try {
-//            Buffer pmBytes = encoder.enc(pm);
-
-            JsonObject request = new JsonObject()
-                    .put("topic", topic)
-                    .put("message", pm.getBytes());
-            vertx.eventBus().publish(
-                    StoreVerticle.ADDRESS,
-                    request,
-                    new DeliveryOptions().addHeader("command", "saveRetainMessage"));
-
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
 
     public void getRetainedMessagesByTopicFilter(String topicFilter, Handler<List<PublishMessage>> handler) {
         List<PublishMessage> list = new ArrayList<>();

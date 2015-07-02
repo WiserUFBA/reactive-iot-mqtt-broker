@@ -12,7 +12,8 @@ ENV VERTICLE_NAME io.github.giovibal.mqtt.MQTTBroker
 ENV VERTX_OPTIONS "-conf $VERTICLE_HOME/config.json"
 
 # Set Vertx/Java Opts
-ENV VERTX_OPTS="-agentlib:jdwp=transport=dt_socket,address=8000,suspend=n,server=y"
+#ENV VERTX_OPTS="-agentlib:jdwp=transport=dt_socket,address=8000,suspend=n,server=y"
+ENV VERTX_OPTS=""
 
 # Copy resources
 COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/vertx-mqtt-broker-mod-2.0-SNAPSHOT.jar
@@ -27,4 +28,4 @@ EXPOSE 8000
 
 # We use the "sh -c" to turn around https://github.com/docker/docker/issues/5509 - variable not expanded
 ENTRYPOINT ["sh", "-c"]
-CMD ["vertx run $VERTICLE_NAME -cp $VERTICLE_HOME/*.jar $VERTX_OPTIONS"]
+CMD ["vertx run $VERTICLE_NAME -instances 4 -cp $VERTICLE_HOME/*.jar $VERTX_OPTIONS"]

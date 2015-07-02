@@ -144,11 +144,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             byte willQosByte = connectMessage.getWillQos();
             AbstractMessage.QOSType willQos = qosUtils.toQos(willQosByte);
 
-//            JsonObject will = new JsonObject()
-//                    .put("topicName", willTopic)
-//                    .put("qos", willQos.ordinal())
-//                    .put("message", willMessage);
-
             try {
                 willMessage = new PublishMessage();
                 willMessage.setPayload(willMessageM);
@@ -275,7 +270,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             publishMessage.setQos(qos);
 
             // server must send retain=false flag to subscribers ...
-            publishMessage.setRetainFlag(false);
+//            publishMessage.setRetainFlag(false);
             sendPublishMessage(publishMessage);
         }
     }
