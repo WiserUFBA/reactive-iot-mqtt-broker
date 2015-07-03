@@ -86,6 +86,10 @@ public class MQTTBroker extends AbstractVerticle {
                 else {
                     startTcpServer(c);
                 }
+                Container.logger().info(
+                        "Startd Broker ==> [port: " + c.getPort() + "]" +
+                                " [" + c.getFeatursInfo() +"] "
+                );
             }
 
         } catch(Exception e ) {
@@ -93,6 +97,8 @@ public class MQTTBroker extends AbstractVerticle {
         }
 
     }
+
+
 
     private void startTcpServer(ConfigParser c) {
         int port = c.getPort();
@@ -121,7 +127,7 @@ public class MQTTBroker extends AbstractVerticle {
             MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
             mqttNetSocket.start();
         }).listen();
-        Container.logger().info("Startd MQTT TCP-Broker on port: " + port);
+
     }
 
     private void startWebsocketServer(ConfigParser c) {
@@ -147,6 +153,6 @@ public class MQTTBroker extends AbstractVerticle {
             MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
             mqttWebSocket.start();
         }).listen();
-        Container.logger().info("Startd MQTT WebSocket-Broker on port: " + port);
+
     }
 }

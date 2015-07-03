@@ -1,42 +1,44 @@
 {
   "brokers": [
     {
-      "tcp_port": 1883,
+      "tcp_port": 1883
+    },
+    {
+      "tcp_port": 11883,
       "websocket_enabled": true,
-      "websocket_port": 11883,
-      "websocket_subprotocols": "mqtt,mqttv3.1",
-      "retain_support":true,
+      "websocket_subprotocols": "mqtt,mqttv3.1"
+    },
+    {
+      "tcp_port": 1884,
       "security": {
-        "enabled": false,
+        "enabled": true,
         "authorized_clients": ["testing.*"],
         "idp_url": "http://192.168.231.55:9763",
         "idp_username": "admin",
         "idp_password": "d0_ut_d3s$"
       }
     },
-    /*{
-      "tcp_port": 8883,
-      "websocket_enabled": true,
-      "websocket_port": 18883,
-      "websocket_subprotocols": "mqtt,mqttv3.1",
-      "tls": {
-        "keyPath": "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key",
-        "certPath": "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt"
-      }
-    },*/
     {
-      "tcp_port": 1884,
+      "tcp_port": 11884,
       "websocket_enabled": true,
-      "websocket_port": 11884,
       "websocket_subprotocols": "mqtt,mqttv3.1",
-      "retain_support":false,
       "security": {
-        "enabled": false,
+        "enabled": true,
         "authorized_clients": ["testing.*"],
         "idp_url": "http://192.168.231.55:9763",
         "idp_username": "admin",
         "idp_password": "d0_ut_d3s$"
       }
+    },
+    {
+      "tcp_port": 1885,
+      "retain_support": false
+    },
+    {
+      "tcp_port": 11885,
+      "websocket_enabled": true,
+      "websocket_subprotocols": "mqtt,mqttv3.1",
+      "retain_support": false
     }
-    ]
+  ]
 }

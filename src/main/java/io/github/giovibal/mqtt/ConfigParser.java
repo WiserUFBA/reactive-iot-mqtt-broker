@@ -4,6 +4,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -123,5 +124,28 @@ public class ConfigParser {
 
     public boolean isRetainSupport() {
         return retainSupport;
+    }
+
+    public List<String> getFeatures() {
+        List<String> ret = new ArrayList<>();
+        if(wsEnabled)
+            ret.add("websocket");
+        if(securityEnabled)
+            ret.add("security");
+        if(!retainSupport)
+            ret.add("retain_disabled");
+        return ret;
+    }
+    public String getFeatursInfo() {
+        StringBuilder ret = new StringBuilder();
+        List<String> features = getFeatures();
+        for(String f : features) {
+            ret.append(f).append(",");
+        }
+        String s = ret.toString();
+        int idx = s.lastIndexOf(',');
+        if(idx>=0)
+            s = s.substring(0, idx);
+        return s;
     }
 }
