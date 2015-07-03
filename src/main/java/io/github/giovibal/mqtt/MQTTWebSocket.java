@@ -21,7 +21,8 @@ public class MQTTWebSocket extends MQTTSocket {
     public void start() {
         netSocket.handler(this);
         netSocket.closeHandler(aVoid -> {
-            Container.logger().info("web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
+            String clientInfo = getClientInfo();
+            Container.logger().info(clientInfo + ", web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
             shutdown();
         });
     }

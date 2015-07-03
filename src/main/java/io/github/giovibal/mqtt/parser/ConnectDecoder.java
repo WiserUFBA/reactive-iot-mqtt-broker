@@ -52,7 +52,7 @@ public class ConnectDecoder extends DemuxDecoder {
                 message.setProtocolName(protoName);
 
 //                versionAttr.set((int) Utils.VERSION_3_1);
-                System.out.println("Detected MQTT v. 3.1 "+ protoName);
+//                System.out.println("Detected MQTT v. 3.1 "+ protoName);
                 break;
             case 4:
                 //MQTT version 3.1.1 "MQTT"
@@ -70,7 +70,7 @@ public class ConnectDecoder extends DemuxDecoder {
                 }
                 message.setProtocolName(protoName);
 //                versionAttr.set((int) Utils.VERSION_3_1_1);
-                System.out.println("Detected MQTT v. 3.1.1 "+ protoName);
+//                System.out.println("Detected MQTT v. 3.1.1 "+ protoName);
                 break;
 
             default:

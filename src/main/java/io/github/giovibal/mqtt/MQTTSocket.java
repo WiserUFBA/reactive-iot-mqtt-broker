@@ -8,9 +8,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.*;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
 
 /**
@@ -22,8 +19,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     protected Vertx vertx;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
-    protected MQTTPacketTokenizer tokenizer;
-    private MQTTSession session;
+    private MQTTPacketTokenizer tokenizer;
+    protected MQTTSession session;
     private ConfigParser config;
 
     public MQTTSocket(Vertx vertx, ConfigParser config) {
@@ -57,18 +54,20 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     @Override
     public void onToken(byte[] token, boolean timeout) throws Exception {
-        Buffer buffer = Buffer.buffer(token);
-        AbstractMessage message = decoder.dec(buffer);
         try {
+            Buffer buffer = Buffer.buffer(token);
+            AbstractMessage message = decoder.dec(buffer);
             onMessageFromClient(message);
-        } catch (Exception ex) {
-            Container.logger().error("Bad error in processing the message", ex);
+        } catch (Throwable ex) {
+            String clientInfo = getClientInfo();
+            Container.logger().error(clientInfo +", Bad error in processing the message", ex);
         }
     }
 
     @Override
     public void onError(Throwable e) {
-        Container.logger().error(e.getMessage(), e);
+        String clientInfo = getClientInfo();
+        Container.logger().error(clientInfo +", "+ e.getMessage(), e);
         if(e instanceof CorruptedFrameException) {
             closeConnection();
         }
@@ -191,6 +190,14 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         session = null;
     }
 
+
+    protected String getClientInfo() {
+        String clientInfo = "Session n/a";
+        if(session != null) {
+            clientInfo = session.getClientInfo();
+        }
+        return clientInfo;
+    }
 
 
 }

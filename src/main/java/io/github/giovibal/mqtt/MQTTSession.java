@@ -37,6 +37,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private MQTTEncoder encoder;
     private ITopicsManager topicsManager;
     private String clientID;
+    private String protoName;
     private boolean cleanSession;
     private String tenant;
     private boolean useOAuth2TokenValidation;
@@ -81,12 +82,20 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
         clientID = connectMessage.getClientID();
         cleanSession = connectMessage.isCleanSession();
+        protoName = connectMessage.getProtocolName();
+        if("MQIsdp".equals(protoName)) {
+            Container.logger().info("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
+        } else if("MQTT".equals(protoName)) {
+            Container.logger().info("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
+        } else {
+            Container.logger().info("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
+        }
 
-        // AUTHENTICATION START
         String username = connectMessage.getUsername();
         String password = connectMessage.getPassword();
 
         if(useOAuth2TokenValidation) {
+            // AUTHENTICATION START
             String authorizationAddress = "io.github.giovibal.mqtt.AuthorizationVerticle";
             JsonObject oauth2_token_info = new JsonObject()
                     .put("access_token", username)
@@ -102,11 +111,11 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                     if (token_valid) {
                         String tenant = extractTenant(authorized_user);
                         _initTenant(tenant);
-                        Container.logger().info("authorized_user ===> " + authorized_user +", tenant ===> "+ tenant);
+                        Container.logger().info("authorized_user ===> " + authorized_user + ", tenant ===> " + tenant);
                         _handleConnectMessage(connectMessage);
                         authHandler.handle(Boolean.TRUE);
                     } else {
-                        Container.logger().info("authenticated error ===> "+ error_msg);
+                        Container.logger().info("authenticated error ===> " + error_msg);
                         authHandler.handle(Boolean.FALSE);
                     }
                 } else {
@@ -350,4 +359,17 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         vertx = null;
     }
 
+
+//    public String getClientID() {
+//        return clientID;
+//    }
+//
+//    public String getProtoName() {
+//        return protoName;
+//    }
+
+    public String getClientInfo() {
+        String clientInfo ="clientID: "+ clientID +", MQTT protocol: "+ protoName +"";
+        return clientInfo;
+    }
 }

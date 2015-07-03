@@ -160,7 +160,7 @@ public class MQTTBroker extends AbstractVerticle {
 
                 NetServer netServer = vertx.createNetServer(opt);
                 netServer.connectHandler(netSocket -> {
-                    Container.logger().info("IS SSL: " + netSocket.isSsl());
+//                    Container.logger().info("IS SSL: " + netSocket.isSsl());
                     MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
                     mqttNetSocket.start();
                 }).listen();
