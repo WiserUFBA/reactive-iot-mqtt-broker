@@ -116,10 +116,10 @@ public class MQTTBroker extends AbstractVerticle {
                             .setKeyPath(keyPath)
                             .setCertPath(certPath)
             )
-//                        .setClientAuthRequired(true)
-//                        .setPemTrustOptions(new PemTrustOptions()
-//                            .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                        )
+//              .setClientAuthRequired(true)
+//              .setPemTrustOptions(new PemTrustOptions()
+//                  .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+//              )
             ;
         }
         NetServer netServer = vertx.createNetServer(opt);
@@ -127,7 +127,6 @@ public class MQTTBroker extends AbstractVerticle {
             MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
             mqttNetSocket.start();
         }).listen();
-
     }
 
     private void startWebsocketServer(ConfigParser c) {
@@ -139,7 +138,7 @@ public class MQTTBroker extends AbstractVerticle {
 
         HttpServerOptions httpOpt = new HttpServerOptions()
                 .setTcpKeepAlive(true)
-                .setMaxWebsocketFrameSize(1024)
+//                .setMaxWebsocketFrameSize(1024)
                 .setWebsocketSubProtocol(wsSubProtocols)
                 .setPort(port);
         if(tlsEnabled) {
@@ -153,6 +152,5 @@ public class MQTTBroker extends AbstractVerticle {
             MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
             mqttWebSocket.start();
         }).listen();
-
     }
 }
