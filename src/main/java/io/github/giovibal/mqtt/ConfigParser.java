@@ -12,7 +12,7 @@ import java.util.List;
 public class ConfigParser {
 
     private int port;
-    private int wsPort;
+//    private int wsPort;
     private boolean wsEnabled;
     private String wsSubProtocols;
     private boolean retainSupport;
@@ -34,8 +34,8 @@ public class ConfigParser {
     }
     public void parse(JsonObject conf) {
         port = conf.getInteger("tcp_port", 1883);
-        wsPort = conf.getInteger("websocket_port", 11883);
-        wsEnabled = conf.getBoolean("websocket_enabled", true);
+//        wsPort = conf.getInteger("websocket_port", 11883);
+        wsEnabled = conf.getBoolean("websocket_enabled", false);
         wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
         retainSupport = conf.getBoolean("retain_support", true);
 
@@ -62,9 +62,9 @@ public class ConfigParser {
         return port;
     }
 
-    public int getWsPort() {
-        return wsPort;
-    }
+//    public int getWsPort() {
+//        return wsPort;
+//    }
 
     public boolean isWsEnabled() {
         return wsEnabled;

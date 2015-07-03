@@ -65,24 +65,13 @@ public class MQTTBroker extends AbstractVerticle {
             // 1 store for 1 broker
             deployStoreVerticle(1);
 
-//            deployVerticle(SlaveBrokerVerticle.class,
-//                    new DeploymentOptions().setWorker(false).setInstances(1)
-//            );
-//            deployVerticle(RevProxyVerticle.class,
-//                    new DeploymentOptions().setWorker(false).setInstances(1)
-//            );
-
             JsonObject config = config();
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
 
-
                 ConfigParser c = new ConfigParser(brokerConf);
-                int port = c.getPort();
-                int wsPort = c.getWsPort();
                 boolean wsEnabled = c.isWsEnabled();
-                String wsSubProtocols = c.getWsSubProtocols();
                 boolean securityEnabled = c.isSecurityEnabled();
 
                 if(securityEnabled) {
@@ -90,50 +79,12 @@ public class MQTTBroker extends AbstractVerticle {
                     deployAuthorizationWorker(brokerConf, 2);
                 }
 
-                // MQTT over TCP
-                NetServerOptions opt = new NetServerOptions()
-                        .setTcpKeepAlive(true)
-                        .setPort(port);
-                String keyPath = c.getTlsKeyPath();
-                String certPath = c.getTlsCertPath();
-                boolean tlsEnabled = c.isTlsEnabled();
-                if(tlsEnabled) {
-                    opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                                    .setKeyPath(keyPath)
-                                    .setCertPath(certPath)
-                    )
-//                        .setClientAuthRequired(true)
-//                        .setPemTrustOptions(new PemTrustOptions()
-//                            .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                        )
-                    ;
-                }
-                NetServer netServer = vertx.createNetServer(opt);
-                netServer.connectHandler(netSocket -> {
-                    MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
-                    mqttNetSocket.start();
-                }).listen();
-                Container.logger().info("Startd MQTT TCP-Broker on port: " + port);
-
                 // MQTT over WebSocket
                 if (wsEnabled) {
-                    HttpServerOptions httpOpt = new HttpServerOptions()
-                        .setTcpKeepAlive(true)
-                        .setMaxWebsocketFrameSize(1024)
-                        .setWebsocketSubProtocol(wsSubProtocols)
-                        .setPort(wsPort);
-                    if(tlsEnabled) {
-                        httpOpt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                            .setKeyPath(keyPath)
-                            .setCertPath(certPath)
-                        );
-                    }
-                    HttpServer http = vertx.createHttpServer(httpOpt);
-                    http.websocketHandler(serverWebSocket -> {
-                        MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
-                        mqttWebSocket.start();
-                    }).listen();
-                    Container.logger().info("Startd MQTT WebSocket-Broker on port: " + wsPort);
+                    startWebsocketServer(c);
+                }
+                else {
+                    startTcpServer(c);
                 }
             }
 
@@ -143,4 +94,59 @@ public class MQTTBroker extends AbstractVerticle {
 
     }
 
+    private void startTcpServer(ConfigParser c) {
+        int port = c.getPort();
+        String keyPath = c.getTlsKeyPath();
+        String certPath = c.getTlsCertPath();
+        boolean tlsEnabled = c.isTlsEnabled();
+
+        // MQTT over TCP
+        NetServerOptions opt = new NetServerOptions()
+                .setTcpKeepAlive(true)
+                .setPort(port);
+
+        if(tlsEnabled) {
+            opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
+                            .setKeyPath(keyPath)
+                            .setCertPath(certPath)
+            )
+//                        .setClientAuthRequired(true)
+//                        .setPemTrustOptions(new PemTrustOptions()
+//                            .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+//                        )
+            ;
+        }
+        NetServer netServer = vertx.createNetServer(opt);
+        netServer.connectHandler(netSocket -> {
+            MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
+            mqttNetSocket.start();
+        }).listen();
+        Container.logger().info("Startd MQTT TCP-Broker on port: " + port);
+    }
+
+    private void startWebsocketServer(ConfigParser c) {
+        int port = c.getPort();
+        String wsSubProtocols = c.getWsSubProtocols();
+        String keyPath = c.getTlsKeyPath();
+        String certPath = c.getTlsCertPath();
+        boolean tlsEnabled = c.isTlsEnabled();
+
+        HttpServerOptions httpOpt = new HttpServerOptions()
+                .setTcpKeepAlive(true)
+                .setMaxWebsocketFrameSize(1024)
+                .setWebsocketSubProtocol(wsSubProtocols)
+                .setPort(port);
+        if(tlsEnabled) {
+            httpOpt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
+                            .setKeyPath(keyPath)
+                            .setCertPath(certPath)
+            );
+        }
+        HttpServer http = vertx.createHttpServer(httpOpt);
+        http.websocketHandler(serverWebSocket -> {
+            MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
+            mqttWebSocket.start();
+        }).listen();
+        Container.logger().info("Startd MQTT WebSocket-Broker on port: " + port);
+    }
 }
