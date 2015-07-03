@@ -8,10 +8,9 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.*;
-
-import java.util.ArrayList;
-import java.util.List;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -20,29 +19,7 @@ import java.util.List;
 public class MQTTBroker extends AbstractVerticle {
 
 
-    private List<String> deployments;
-
-
     public static void main(String[] args) {
-//        Vertx vertx = Vertx.vertx();
-//
-//        int instances = Runtime.getRuntime().availableProcessors();
-//        if(instances > 2) {
-//            instances = instances - 2;
-//        }
-//
-//        // broker
-//        vertx.deployVerticle(MQTTBroker.class.getName(), new DeploymentOptions().setInstances(instances),
-//                result -> {
-//                    if (result.failed()) {
-//                        result.cause().printStackTrace();
-//                    } else {
-//                        Container.logger().info(MQTTBroker.class.getSimpleName()+": "+result.result());
-//                    }
-//                }
-//        );
-
-
         start(args);
     }
     public static void start(String[] args) {
@@ -52,20 +29,6 @@ public class MQTTBroker extends AbstractVerticle {
         System.exit(0);
     }
 
-    private void undeployVerticle(String deploymentID) {
-        vertx.undeploy(deploymentID,
-            result -> {
-                if (result.failed()) {
-                    result.cause().printStackTrace();
-                } else {
-                    Container.logger().info("Undeploy success: " + deploymentID);
-                    if (deployments != null) {
-                        deployments.remove(deploymentID);
-                    }
-                }
-            }
-        );
-    }
 
     private void deployVerticle(Class c, DeploymentOptions opt) {
         vertx.deployVerticle(c.getName(), opt,
@@ -75,10 +38,6 @@ public class MQTTBroker extends AbstractVerticle {
                 } else {
                     String deploymentID = result.result();
                     Container.logger().info(c.getSimpleName() + ": " + deploymentID);
-                    if(deployments == null) {
-                        deployments = new ArrayList<>();
-                    }
-                    deployments.add(deploymentID);
                 }
             }
         );
@@ -97,11 +56,6 @@ public class MQTTBroker extends AbstractVerticle {
 
     @Override
     public void stop() {
-//        if(deployments != null) {
-//            for(String depID : deployments) {
-//                undeployVerticle(depID);
-//            }
-//        }
     }
 
 
@@ -140,8 +94,6 @@ public class MQTTBroker extends AbstractVerticle {
                 NetServerOptions opt = new NetServerOptions()
                         .setTcpKeepAlive(true)
                         .setPort(port);
-                // SSL setup
-
                 String keyPath = c.getTlsKeyPath();
                 String certPath = c.getTlsCertPath();
                 boolean tlsEnabled = c.isTlsEnabled();
@@ -156,15 +108,11 @@ public class MQTTBroker extends AbstractVerticle {
 //                        )
                     ;
                 }
-
-
                 NetServer netServer = vertx.createNetServer(opt);
                 netServer.connectHandler(netSocket -> {
-//                    Container.logger().info("IS SSL: " + netSocket.isSsl());
                     MQTTNetSocket mqttNetSocket = new MQTTNetSocket(vertx, c, netSocket);
                     mqttNetSocket.start();
                 }).listen();
-
                 Container.logger().info("Startd MQTT TCP-Broker on port: " + port);
 
                 // MQTT over WebSocket
@@ -180,8 +128,7 @@ public class MQTTBroker extends AbstractVerticle {
                             .setCertPath(certPath)
                         );
                     }
-
-                    final HttpServer http = vertx.createHttpServer(httpOpt);
+                    HttpServer http = vertx.createHttpServer(httpOpt);
                     http.websocketHandler(serverWebSocket -> {
                         MQTTWebSocket mqttWebSocket = new MQTTWebSocket(vertx, c, serverWebSocket);
                         mqttWebSocket.start();
