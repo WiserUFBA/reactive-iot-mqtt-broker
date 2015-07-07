@@ -16,7 +16,7 @@ ENV VERTX_OPTIONS "-conf $VERTICLE_HOME/config.json"
 ENV VERTX_OPTS=""
 
 # Copy resources
-COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/vertx-mqtt-broker-mod-2.0-SNAPSHOT.jar
+COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/mqtt-broker.jar
 COPY config.json $VERTICLE_HOME/config.json
 
 # Expose ports
@@ -24,8 +24,10 @@ EXPOSE 1883
 EXPOSE 11883
 EXPOSE 1884
 EXPOSE 11884
-EXPOSE 8000
+EXPOSE 1885
+EXPOSE 11885
+#EXPOSE 8000
 
 # We use the "sh -c" to turn around https://github.com/docker/docker/issues/5509 - variable not expanded
 ENTRYPOINT ["sh", "-c"]
-CMD ["vertx run $VERTICLE_NAME -instances 4 -cp $VERTICLE_HOME/*.jar $VERTX_OPTIONS"]
+CMD ["vertx run $VERTICLE_NAME -instances 1 -cp $VERTICLE_HOME/*.jar $VERTX_OPTIONS"]
