@@ -1,8 +1,6 @@
 package io.github.giovibal.mqtt;
 
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VoidHandler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
 

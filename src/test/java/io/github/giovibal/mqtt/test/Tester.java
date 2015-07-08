@@ -16,13 +16,14 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.52:1883";
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
-//    static final String serverURL = "tcp://127.0.0.1:1883";
 //    static final String serverURL = "tcp://127.0.0.1:1884";
-    static final String serverURL = "tcp://192.168.231.53:1884";
-    static final String serverURLSubscribers = "tcp://192.168.231.51:1886";
-    static final String serverURLPublishers = "tcp://192.168.231.52:1886";
-//    static final String serverURL = "tcp://192.168.0.14:1884";
-//    static final String serverURL = "ssl://127.0.0.1:8883";
+//    static final String serverURL = "tcp://192.168.231.53:1884";
+//    static final String serverURLSubscribers = "tcp://192.168.231.51:1886";
+//    static final String serverURLPublishers = "tcp://192.168.231.52:1886";
+    static final String serverURL = "ssl://192.168.231.2:8883";
+    static final String serverURLSubscribers = serverURL;
+    static final String serverURLPublishers = serverURL;
+
 
     static boolean logEnabled=false;
 
@@ -34,10 +35,10 @@ public class Tester {
 //        test2(30, 100, 2, 0);
 
         stats("Num Clients / Num Messages Tests");
-        test2(30, 100, 0, 1);
-        test2(100, 30, 0, 1);
-        test2(3, 1000, 0, 1);
-//        test2(30, 10000, 0, 1);
+//        test2(30, 100, 0, 1);
+//        test2(100, 30, 0, 1);
+//        test2(3, 1000, 0, 1);
+        test2(3, 10, 0, 1);
 
 //        test2(30, 200, 0, 0);
 //        test2(30, 500, 0, 0);
@@ -223,23 +224,23 @@ public class Tester {
         log("connect ...");
         for(IMqttClient client : clients) {
             MqttConnectOptions o = new MqttConnectOptions();
-            if(this.serverURL.startsWith("ssl")) {
-                try {
-                        SSLSocketFactory sslSocketFactory = SslUtil.getSocketFactory(
-                                "C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem",
-//                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1_CA1.crt",
-                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt",
-                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key",
-                                "");
-                        o.setSocketFactory(sslSocketFactory);
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
+//            if(this.serverURL.startsWith("ssl")) {
+//                try {
+//                        SSLSocketFactory sslSocketFactory = SslUtil.getSocketFactory(
+//                                "C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem",
+////                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1_CA1.crt",
+//                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt",
+//                                "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key",
+//                                "");
+//                        o.setSocketFactory(sslSocketFactory);
+//                } catch(Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
             o.setCleanSession(true);
-            try {
-                o.setWill("$SYS/config", new String("{\"retain\":false}").getBytes("UTF-8"), 0, false);
-            } catch (Throwable e) { e.printStackTrace(); }
+//            try {
+//                o.setWill("$SYS/config", new String("{\"retain\":false}").getBytes("UTF-8"), 0, false);
+//            } catch (Throwable e) { e.printStackTrace(); }
             client.connect(o);
         }
     }

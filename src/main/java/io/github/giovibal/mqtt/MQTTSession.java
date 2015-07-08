@@ -181,8 +181,12 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Buffer msg = encoder.enc(publishMessage);
             Container.logger().debug(msg.getBytes().length + " " + remLen + " fixed header length => " + (msg.getBytes().length - remLen));
 
-            DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, tenant);
-            vertx.eventBus().publish(ADDRESS, msg, opt);
+            if(tenant!=null && tenant.trim().length()>0) {
+                DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, tenant);
+                vertx.eventBus().publish(ADDRESS, msg, opt);
+            } else {
+                vertx.eventBus().publish(ADDRESS, msg);
+            }
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
