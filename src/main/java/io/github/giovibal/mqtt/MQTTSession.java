@@ -177,18 +177,69 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 storeManager.saveRetainMessage(publishMessage);
             }
 
-            int remLen = publishMessage.getRemainingLength();
+//            int remLen = publishMessage.getRemainingLength();
             Buffer msg = encoder.enc(publishMessage);
-            Container.logger().debug(msg.getBytes().length + " " + remLen + " fixed header length => " + (msg.getBytes().length - remLen));
-
-            if(tenant!=null && tenant.trim().length()>0) {
-                DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, tenant);
-                vertx.eventBus().publish(ADDRESS, msg, opt);
-            } else {
-                vertx.eventBus().publish(ADDRESS, msg);
-            }
+//            Container.logger().debug(msg.getBytes().length + " " + remLen + " fixed header length => " + (msg.getBytes().length - remLen));
+            if(tenant == null)
+                tenant = "";
+            String publishTenant = calculatePublishTenant(publishMessage);
+            DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, publishTenant);
+            vertx.eventBus().publish(ADDRESS, msg, opt);
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
+        }
+    }
+
+    private String calculatePublishTenant(PublishMessage publishMessage) {
+        boolean isTenantSession = isTenantSession();
+        if(isTenantSession) {
+            return tenant;
+        } else {
+            String topic = publishMessage.getTopicName();
+            String t;
+            boolean slashFirst = topic.startsWith("/");
+            if (slashFirst) {
+                int idx = topic.indexOf('/', 1);
+                if(idx>1)
+                    t = topic.substring(1, idx);
+                else
+                    t = topic.substring(1);
+            } else {
+                int idx = topic.indexOf('/', 0);
+                if(idx>0)
+                    t = topic.substring(0, idx);
+                else
+                    t = topic;
+            }
+            return t;
+        }
+    }
+    public static void main(String[] args) {
+        String[] topics = {
+                "/tenant.it/prova/topic",
+                "tenant.it/prova/topic",
+                "tenant.it",
+                "/tenant.it",
+                "/tenant.it/tenant.it",
+                ""
+        };
+        for(String topic : topics) {
+            String t;
+            boolean slashFirst = topic.startsWith("/");
+            if (slashFirst) {
+                int idx = topic.indexOf('/', 1);
+                if(idx>1)
+                    t = topic.substring(1, idx);
+                else
+                    t = topic.substring(1);
+            } else {
+                int idx = topic.indexOf('/', 0);
+                if(idx>0)
+                    t = topic.substring(0, idx);
+                else
+                    t = topic;
+            }
+            System.out.println(t);
         }
     }
 
@@ -225,34 +276,31 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Container.logger().error(e.getMessage());
         }
     }
-//    private boolean clientRefuseRetainMessages() {
-//        boolean clientRefuseRetainMessages = false;
-//        if(willMessage!=null && willMessage.getTopicName().equals("$SYS/config")) {
-//            try {
-//                String willConfig = new String( willMessage.getPayload().array(), "UTF-8" );
-//                JsonObject configJson = new JsonObject(willConfig);
-//                if(configJson.containsKey("retain")) {
-//                    Boolean retainSupport = configJson.getBoolean("retain");
-//                    clientRefuseRetainMessages = retainSupport != null && !retainSupport;
-//                }
-//            } catch(Throwable e) {
-//                Container.logger().warn(e.getMessage(), e);
-//            }
-//        }
-//        return clientRefuseRetainMessages;
-//    }
+
+    private boolean isTenantSession() {
+        boolean isTenantSession = tenant!=null && tenant.trim().length()>0;
+        return isTenantSession;
+    }
 
     @Override
     public void handle(Message<Buffer> message) {
         try {
+            boolean isTenantSession = isTenantSession();
             boolean tenantMatch;
-            boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
-            if(containsTenantHeader) {
-                String tenantHeaderValue = message.headers().get(TENANT_HEADER);
-                tenantMatch = tenant != null && tenantHeaderValue != null && tenant.equals(tenantHeaderValue);
-            }
-            else {
-                // if message doesn't contains header, is a "all-tenant" message
+            if(isTenantSession) {
+                boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
+                if (containsTenantHeader) {
+                    String tenantHeaderValue = message.headers().get(TENANT_HEADER);
+                    tenantMatch =
+                            tenant.equals(tenantHeaderValue)
+                            || "".equals(tenantHeaderValue)
+                    ;
+                } else {
+                    // if message doesn't contains header is not for a tenant-session
+                    tenantMatch = false;
+                }
+            } else {
+                // if this is not a tenant-session, receive all messages from all tenants
                 tenantMatch = true;
             }
 

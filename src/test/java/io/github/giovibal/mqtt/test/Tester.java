@@ -20,7 +20,9 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.53:1884";
 //    static final String serverURLSubscribers = "tcp://192.168.231.51:1886";
 //    static final String serverURLPublishers = "tcp://192.168.231.52:1886";
-    static final String serverURL = "ssl://192.168.231.2:8883";
+
+//    static final String serverURL = "ssl://192.168.231.2:8883";
+    static final String serverURL = "ssl://iot.eimware.it:8883";
     static final String serverURLSubscribers = serverURL;
     static final String serverURLPublishers = serverURL;
 
