@@ -45,6 +45,9 @@ public class StoreVerticle extends AbstractVerticle {
                 case "getRetainedMessagesByTopicFilter":
                     response = getRetainedMessagesByTopicFilter(request);
                     break;
+                case "deleteRetainMessage":
+                    response = deleteRetainMessage(request);
+                    break;
                 default:
                     response = doDefault(request);
                     break;
@@ -80,6 +83,15 @@ public class StoreVerticle extends AbstractVerticle {
 
         JsonObject response = new JsonObject();
         response.put("results", new JsonArray(list));
+        return response;
+    }
+
+    private JsonObject deleteRetainMessage(JsonObject request) {
+        String topic = request.getString("topic");
+        db.remove(topic);
+
+        JsonObject response = new JsonObject();
+        response.put("success", true);
         return response;
     }
 

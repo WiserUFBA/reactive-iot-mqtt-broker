@@ -60,4 +60,9 @@ public class PublishMessage extends MessageIDMessage {
         byte[] b = payload.getBytes("UTF-8");
         this.m_payload = ByteBuffer.wrap(b);
     }
+
+    @Override
+    public String toString() {
+        return "PUBLISH: "+getMessageID() +" topic["+getTopicName()+"] payload length["+getPayload().array().length+"] qos["+getQos()+"] retain["+isRetainFlag()+"] dup["+isDupFlag()+"]";
+    }
 }

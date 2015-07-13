@@ -54,6 +54,20 @@ public class StoreManager {
             e.printStackTrace();
         }
     }
+    public void deleteRetainMessage(String topic) {
+        try {
+            JsonObject request = new JsonObject()
+                    .put("topic", topic)
+                    ;
+            vertx.eventBus().publish(
+                    StoreVerticle.ADDRESS,
+                    request,
+                    new DeliveryOptions().addHeader("command", "deleteRetainMessage"));
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
 
     public void getRetainedMessagesByTopicFilter(String topicFilter, Handler<List<PublishMessage>> handler) {
         List<PublishMessage> list = new ArrayList<>();

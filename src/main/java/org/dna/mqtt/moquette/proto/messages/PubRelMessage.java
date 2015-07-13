@@ -26,10 +26,16 @@ public class PubRelMessage extends MessageIDMessage {
         m_qos = QOSType.LEAST_ONE;
     }
 
+//    @Override
+//    public void setQos(QOSType qos) {
+//        super.setQos(qos);
+//        if(qos != QOSType.LEAST_ONE)
+//            System.out.println("PUBREL QoS must be 1 !!");
+//    }
+
+
     @Override
-    public void setQos(QOSType qos) {
-        super.setQos(qos);
-        if(qos != QOSType.LEAST_ONE)
-            System.out.println("PUBREL QoS must be 1 !!");
+    public String toString() {
+        return "PUBREL: "+ getMessageID();
     }
 }

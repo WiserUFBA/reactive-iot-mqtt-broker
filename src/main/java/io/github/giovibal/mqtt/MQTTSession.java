@@ -5,23 +5,18 @@ import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.StoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.impl.FutureFactoryImpl;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.FutureFactory;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.BooleanSupplier;
 
 /**
  * Created by giovanni on 07/05/2014.
@@ -47,8 +42,12 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private Map<String, Subscription> subscriptions;
     private QOSUtils qosUtils;
     private StoreManager storeManager;
-    private PublishMessage willMessage;
     private Map<String, List<Subscription>> matchingSubscriptionsCache;
+    private PublishMessage willMessage;
+
+    private int keepAliveSeconds;
+    private long keepAliveTimerID;
+    private Handler<String> keepaliveErrorHandler;
 
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
@@ -76,6 +75,14 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         this.publishMessageHandler = publishMessageHandler;
     }
 
+    public void setKeepaliveErrorHandler(Handler<String> keepaliveErrorHandler) {
+        this.keepaliveErrorHandler = keepaliveErrorHandler;
+    }
+
+    public PublishMessage getWillMessage() {
+        return willMessage;
+    }
+
     public void handleConnectMessage(ConnectMessage connectMessage,
                                      Handler<Boolean> authHandler)
             throws Exception {
@@ -84,11 +91,11 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         cleanSession = connectMessage.isCleanSession();
         protoName = connectMessage.getProtocolName();
         if("MQIsdp".equals(protoName)) {
-            Container.logger().info("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
+            Container.logger().debug("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
         } else if("MQTT".equals(protoName)) {
-            Container.logger().info("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
+            Container.logger().debug("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
         } else {
-            Container.logger().info("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
+            Container.logger().debug("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
         }
 
         String username = connectMessage.getUsername();
@@ -147,7 +154,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {
-            Container.logger().info("cleanSession=false: restore old session state with subscriptions ...");
+            Container.logger().debug("cleanSession=false: restore old session state with subscriptions ...");
         }
         boolean isWillFlag = connectMessage.isWillFlag();
         if(isWillFlag) {
@@ -161,25 +168,68 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 willMessage.setPayload(willMessageM);
                 willMessage.setTopicName(willTopic);
                 willMessage.setQos(willQos);
+                switch (willQos) {
+                    case EXACTLY_ONCE:
+                    case LEAST_ONE:
+                        willMessage.setMessageID(1);
+                }
             } catch (UnsupportedEncodingException e) {
                 Container.logger().error(e.getMessage(), e);
             }
-
         }
-//        messageConsumer = vertx.eventBus().consumer(ADDRESS + tenant);
-//        messageConsumer.handler(this);
+
+        setKeepAliveSeconds(connectMessage.getKeepAlive());
+        resetKeepAliveTimer();
+    }
+
+    public void setKeepAliveSeconds(int keepAliveSeconds) {
+        this.keepAliveSeconds = keepAliveSeconds;
+    }
+
+    public void resetKeepAliveTimer() {
+        if(keepAliveSeconds > 0) {
+//            Container.logger().info("keep alive seconds: "+ keepAliveSeconds);
+            if(keepAliveTimerID!=0) {
+//                Container.logger().info("keep alive cancel old timer: "+ keepAliveTimerID);
+                boolean removed = vertx.cancelTimer(keepAliveTimerID);
+//                Container.logger().info("keep alive cancel old timer: "+ keepAliveTimerID +" removed: "+ removed);
+            }
+            /*
+             * If the Keep Alive value is non-zero and the Server does not receive a Control Packet from the Client within one and a half times the Keep Alive time period, it MUST disconnect
+             */
+            long keepAliveMillis = keepAliveSeconds*1500;
+//            Container.logger().info("keep alive milli-seconds: "+ keepAliveMillis);
+            keepAliveTimerID = vertx.setTimer(keepAliveMillis, tid -> {
+                Container.logger().info("keep alive timer end");
+                handleWillMessage();
+                if(keepaliveErrorHandler !=null) {
+                    keepaliveErrorHandler.handle(clientID);
+                }
+            });
+//            Container.logger().info("keep alive started new timer: "+ keepAliveTimerID);
+        }
     }
 
 
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
             if(publishMessage.isRetainFlag()) {
-                storeManager.saveRetainMessage(publishMessage);
+                boolean payloadIsEmpty=false;
+                ByteBuffer bb = publishMessage.getPayload();
+                if(bb!=null) {
+                    byte[] bytes = bb.array();
+                    if (bytes.length == 0) {
+                        payloadIsEmpty = true;
+                    }
+                }
+                if(payloadIsEmpty) {
+                    storeManager.deleteRetainMessage(publishMessage.getTopicName());
+                } else {
+                    storeManager.saveRetainMessage(publishMessage);
+                }
             }
 
-//            int remLen = publishMessage.getRemainingLength();
             Buffer msg = encoder.enc(publishMessage);
-//            Container.logger().debug(msg.getBytes().length + " " + remLen + " fixed header length => " + (msg.getBytes().length - remLen));
             if(tenant == null)
                 tenant = "";
             String publishTenant = calculatePublishTenant(publishMessage);
@@ -245,6 +295,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
+            final int messageID = subscribeMessage.getMessageID();
             if(this.messageConsumer==null) {
                 messageConsumer = vertx.eventBus().consumer(ADDRESS);
                 messageConsumer.handler(this);
@@ -265,7 +316,14 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 if(retainSupport) {
                     storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
                         if (retainedMessages != null) {
+                            int incrMessageID = messageID;
                             for (PublishMessage retainedMessage : retainedMessages) {
+                                switch (retainedMessage.getQos()) {
+                                    case LEAST_ONE:
+                                    case EXACTLY_ONCE:
+                                        retainedMessage.setMessageID(++incrMessageID);
+                                }
+                                retainedMessage.setRetainFlag(true);
                                 handlePublishMessageReceived(retainedMessage);
                             }
                         }
@@ -307,8 +365,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             if(tenantMatch) {
                 Buffer in = message.body();
                 PublishMessage pm = (PublishMessage) decoder.dec(in);
-                // filter messages by tenant header
-
                 // filter messages by of subscriptions of this client
                 handlePublishMessageReceived(pm);
             }
@@ -345,9 +401,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             int iOkQos = qosUtils.calculatePublishQos(iSentQos, maxQos);
             AbstractMessage.QOSType qos = qosUtils.toQos(iOkQos);
             publishMessage.setQos(qos);
-
-            // server must send retain=false flag to subscribers ...
-//            publishMessage.setRetainFlag(false);
             sendPublishMessage(publishMessage);
         }
     }
@@ -393,7 +446,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
 
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
-        Container.logger().info("Disconnect from "+ clientID +" ...");
+        Container.logger().debug("Disconnect from " + clientID +" ...");
         /*
          * TODO: implement this behaviour
          * On receipt of DISCONNECT the Server:
@@ -403,7 +456,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         shutdown();
     }
     public void shutdown() {
-        //deallocate this instance ...
+        // deallocate this instance ...
         if(messageConsumer!=null && cleanSession) {
             messageConsumer.unregister();
             messageConsumer = null;
@@ -411,14 +464,13 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         vertx = null;
     }
 
-
-//    public String getClientID() {
-//        return clientID;
-//    }
-//
-//    public String getProtoName() {
-//        return protoName;
-//    }
+    public void handleWillMessage() {
+        // publish will message if present ...
+        if(willMessage != null) {
+//            Container.logger().debug("publish will message ... topic[" + willMessage.getTopicName()+"]");
+            handlePublishMessage(willMessage);
+        }
+    }
 
     public String getClientInfo() {
         String clientInfo ="clientID: "+ clientID +", MQTT protocol: "+ protoName +"";

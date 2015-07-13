@@ -34,4 +34,8 @@ public abstract class MessageIDMessage extends AbstractMessage {
         this.m_messageID = messageID;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() +": "+ getMessageID() +" ...";
+    }
 }

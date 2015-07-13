@@ -24,4 +24,9 @@ public class PingRespMessage extends ZeroLengthMessage {
     public PingRespMessage() {
         m_messageType = AbstractMessage.PINGRESP;
     }
+
+    @Override
+    public String toString() {
+        return "PINGRESP";
+    }
 }

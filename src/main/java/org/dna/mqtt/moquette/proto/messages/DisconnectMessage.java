@@ -25,4 +25,9 @@ public class DisconnectMessage extends ZeroLengthMessage {
     public DisconnectMessage() {
         m_messageType = AbstractMessage.DISCONNECT;
     }
+
+    @Override
+    public String toString() {
+        return "DISCONNECT";
+    }
 }

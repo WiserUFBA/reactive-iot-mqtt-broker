@@ -41,6 +41,11 @@ public class SubscribeMessage extends MessageIDMessage {
         public String getTopicFilter() {
             return m_topicFilter;
         }
+
+        @Override
+        public String toString() {
+            return getTopicFilter()+" qos["+getQos()+"]";
+        }
     }
     private List<Couple> m_subscriptions = new ArrayList<Couple>();
 
@@ -56,5 +61,10 @@ public class SubscribeMessage extends MessageIDMessage {
 
     public void addSubscription(Couple subscription) {
         m_subscriptions.add(subscription);
+    }
+
+    @Override
+    public String toString() {
+        return "SUBSCRIBE: "+ getMessageID() +" "+ subscriptions();
     }
 }

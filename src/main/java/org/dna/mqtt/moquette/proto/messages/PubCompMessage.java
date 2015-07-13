@@ -24,5 +24,10 @@ public class PubCompMessage extends MessageIDMessage {
     public PubCompMessage() {
         m_messageType = AbstractMessage.PUBCOMP;
     }
+
+    @Override
+    public String toString() {
+        return "PUBCOMP: "+ getMessageID();
+    }
 }
 

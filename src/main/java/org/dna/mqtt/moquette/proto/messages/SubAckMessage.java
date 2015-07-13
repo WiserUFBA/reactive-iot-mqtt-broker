@@ -37,4 +37,9 @@ public class SubAckMessage extends MessageIDMessage {
     public void addType(QOSType type) {
         m_types.add(type);
     }
+
+    @Override
+    public String toString() {
+        return "SUBACK: "+ getMessageID() +" types["+types()+"]";
+    }
 }

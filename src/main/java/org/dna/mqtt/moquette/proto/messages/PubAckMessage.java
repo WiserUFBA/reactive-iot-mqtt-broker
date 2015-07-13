@@ -25,4 +25,9 @@ public class PubAckMessage extends MessageIDMessage {
     public PubAckMessage() {
         m_messageType = AbstractMessage.PUBACK;
     }
+
+    @Override
+    public String toString() {
+        return "PUBACK: "+ getMessageID();
+    }
 }

@@ -39,11 +39,11 @@ public class RevProxyBackendVerticle extends AbstractVerticle {
 
                 NetSocketWrapper backendSocket = new MQTTNetSocketWrapper(backendNetSocket);
                 backendNetSocket.handler(buffer -> {
-                    Container.logger().info("MQTT Backend from-backend-to-proxy");
+                    Container.logger().debug("MQTT Backend from-backend-to-proxy");
                     vertx.eventBus().send("from-backend-to-proxy", buffer);
                 });
                 vertx.eventBus().consumer("from-proxy-to-backend", (Message<Buffer> objectMessage) -> {
-                    Container.logger().info("MQTT Backend from-proxy-to-backend");
+                    Container.logger().debug("MQTT Backend from-proxy-to-backend");
                     Buffer buff = objectMessage.body();
                     backendSocket.sendMessageToClient(buff);
                 });

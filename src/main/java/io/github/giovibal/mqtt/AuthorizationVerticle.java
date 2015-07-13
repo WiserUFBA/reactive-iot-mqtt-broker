@@ -55,7 +55,7 @@ public class AuthorizationVerticle extends AbstractVerticle {
         String idp_password = c.getIdpPassword();
 
         if(!securityEnabled) {
-            Container.logger().info("MQTT Authorization disabled");
+            Container.logger().debug("MQTT Authorization disabled");
             return;
         }
 

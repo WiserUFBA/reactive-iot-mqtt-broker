@@ -50,4 +50,33 @@ public class ConnAckMessage extends AbstractMessage {
     public void setSessionPresent(boolean present) {
         this.sessionPresent = present;
     }
+
+    public String getReturnCodeText() {
+        String returnCode = "";
+        switch (getReturnCode()) {
+            case CONNECTION_ACCEPTED:
+                returnCode = "CONNECTION_ACCEPTED";
+                break;
+            case UNNACEPTABLE_PROTOCOL_VERSION:
+                returnCode = "UNNACEPTABLE_PROTOCOL_VERSION";
+                break;
+            case IDENTIFIER_REJECTED:
+                returnCode = "IDENTIFIER_REJECTED";
+                break;
+            case SERVER_UNAVAILABLE:
+                returnCode = "SERVER_UNAVAILABLE";
+                break;
+            case BAD_USERNAME_OR_PASSWORD:
+                returnCode = "BAD_USERNAME_OR_PASSWORD";
+                break;
+            case NOT_AUTHORIZED:
+                returnCode = "NOT_AUTHORIZED";
+                break;
+        }
+        return returnCode;
+    }
+    @Override
+    public String toString() {
+        return "CONNACK: sessionPresent[" + isSessionPresent() +"] returnCode["+getReturnCodeText()+"]";
+    }
 }

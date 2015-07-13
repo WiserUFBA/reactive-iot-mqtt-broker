@@ -25,4 +25,9 @@ public class PubRecMessage extends MessageIDMessage {
     public PubRecMessage() {
         m_messageType = AbstractMessage.PUBREC;
     }
+
+    @Override
+    public String toString() {
+        return "PUBREC: "+ getMessageID();
+    }
 }

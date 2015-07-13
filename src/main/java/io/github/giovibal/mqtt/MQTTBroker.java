@@ -37,7 +37,7 @@ public class MQTTBroker extends AbstractVerticle {
                     result.cause().printStackTrace();
                 } else {
                     String deploymentID = result.result();
-                    Container.logger().info(c.getSimpleName() + ": " + deploymentID);
+                    Container.logger().debug(c.getSimpleName() + ": " + deploymentID);
                 }
             }
         );
@@ -86,9 +86,9 @@ public class MQTTBroker extends AbstractVerticle {
                 else {
                     startTcpServer(c);
                 }
-                Container.logger().info(
+                Container.logger().debug(
                         "Startd Broker ==> [port: " + c.getPort() + "]" +
-                                " [" + c.getFeatursInfo() +"] "
+                                " [" + c.getFeatursInfo() + "] "
                 );
             }
 

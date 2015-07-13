@@ -36,4 +36,9 @@ public class UnsubscribeMessage extends MessageIDMessage {
     public void addTopicFilter(String type) {
         m_types.add(type);
     }
+
+    @Override
+    public String toString() {
+        return "UNSUBSCRIBE: "+ getMessageID() +" topicFilters["+topicFilters()+"]";
+    }
 }

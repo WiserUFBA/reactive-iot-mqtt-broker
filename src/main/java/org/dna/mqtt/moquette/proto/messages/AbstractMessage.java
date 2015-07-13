@@ -15,6 +15,8 @@
  */
 package org.dna.mqtt.moquette.proto.messages;
 
+import javax.xml.bind.DatatypeConverter;
+
 /**
  * Basic abstract message for all MQTT protocol messages.
  * 
@@ -95,5 +97,10 @@ public abstract class AbstractMessage {
      */
     public void setRemainingLength(int remainingLength) {
         this.m_remainingLength = remainingLength;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() +" ...";
     }
 }

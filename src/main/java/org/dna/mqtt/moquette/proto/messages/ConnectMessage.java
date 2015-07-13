@@ -158,4 +158,15 @@ public class ConnectMessage extends AbstractMessage {
         this.m_willMessage = willMessage;
     }
 
+
+    @Override
+    public String toString() {
+        String userpass = getUsername()+"/"+getPassword();
+        return "CONNECT: "+ getProtocolName()+" "+getProcotolVersion()
+                +" clientId["+ getClientID() +"]"
+                +" cleanSession["+ isCleanSession() +"]"
+                +" credentials["+ userpass +"]"
+                +" willMessage["+ getWillMessage() +"]"
+                +" keepAlive["+ getKeepAlive() +"]";
+    }
 }

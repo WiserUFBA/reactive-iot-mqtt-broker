@@ -2,7 +2,6 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
-import io.netty.handler.codec.CorruptedFrameException;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -61,6 +60,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         } catch (Throwable ex) {
             String clientInfo = getClientInfo();
             Container.logger().error(clientInfo +", Bad error in processing the message", ex);
+            closeConnection();
         }
     }
 
@@ -68,28 +68,50 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     public void onError(Throwable e) {
         String clientInfo = getClientInfo();
         Container.logger().error(clientInfo +", "+ e.getMessage(), e);
-        if(e instanceof CorruptedFrameException) {
+//        if(e instanceof CorruptedFrameException) {
             closeConnection();
-        }
+//        }
     }
 
     private void onMessageFromClient(AbstractMessage msg) throws Exception {
+        Container.logger().info("<<< " + msg);
+        if(session!=null) {
+            session.resetKeepAliveTimer();
+        }
         switch (msg.getMessageType()) {
             case CONNECT:
                 ConnectMessage connect = (ConnectMessage)msg;
+                ConnAckMessage connAck = new ConnAckMessage();
                 if(session == null) {
                     session = new MQTTSession(vertx, config);
                     session.setPublishMessageHandler(this::sendMessageToClient);
+                    session.setKeepaliveErrorHandler(clientID -> {
+                        String cinfo = clientID;
+                        if(session!=null) {
+                            cinfo = session.getClientInfo();
+                        }
+                        Container.logger().info("keep alive exausted! closing connection for client["+cinfo+"] ...");
+                        closeConnection();
+                    });
+                    connAck.setSessionPresent(false);
                 } else {
                     Container.logger().warn("Session alredy allocated ...");
+                    /*
+                     The Server MUST process a second CONNECT Packet sent from a Client as a protocol violation and disconnect the Client
+                      */
+//                    connAck.setSessionPresent(true);// TODO implement cleanSession=false
+                    closeConnection();
+                    break;
                 }
                 session.handleConnectMessage(connect, authenticated -> {
                     if (authenticated) {
-                        ConnAckMessage connAck = new ConnAckMessage();
+                        connAck.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
                         sendMessageToClient(connAck);
                     } else {
                         Container.logger().error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
-                        closeConnection();
+//                        closeConnection();
+                        connAck.setReturnCode(ConnAckMessage.BAD_USERNAME_OR_PASSWORD);
+                        sendMessageToClient(connAck);
                     }
                 });
                 break;
@@ -178,6 +200,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     public void sendMessageToClient(AbstractMessage message) {
         try {
+            Container.logger().info(">>> " + message);
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
         } catch(Throwable e) {
@@ -199,5 +222,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
         return clientInfo;
     }
 
+    protected void handleWillMessage() {
+//        Container.logger().info("handle will message... ");
+        if(session != null) {
+//            Container.logger().info("handle will message: session found!");
+            session.handleWillMessage();
+        }
+//        Container.logger().info("handle will message end.");
+    }
 
 }

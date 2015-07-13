@@ -24,5 +24,10 @@ public class UnsubAckMessage extends MessageIDMessage {
     public UnsubAckMessage() {
         m_messageType = AbstractMessage.UNSUBACK;
     }
+
+    @Override
+    public String toString() {
+        return "UNSUBACK: "+ getMessageID();
+    }
 }
 

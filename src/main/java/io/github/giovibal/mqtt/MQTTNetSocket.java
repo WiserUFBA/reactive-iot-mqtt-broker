@@ -21,7 +21,8 @@ public class MQTTNetSocket extends MQTTSocket {
         netSocket.handler(this);
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
-            Container.logger().info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
+            Container.logger().debug(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
+            handleWillMessage();
             shutdown();
         });
     }
@@ -40,7 +41,7 @@ public class MQTTNetSocket extends MQTTSocket {
     }
 
     protected void closeConnection() {
-        Container.logger().info("net-socket will be closed ... "+ netSocket.writeHandlerID());
+        Container.logger().debug("net-socket will be closed ... " + netSocket.writeHandlerID());
         netSocket.close();
     }
 
