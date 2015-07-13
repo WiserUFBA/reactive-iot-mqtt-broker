@@ -86,7 +86,7 @@ public class MQTTBroker extends AbstractVerticle {
                 else {
                     startTcpServer(c);
                 }
-                Container.logger().debug(
+                Container.logger().info(
                         "Startd Broker ==> [port: " + c.getPort() + "]" +
                                 " [" + c.getFeatursInfo() + "] "
                 );

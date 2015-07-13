@@ -74,7 +74,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
     private void onMessageFromClient(AbstractMessage msg) throws Exception {
-        Container.logger().info("<<< " + msg);
+        Container.logger().debug("<<< " + msg);
         if(session!=null) {
             session.resetKeepAliveTimer();
         }
@@ -200,7 +200,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     public void sendMessageToClient(AbstractMessage message) {
         try {
-            Container.logger().info(">>> " + message);
+            Container.logger().debug(">>> " + message);
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
         } catch(Throwable e) {
