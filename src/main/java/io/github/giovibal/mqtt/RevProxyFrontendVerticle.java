@@ -47,7 +47,7 @@ public class RevProxyFrontendVerticle extends AbstractVerticle {
     private void deployBackend() {
         String managerTopic = UUID.randomUUID().toString();
         System.out.println("Deploy Backend: managerTopic = "+ managerTopic);
-        DeploymentOptions optBackend = new DeploymentOptions().setConfig(config().put("manager.topic",managerTopic)).setInstances(2);
+        DeploymentOptions optBackend = new DeploymentOptions().setConfig(config().put("manager.topic",managerTopic)).setInstances(1);
         vertx.deployVerticle(RevProxyBackendVerticle.class.getName(), optBackend, stringAsyncResult -> {
             String deplID = stringAsyncResult.result();
             System.out.println("DeploymentID Backend: "+ deplID);

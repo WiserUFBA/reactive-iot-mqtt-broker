@@ -19,14 +19,14 @@ public class RevProxyBackendVerticle extends AbstractVerticle {
     public void start() throws Exception {
 
         // PROXY BACKEND
-        backendPort = config().getInteger("proxy.backend.port", 1884);
+        backendPort = config().getInteger("proxy.backend.port", 1883);
         backendHost = config().getString("proxy.backend.host","192.168.231.53");
         managerTopic = config().getString("manager.topic");
 
         NetClientOptions opt = new NetClientOptions()
                 .setConnectTimeout(5000)
                 .setIdleTimeout(1000)
-                .setReconnectAttempts(10)
+//                .setReconnectAttempts(10)
                 .setReconnectInterval(500)
                 ;
         NetClient netClient = vertx.createNetClient(opt);

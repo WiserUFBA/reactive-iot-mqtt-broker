@@ -32,14 +32,14 @@ public class MQTTBroker extends AbstractVerticle {
 
     private void deployVerticle(Class c, DeploymentOptions opt) {
         vertx.deployVerticle(c.getName(), opt,
-            result -> {
-                if (result.failed()) {
-                    result.cause().printStackTrace();
-                } else {
-                    String deploymentID = result.result();
-                    Container.logger().debug(c.getSimpleName() + ": " + deploymentID);
+                result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    } else {
+                        String deploymentID = result.result();
+                        Container.logger().debug(c.getSimpleName() + ": " + deploymentID);
+                    }
                 }
-            }
         );
     }
     private void deployAuthorizationWorker(JsonObject config, int instances) {
@@ -53,6 +53,16 @@ public class MQTTBroker extends AbstractVerticle {
         );
     }
 
+    private void deployBridgeServerVerticle(JsonObject config, int instances) {
+        deployVerticle(EventBusBridgeServerVerticle.class,
+                new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config)
+        );
+    }
+    private void deployBridgeClientVerticle(JsonObject config, int instances) {
+        deployVerticle(EventBusBridgeClientVerticle.class,
+                new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config)
+        );
+    }
 
     @Override
     public void stop() {
@@ -62,10 +72,23 @@ public class MQTTBroker extends AbstractVerticle {
     @Override
     public void start() {
         try {
+            JsonObject config = config();
+
             // 1 store for 1 broker
             deployStoreVerticle(1);
 
-            JsonObject config = config();
+            // 2 bridge server
+            if(config.containsKey("bridge_server")) {
+                JsonObject bridgeServerConf = config.getJsonObject("bridge_server", new JsonObject());
+                deployBridgeServerVerticle(bridgeServerConf, 1);
+            }
+
+            // 3 bridge client
+            if(config.containsKey("bridge_client")) {
+                JsonObject bridgeClientConf = config.getJsonObject("bridge_client", new JsonObject());
+                deployBridgeClientVerticle(bridgeClientConf, 1);
+            }
+
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
@@ -76,7 +99,7 @@ public class MQTTBroker extends AbstractVerticle {
 
                 if(securityEnabled) {
                     // 2 auth for 1 broker-endpoint-conf that need an authenticator
-                    deployAuthorizationWorker(brokerConf, 2);
+                    deployAuthorizationWorker(brokerConf, 1);
                 }
 
                 // MQTT over WebSocket

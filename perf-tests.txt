@@ -42,3 +42,42 @@ Throughput Published: 16666.666 msg/sec.
 Throughput Received: 79616.836 msg/sec.
 Throughput Total: 96283.5 msg/sec.
 ------------------------------------------------------------------
+
+
+
+
+
+
+
+
+==================================================================
+=== verx-mqtt on PC i7 2.3 GHZ (1 instances)
+==================================================================
+Num Clients / Num Messages Tests
+
+------------------------------------------------------------------
+Test clients: 5 num msg: 20000 qos: 0 sleep: 0 seconds 1 instance
+------------------------------------------------------------------
+Time elapsed: 6917 millis.
+Messages sent: 100000 messages.
+Messages received: 87682 messages.
+Throughput Published: 16666.666 msg/sec.
+Throughput Received: 14613.667 msg/sec.
+Throughput Total: 31280.332 msg/sec.
+------------------------------------------------------------------
+
+==================================================================
+=== verx-mqtt on PC i7 2.3 GHZ (4 instances)
+==================================================================
+Num Clients / Num Messages Tests
+
+------------------------------------------------------------------
+Test clients: 5 num msg: 20000 qos: 0 sleep: 0 seconds
+------------------------------------------------------------------
+Time elapsed: 6717 millis.
+Messages sent: 100000 messages.
+Messages received: 317961 messages.
+Throughput Published: 16666.666 msg/sec.
+Throughput Received: 52993.5 msg/sec.
+Throughput Total: 69660.164 msg/sec.
+------------------------------------------------------------------

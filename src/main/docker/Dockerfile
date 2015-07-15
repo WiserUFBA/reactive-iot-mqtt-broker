@@ -20,13 +20,12 @@ COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/mqtt-broker.jar
 COPY config.json $VERTICLE_HOME/config.json
 
 # Expose ports
-EXPOSE 1883
-EXPOSE 11883
-EXPOSE 1884
-EXPOSE 11884
-EXPOSE 1885
-EXPOSE 11885
+EXPOSE 1883 11883
+EXPOSE 1884 11884
+EXPOSE 1885 11885
+EXPOSE 7007
 #EXPOSE 8000
+
 
 # We use the "sh -c" to turn around https://github.com/docker/docker/issues/5509 - variable not expanded
 ENTRYPOINT ["sh", "-c"]

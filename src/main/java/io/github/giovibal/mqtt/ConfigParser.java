@@ -28,8 +28,8 @@ public class ConfigParser {
     private String tlsCertPath;
 
 
-    public ConfigParser() {
-    }
+    public ConfigParser() { }
+
     public ConfigParser(JsonObject conf) {
         parse(conf);
     }

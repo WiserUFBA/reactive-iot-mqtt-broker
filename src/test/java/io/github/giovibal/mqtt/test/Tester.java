@@ -21,7 +21,8 @@ public class Tester {
 //    static final String serverURLSubscribers = "tcp://192.168.231.51:1886";
 //    static final String serverURLPublishers = "tcp://192.168.231.52:1886";
 
-    static final String serverURL = "tcp://192.168.231.53:1883";
+//    static final String serverURL = "tcp://192.168.231.53:1883";
+    static final String serverURL = "tcp://127.0.0.1:1883";
 //    static final String serverURL = "ssl://iot.eimware.it:8883";
     static final String serverURLSubscribers = serverURL;
     static final String serverURLPublishers = serverURL;
@@ -40,7 +41,10 @@ public class Tester {
 //        test2(30, 100, 0, 1);
 //        test2(100, 30, 0, 1);
 //        test2(3, 1000, 0, 1);
-        test2(30, 100, 0, 1);
+//        test2(5, 1000, 0, 10);
+//        test2(5, 1000, 0, 1);
+//        test2(5, 20000, 0, 0);
+        test2(50, 100, 0, 0);
 
 //        test2(30, 200, 0, 0);
 //        test2(30, 500, 0, 0);
@@ -82,35 +86,11 @@ public class Tester {
         System.out.println(msg);
     }
 
-    public static void test1(int numClients) throws Exception {
-        String topic = "test/untopic";
-
-        long t1,t2,t3;
-        t1=System.currentTimeMillis();
-
-        Tester c = new Tester(numClients, "Paho", serverURL);
-        c.connect();
-        c.subscribe(topic);
-        c.publish(topic);
-
-//        log("Wait 10 seconds ...");
-//        Thread.sleep(10000);
-
-        c.unsubcribe(topic);
-        c.disconnect();
-
-        c.stats();
-
-        t2=System.currentTimeMillis();
-        t3=t2-t1;
-        log("Time elapsed: " + t3 + " millis.");
-    }
-
 
     public static void test2(int numClients, int numMessagesToPublishPerClient, int qos, long sleepSeconds) throws Exception {
         stats("");
         stats("------------------------------------------------------------------");
-        stats("Test clients: "+ numClients +" num msg: "+ numMessagesToPublishPerClient +" qos: "+ qos);
+        stats("Test clients: "+ numClients +" num msg: "+ numMessagesToPublishPerClient +" qos: "+ qos +" sleep: "+sleepSeconds +" seconds");
         stats("------------------------------------------------------------------");
         String topic = "test/untopic/a";
         String topicFilter = "test/+/a";
@@ -125,12 +105,14 @@ public class Tester {
         Tester cPubs = new Tester(numClients, "PUBS", serverURLPublishers);
         cPubs.connect();
 
-//        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
-        cPubs.publish(numMessagesToPublishPerClient, topic, qos, true);
+        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
+//        cPubs.publish(numMessagesToPublishPerClient, topic, qos, true);
         cPubs.disconnect();
 
-        log("Sleep for " + sleepSeconds + " seconds ...");
-        Thread.sleep(sleepSeconds*1000);
+        if(sleepSeconds>0) {
+            log("Sleep for " + sleepSeconds + " seconds ...");
+            Thread.sleep(sleepSeconds * 1000);
+        }
 
         cSubs.unsubcribe(topic);
         cSubs.disconnect();
@@ -141,7 +123,10 @@ public class Tester {
         t2=System.currentTimeMillis();
         t3=t2-t1;
 
+
         stats("Time elapsed: " + t3 + " millis.");
+        stats("Messages sent: " + cPubs.getMessaggiSpeditiInMedia() + " messages.");
+        stats("Messages received: " + cSubs.getMessaggiArrivatiInMedia() + " messages.");
         float seconds = (t3/1000);
         if(seconds > 0) {
             float throughputPub = cPubs.getMessaggiSpeditiInMedia() / (seconds);
@@ -153,57 +138,6 @@ public class Tester {
         }
         stats("------------------------------------------------------------------");
     }
-
-    public static void test3(int numClients) throws Exception {
-        String topicPub = "test/publish";
-        String topicSub = "test/+";
-
-        long t1,t2,t3;
-        t1=System.currentTimeMillis();
-
-        Tester c = new Tester(numClients, "Paho", serverURL);
-        c.connect();
-        c.subscribe(topicSub);
-        c.publish(topicPub);
-        c.unsubcribe(topicSub);
-        c.disconnect();
-
-        c.stats();
-
-        t2=System.currentTimeMillis();
-        t3=t2-t1;
-        log("Time elapsed: " + t3 + " millis.");
-    }
-
-    public static void test4(int numClients, int numTopics) throws Exception {
-        String topicPrefix = "test/topic";
-
-        long t1,t2,t3;
-        t1=System.currentTimeMillis();
-
-        Tester c = new Tester(numClients, "Paho", serverURL);
-        c.connect();
-        for(int i=0; i<numTopics; i++) {
-            String topic = topicPrefix + "/" + i;
-            c.subscribe(topic);
-        }
-        for(int i=0; i<numTopics; i++) {
-            String topic = topicPrefix + "/" + i;
-            c.publish(topic);
-        }
-        for(int i=0; i<numTopics; i++) {
-            String topic = topicPrefix + "/" + i;
-            c.unsubcribe(topic);
-        }
-        c.disconnect();
-
-        c.stats();
-
-        t2=System.currentTimeMillis();
-        t3=t2-t1;
-        log("Time elapsed: " + t3 + " millis.");
-    }
-
 
 
 

@@ -75,9 +75,6 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     private void onMessageFromClient(AbstractMessage msg) throws Exception {
         Container.logger().debug("<<< " + msg);
-        if(session!=null) {
-            session.resetKeepAliveTimer();
-        }
         switch (msg.getMessageType()) {
             case CONNECT:
                 ConnectMessage connect = (ConnectMessage)msg;
@@ -116,6 +113,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 });
                 break;
             case SUBSCRIBE:
+                session.resetKeepAliveTimer();
+
                 SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
                 session.handleSubscribeMessage(subscribeMessage);
                 SubAckMessage subAck = new SubAckMessage();
@@ -134,6 +133,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 sendMessageToClient(subAck);
                 break;
             case UNSUBSCRIBE:
+                session.resetKeepAliveTimer();
+
                 UnsubscribeMessage unsubscribeMessage = (UnsubscribeMessage)msg;
                 session.handleUnsubscribeMessage(unsubscribeMessage);
                 UnsubAckMessage unsubAck = new UnsubAckMessage();
@@ -141,6 +142,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 sendMessageToClient(unsubAck);
                 break;
             case PUBLISH:
+                session.resetKeepAliveTimer();
+
                 PublishMessage publish = (PublishMessage)msg;
                 session.handlePublishMessage(publish);
                 switch (publish.getQos()) {
@@ -161,6 +164,8 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 }
                 break;
             case PUBREC:
+                session.resetKeepAliveTimer();
+
                 PubRecMessage pubRec = (PubRecMessage)msg;
                 PubRelMessage prelResp = new PubRelMessage();
                 prelResp.setMessageID(pubRec.getMessageID());
@@ -168,23 +173,28 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 sendMessageToClient(prelResp);
                 break;
             case PUBCOMP:
+                session.resetKeepAliveTimer();
                 break;
             case PUBREL:
+                session.resetKeepAliveTimer();
                 PubRelMessage pubRel = (PubRelMessage)msg;
                 PubCompMessage pubComp = new PubCompMessage();
                 pubComp.setMessageID(pubRel.getMessageID());
                 sendMessageToClient(pubComp);
                 break;
             case PUBACK:
+                session.resetKeepAliveTimer();
                 // A PUBACK message is the response to a PUBLISH message with QoS level 1.
                 // A PUBACK message is sent by a server in response to a PUBLISH message from a publishing client,
                 // and by a subscriber in response to a PUBLISH message from the server.
                 break;
             case PINGREQ:
+                session.resetKeepAliveTimer();
                 PingRespMessage pingResp = new PingRespMessage();
                 sendMessageToClient(pingResp);
                 break;
             case DISCONNECT:
+                session.resetKeepAliveTimer();
                 DisconnectMessage disconnectMessage = (DisconnectMessage)msg;
                 handleDisconnect(disconnectMessage);
                 break;

@@ -45,8 +45,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private Map<String, List<Subscription>> matchingSubscriptionsCache;
     private PublishMessage willMessage;
 
-    private int keepAliveSeconds;
+//    private int keepAliveSeconds;
     private long keepAliveTimerID;
+    private boolean keepAliveTimeEnded;
     private Handler<String> keepaliveErrorHandler;
 
     public MQTTSession(Vertx vertx, ConfigParser config) {
@@ -178,36 +179,51 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             }
         }
 
-        setKeepAliveSeconds(connectMessage.getKeepAlive());
-        resetKeepAliveTimer();
+//        setKeepAliveSeconds(connectMessage.getKeepAlive());
+        startKeepAliveTimer(connectMessage.getKeepAlive());
     }
 
-    public void setKeepAliveSeconds(int keepAliveSeconds) {
-        this.keepAliveSeconds = keepAliveSeconds;
+//    public void setKeepAliveSeconds(int keepAliveSeconds) {
+//        this.keepAliveSeconds = keepAliveSeconds;
+//    }
+
+    private void startKeepAliveTimer(int keepAliveSeconds) {
+        if(keepAliveSeconds > 0) {
+            stopKeepAliveTimer();
+            keepAliveTimeEnded = true;
+            /*
+             * If the Keep Alive value is non-zero and the Server does not receive a Control Packet from the Client
+             * within one and a half times the Keep Alive time period, it MUST disconnect
+             */
+            long keepAliveMillis = keepAliveSeconds * 1500;
+            keepAliveTimerID = vertx.setPeriodic(keepAliveMillis, tid -> {
+                if(keepAliveTimeEnded) {
+                    Container.logger().info("keep alive timer end");
+                    handleWillMessage();
+                    if (keepaliveErrorHandler != null) {
+                        keepaliveErrorHandler.handle(clientID);
+                    }
+                    stopKeepAliveTimer();
+                }
+                // next time, will close connection
+                keepAliveTimeEnded = true;
+            });
+        }
+    }
+    private void stopKeepAliveTimer() {
+        try {
+            Container.logger().info("keep alive cancel old timer: " + keepAliveTimerID);
+            boolean removed = vertx.cancelTimer(keepAliveTimerID);
+            if (!removed) {
+                Container.logger().info("keep alive cancel old timer not removed: " + keepAliveTimerID);
+            }
+        } catch(Throwable e) {
+            Container.logger().error("Cannot stop KeepAlive Timer with ID: "+keepAliveTimerID, e);
+        }
     }
 
     public void resetKeepAliveTimer() {
-        if(keepAliveSeconds > 0) {
-//            Container.logger().info("keep alive seconds: "+ keepAliveSeconds);
-            if(keepAliveTimerID!=0) {
-//                Container.logger().info("keep alive cancel old timer: "+ keepAliveTimerID);
-                boolean removed = vertx.cancelTimer(keepAliveTimerID);
-//                Container.logger().info("keep alive cancel old timer: "+ keepAliveTimerID +" removed: "+ removed);
-            }
-            /*
-             * If the Keep Alive value is non-zero and the Server does not receive a Control Packet from the Client within one and a half times the Keep Alive time period, it MUST disconnect
-             */
-            long keepAliveMillis = keepAliveSeconds*1500;
-//            Container.logger().info("keep alive milli-seconds: "+ keepAliveMillis);
-            keepAliveTimerID = vertx.setTimer(keepAliveMillis, tid -> {
-                Container.logger().info("keep alive timer end");
-                handleWillMessage();
-                if(keepaliveErrorHandler !=null) {
-                    keepaliveErrorHandler.handle(clientID);
-                }
-            });
-//            Container.logger().info("keep alive started new timer: "+ keepAliveTimerID);
-        }
+        keepAliveTimeEnded = false;
     }
 
 

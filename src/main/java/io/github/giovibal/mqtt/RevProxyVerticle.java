@@ -63,10 +63,10 @@ public class RevProxyVerticle extends AbstractVerticle {
 //        });
 
         JsonObject conf = new JsonObject()
-                .put("proxy.frontend.port",1885)
-//                .put("proxy.backend.host","192.168.231.53")
-                .put("proxy.backend.host","localhost")
-                .put("proxy.backend.port", 1884)
+                .put("proxy.frontend.port",1883)
+                .put("proxy.backend.host","192.168.231.53")
+//                .put("proxy.backend.host","localhost")
+                .put("proxy.backend.port", 1883)
                 ;
 
         DeploymentOptions optFrontend = new DeploymentOptions().setConfig(conf).setInstances(1);

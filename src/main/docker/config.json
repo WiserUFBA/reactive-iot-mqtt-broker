@@ -12,7 +12,7 @@
       "tcp_port": 1884,
       "security": {
         "enabled": true,
-        "authorized_clients": ["testing.*"],
+        "authorized_clients": ["mqtt-bridge-.*","testing.*"],
         "idp_url": "http://192.168.231.55:9763",
         "idp_username": "admin",
         "idp_password": "d0_ut_d3s$"
@@ -24,7 +24,7 @@
       "websocket_subprotocols": "mqtt,mqttv3.1",
       "security": {
         "enabled": true,
-        "authorized_clients": ["testing.*"],
+        "authorized_clients": ["mqtt-bridge-.*","testing.*"],
         "idp_url": "http://192.168.231.55:9763",
         "idp_username": "admin",
         "idp_password": "d0_ut_d3s$"
@@ -40,5 +40,8 @@
       "websocket_subprotocols": "mqtt,mqttv3.1",
       "retain_support": false
     }
-  ]
+  ],
+  "bridge_server": {
+    "local_bridge_port": 7007
+  }
 }
