@@ -18,7 +18,6 @@ import io.vertx.core.net.PemKeyCertOptions;
  */
 public class MQTTBroker extends AbstractVerticle {
 
-
     public static void main(String[] args) {
         start(args);
     }
@@ -67,6 +66,7 @@ public class MQTTBroker extends AbstractVerticle {
     @Override
     public void stop() {
     }
+
 
 
     @Override
@@ -160,14 +160,14 @@ public class MQTTBroker extends AbstractVerticle {
         boolean tlsEnabled = c.isTlsEnabled();
 
         HttpServerOptions httpOpt = new HttpServerOptions()
-                .setTcpKeepAlive(true)
+            .setTcpKeepAlive(true)
 //                .setMaxWebsocketFrameSize(1024)
-                .setWebsocketSubProtocol(wsSubProtocols)
-                .setPort(port);
+            .setWebsocketSubProtocol(wsSubProtocols)
+            .setPort(port);
         if(tlsEnabled) {
             httpOpt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                            .setKeyPath(keyPath)
-                            .setCertPath(certPath)
+                .setKeyPath(keyPath)
+                .setCertPath(certPath)
             );
         }
         HttpServer http = vertx.createHttpServer(httpOpt);

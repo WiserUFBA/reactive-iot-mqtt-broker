@@ -50,6 +50,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private boolean keepAliveTimeEnded;
     private Handler<String> keepaliveErrorHandler;
 
+//    private TenantMessageFilter tenantMessageFilter;
+
     public MQTTSession(Vertx vertx, ConfigParser config) {
         this.vertx = vertx;
         this.decoder = new MQTTDecoder();
@@ -213,6 +215,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private void stopKeepAliveTimer() {
         try {
             Container.logger().info("keep alive cancel old timer: " + keepAliveTimerID);
+            if(vertx == null)
+                Container.logger().info("vertx instance cannot be null!!");
             boolean removed = vertx.cancelTimer(keepAliveTimerID);
             if (!removed) {
                 Container.logger().info("keep alive cancel old timer not removed: " + keepAliveTimerID);
@@ -355,29 +359,50 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         boolean isTenantSession = tenant!=null && tenant.trim().length()>0;
         return isTenantSession;
     }
+    private boolean tenantMatch(Message<Buffer> message) {
+        boolean isTenantSession = isTenantSession();
+        boolean tenantMatch;
+        if(isTenantSession) {
+            boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
+            if (containsTenantHeader) {
+                String tenantHeaderValue = message.headers().get(TENANT_HEADER);
+                tenantMatch =
+                        tenant.equals(tenantHeaderValue)
+                                || "".equals(tenantHeaderValue)
+                ;
+            } else {
+                // if message doesn't contains header is not for a tenant-session
+                tenantMatch = false;
+            }
+        } else {
+            // if this is not a tenant-session, receive all messages from all tenants
+            tenantMatch = true;
+        }
+        return tenantMatch;
+    }
 
     @Override
     public void handle(Message<Buffer> message) {
         try {
-            boolean isTenantSession = isTenantSession();
-            boolean tenantMatch;
-            if(isTenantSession) {
-                boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
-                if (containsTenantHeader) {
-                    String tenantHeaderValue = message.headers().get(TENANT_HEADER);
-                    tenantMatch =
-                            tenant.equals(tenantHeaderValue)
-                            || "".equals(tenantHeaderValue)
-                    ;
-                } else {
-                    // if message doesn't contains header is not for a tenant-session
-                    tenantMatch = false;
-                }
-            } else {
-                // if this is not a tenant-session, receive all messages from all tenants
-                tenantMatch = true;
-            }
-
+//            boolean isTenantSession = isTenantSession();
+//            boolean tenantMatch;
+//            if(isTenantSession) {
+//                boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
+//                if (containsTenantHeader) {
+//                    String tenantHeaderValue = message.headers().get(TENANT_HEADER);
+//                    tenantMatch =
+//                            tenant.equals(tenantHeaderValue)
+//                            || "".equals(tenantHeaderValue)
+//                    ;
+//                } else {
+//                    // if message doesn't contains header is not for a tenant-session
+//                    tenantMatch = false;
+//                }
+//            } else {
+//                // if this is not a tenant-session, receive all messages from all tenants
+//                tenantMatch = true;
+//            }
+            boolean tenantMatch = tenantMatch(message);
             if(tenantMatch) {
                 Buffer in = message.body();
                 PublishMessage pm = (PublishMessage) decoder.dec(in);
