@@ -46,13 +46,13 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
         NetServer netServer = vertx.createNetServer(opt);
         netServer.connectHandler(netSocket -> {
             netSocket.closeHandler(aVoid -> {
-                Container.logger().error("Bridge Server - closed connection from client" + netSocket.writeHandlerID());
+                Container.logger().error("Bridge Server - closed connection from client " + netSocket.writeHandlerID());
             });
             netSocket.exceptionHandler(throwable -> {
                 Container.logger().error("Bridge Server - Exception: " + throwable.getMessage(), throwable);
             });
 
-            Container.logger().error("Bridge Server - new connection from client" + netSocket.writeHandlerID());
+            Container.logger().error("Bridge Server - new connection from client " + netSocket.writeHandlerID());
 //            // TODO: some sort of authentication with tenant
 //            try {
 //                X509Certificate[] certs = netSocket.peerCertificateChain();
@@ -76,9 +76,9 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
 
             final RecordParser parser = RecordParser.newDelimited("\n", h -> {
                 String cmd = h.toString();
-                System.out.println(cmd);
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
+                    Container.logger().info("Bridge Server - start session with tenant: "+ tenant);
                     new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
                     netSocket.resume();
                 } else {
