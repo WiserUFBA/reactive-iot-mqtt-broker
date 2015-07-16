@@ -76,12 +76,13 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
 
             final RecordParser parser = RecordParser.newDelimited("\n", h -> {
                 String cmd = h.toString();
-                tenant = cmd;
                 System.out.println(cmd);
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
                     new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
                     netSocket.resume();
+                } else {
+                    tenant = cmd;
                 }
             });
             netSocket.handler(buffer -> {
