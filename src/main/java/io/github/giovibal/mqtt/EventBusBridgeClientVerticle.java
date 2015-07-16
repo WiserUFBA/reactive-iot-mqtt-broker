@@ -33,8 +33,9 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
         tenant = conf.getString("remote_bridge_tenant", "cmroma.it");
 
         // [TCP <- BUS] listen BUS write to TCP
+        int timeout = 1000;
         NetClientOptions opt = new NetClientOptions()
-//                .setConnectTimeout(1000) // 60 seconds
+                .setConnectTimeout(timeout) // 60 seconds
                 .setTcpKeepAlive(true)
 //                .setSsl(true)
 //                .setPemKeyCertOptions(new PemKeyCertOptions()
@@ -48,7 +49,7 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
 
         netClient = vertx.createNetClient(opt);
         netClient.connect(remoteBridgePort, remoteBridgeHost, this);
-        connectionTimerID = vertx.setPeriodic(1000, aLong -> {
+        connectionTimerID = vertx.setPeriodic(timeout*2, aLong -> {
             checkConnection();
         });
     }
@@ -57,6 +58,7 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
 //        Container.logger().info("Bridge Client - check connection to server [" + remoteBridgeHost + ":" + remoteBridgePort +"] connected ["+connected+"] "+connectionTimerID);
         if(!connected) {
             connected=true;// prevent duplicates
+            Container.logger().info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort +"] ... "+connectionTimerID);
             netClient.connect(remoteBridgePort, remoteBridgeHost, this);
         }
     }
