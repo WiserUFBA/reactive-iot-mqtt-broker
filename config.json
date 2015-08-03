@@ -40,12 +40,12 @@
       "websocket_subprotocols": "mqtt,mqttv3.1",
       "retain_support": false
     }
-  ],
+  ]/*,
   "bridge_server": {
     "local_bridge_port": 7007
   },
   "bridge_client": {
     "remote_bridge_host": "192.168.231.53",
     "remote_bridge_port": 7007
-  }
+  }*/
 }

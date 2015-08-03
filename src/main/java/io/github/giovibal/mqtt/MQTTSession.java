@@ -229,6 +229,10 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     public void handlePublishMessage(PublishMessage publishMessage) {
         try {
+            // publish always have tenant, if session is not tenantized, tenant is retrieved from topic ([tenant]/to/pi/c)
+            String publishTenant = calculatePublishTenant(publishMessage);
+
+            // store retained messages ...
             if(publishMessage.isRetainFlag()) {
                 boolean payloadIsEmpty=false;
                 ByteBuffer bb = publishMessage.getPayload();
@@ -239,9 +243,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                     }
                 }
                 if(payloadIsEmpty) {
-                    storeManager.deleteRetainMessage(publishMessage.getTopicName());
+                    storeManager.deleteRetainMessage(publishTenant, publishMessage.getTopicName());
                 } else {
-                    storeManager.saveRetainMessage(publishMessage);
+                    storeManager.saveRetainMessage(publishTenant, publishMessage);
                 }
             }
 
@@ -252,7 +256,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             Buffer msg = encoder.enc(publishMessage);
             if(tenant == null)
                 tenant = "";
-            String publishTenant = calculatePublishTenant(publishMessage);
             DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, publishTenant);
             vertx.eventBus().publish(ADDRESS, msg, opt);
         } catch(Throwable e) {
@@ -284,34 +287,34 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             return t;
         }
     }
-    public static void main(String[] args) {
-        String[] topics = {
-                "/tenant.it/prova/topic",
-                "tenant.it/prova/topic",
-                "tenant.it",
-                "/tenant.it",
-                "/tenant.it/tenant.it",
-                ""
-        };
-        for(String topic : topics) {
-            String t;
-            boolean slashFirst = topic.startsWith("/");
-            if (slashFirst) {
-                int idx = topic.indexOf('/', 1);
-                if(idx>1)
-                    t = topic.substring(1, idx);
-                else
-                    t = topic.substring(1);
-            } else {
-                int idx = topic.indexOf('/', 0);
-                if(idx>0)
-                    t = topic.substring(0, idx);
-                else
-                    t = topic;
-            }
-            System.out.println(t);
-        }
-    }
+//    public static void main(String[] args) {
+//        String[] topics = {
+//                "/tenant.it/prova/topic",
+//                "tenant.it/prova/topic",
+//                "tenant.it",
+//                "/tenant.it",
+//                "/tenant.it/tenant.it",
+//                ""
+//        };
+//        for(String topic : topics) {
+//            String t;
+//            boolean slashFirst = topic.startsWith("/");
+//            if (slashFirst) {
+//                int idx = topic.indexOf('/', 1);
+//                if(idx>1)
+//                    t = topic.substring(1, idx);
+//                else
+//                    t = topic.substring(1);
+//            } else {
+//                int idx = topic.indexOf('/', 0);
+//                if(idx>0)
+//                    t = topic.substring(0, idx);
+//                else
+//                    t = topic;
+//            }
+//            System.out.println(t);
+//        }
+//    }
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
@@ -334,7 +337,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
                 // check in client wants receive retained message by this topicFilter
                 if(retainSupport) {
-                    storeManager.getRetainedMessagesByTopicFilter(topicFilter, (List<PublishMessage> retainedMessages) -> {
+                    storeManager.getRetainedMessagesByTopicFilter(tenant, topicFilter, (List<PublishMessage> retainedMessages) -> {
                         if (retainedMessages != null) {
                             int incrMessageID = messageID;
                             for (PublishMessage retainedMessage : retainedMessages) {

@@ -33,7 +33,7 @@ public class StoreVerticle extends AbstractVerticle {
         consumer.handler(message -> {
             JsonObject request = message.body();
             MultiMap headers = message.headers();
-            if(headers==null || !headers.contains("command")) {
+            if (headers == null || !headers.contains("command")) {
                 message.reply(new JsonObject().put("error", "Invalid message: missing 'command' header"));
             }
             JsonObject response = new JsonObject();
@@ -61,6 +61,9 @@ public class StoreVerticle extends AbstractVerticle {
     private JsonObject saveRetainMessage(JsonObject request) {
         String topic = request.getString("topic");
         byte[] message = request.getBinary("message");
+        String tenant = request.getString("tenant");
+        if(tenant!=null)
+            topic = tenant + topic;
         db.put(topic, message);
 
         JsonObject response = new JsonObject();
@@ -70,6 +73,16 @@ public class StoreVerticle extends AbstractVerticle {
 
     private JsonObject getRetainedMessagesByTopicFilter(JsonObject request) {
         String topicFilter = request.getString("topicFilter");
+        String tenant = request.getString("tenant");
+        if(tenant!=null) {
+            topicFilter = tenant + topicFilter;
+        }
+//        else {
+//            if(topicFilter.startsWith("/"))
+//                topicFilter = "+" + topicFilter;
+//            else
+//                topicFilter = "+/" + topicFilter;
+//        }
 
         List<JsonObject> list = new ArrayList<>();
         for(String topic : db.keySet()) {
@@ -88,6 +101,9 @@ public class StoreVerticle extends AbstractVerticle {
 
     private JsonObject deleteRetainMessage(JsonObject request) {
         String topic = request.getString("topic");
+        String tenant = request.getString("tenant");
+        if(tenant!=null)
+            topic = tenant + topic;
         db.remove(topic);
 
         JsonObject response = new JsonObject();

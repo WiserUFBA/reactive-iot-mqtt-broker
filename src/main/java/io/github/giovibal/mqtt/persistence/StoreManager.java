@@ -37,13 +37,14 @@ public class StoreManager {
     }
 
 
-    public void saveRetainMessage(PublishMessage pm) {
+    public void saveRetainMessage(String tenant, PublishMessage pm) {
         try {
             String topic = pm.getTopicName();
             Buffer pmBytes = encoder.enc(pm);
 
             JsonObject request = new JsonObject()
                     .put("topic", topic)
+                    .put("tenant", tenant)
                     .put("message", pmBytes.getBytes());
             vertx.eventBus().publish(
                     StoreVerticle.ADDRESS,
@@ -54,10 +55,11 @@ public class StoreManager {
             e.printStackTrace();
         }
     }
-    public void deleteRetainMessage(String topic) {
+    public void deleteRetainMessage(String tenant, String topic) {
         try {
             JsonObject request = new JsonObject()
                     .put("topic", topic)
+                    .put("tenant", tenant)
                     ;
             vertx.eventBus().publish(
                     StoreVerticle.ADDRESS,
@@ -69,11 +71,13 @@ public class StoreManager {
         }
     }
 
-    public void getRetainedMessagesByTopicFilter(String topicFilter, Handler<List<PublishMessage>> handler) {
+    public void getRetainedMessagesByTopicFilter(String tenant, String topicFilter, Handler<List<PublishMessage>> handler) {
         List<PublishMessage> list = new ArrayList<>();
 
         JsonObject request = new JsonObject()
-                .put("topicFilter", topicFilter);
+                .put("topicFilter", topicFilter)
+                .put("tenant", tenant)
+                ;
         vertx.eventBus().send(
                 StoreVerticle.ADDRESS,
                 request,
