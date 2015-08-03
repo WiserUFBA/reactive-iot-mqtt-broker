@@ -245,6 +245,10 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 }
             }
 
+            /* It MUST set the RETAIN flag to 0 when a PUBLISH Packet is sent to a Client
+             * because it matches an established subscription
+             * regardless of how the flag was set in the message it received. */
+            publishMessage.setRetainFlag(false);
             Buffer msg = encoder.enc(publishMessage);
             if(tenant == null)
                 tenant = "";
