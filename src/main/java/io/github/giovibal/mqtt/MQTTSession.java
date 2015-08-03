@@ -497,6 +497,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         shutdown();
     }
     public void shutdown() {
+        // stop timers
+        stopKeepAliveTimer();
+
         // deallocate this instance ...
         if(messageConsumer!=null && cleanSession) {
             messageConsumer.unregister();

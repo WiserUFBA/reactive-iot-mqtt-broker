@@ -71,11 +71,11 @@
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-hazelcast</artifactId>
-            <version>${vertx.version}</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>io.vertx</groupId>-->
+            <!--<artifactId>vertx-hazelcast</artifactId>-->
+            <!--<version>${vertx.version}</version>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>io.github.giovibal.wso2</groupId>
@@ -103,8 +103,6 @@
             <version>1.46</version>
             <scope>test</scope>
         </dependency>
-
-
 
     </dependencies>
 
@@ -336,5 +334,18 @@
             </build>
         </profile>
     </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>fili-deployment</id>
+            <name>Internal Releases</name>
+            <url>http://rd.eimware.it/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>fili-deployment</id>
+            <name>Internal Releases</name>
+            <url>http://rd.eimware.it/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 </project>
