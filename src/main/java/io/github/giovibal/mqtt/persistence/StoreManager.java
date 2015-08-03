@@ -23,15 +23,15 @@ import java.util.List;
 public class StoreManager {
 
     private Vertx vertx;
-    private String tenant;
-    private ITopicsManager topicsManager;
+//    private String tenant;
+//    private ITopicsManager topicsManager;
     private MQTTEncoder encoder;
     private MQTTDecoder decoder;
 
     public StoreManager(Vertx vertx, String tenant, ITopicsManager topicsManager) {
         this.vertx = vertx;
-        this.tenant = tenant;
-        this.topicsManager = topicsManager;
+//        this.tenant = tenant;
+//        this.topicsManager = topicsManager;
         this.encoder = new MQTTEncoder();
         this.decoder = new MQTTDecoder();
     }
@@ -41,7 +41,6 @@ public class StoreManager {
         try {
             String topic = pm.getTopicName();
             Buffer pmBytes = encoder.enc(pm);
-
             JsonObject request = new JsonObject()
                     .put("topic", topic)
                     .put("tenant", tenant)
