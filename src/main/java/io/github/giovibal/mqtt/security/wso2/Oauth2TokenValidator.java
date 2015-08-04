@@ -3,7 +3,6 @@ package io.github.giovibal.mqtt.security.wso2;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.ServiceClient;
-import org.apache.axis2.jaxws.description.xml.handler.ObjectFactory;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.wso2.carbon.identity.oauth2.stub.OAuth2TokenValidationService;
@@ -19,30 +18,15 @@ import java.util.List;
  * Created by giova_000 on 12/02/2015.
  */
 public class Oauth2TokenValidator {
-    private static String adminUserName;
-    private static String adminPassword;
-
+//    private String adminUserName;
+//    private String adminPassword;
     private OAuth2TokenValidationService oAuth2TokenValidationService = null;
-    private ObjectFactory objectFactory;
-
-    public static void main(String[] args) throws Exception {
-        String identityURL = "http://192.168.231.55:9763";
-        String idp_userName="admin";
-        String idp_password="d0_ut_d3s$";
-        Oauth2TokenValidator oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
-
-        System.out.println(oauth2Validator.tokenIsValid("163894acdc8eedd8c06fb1227acfb350"));
-        System.out.println(oauth2Validator.getTokenInfo("163894acdc8eedd8c06fb1227acfb350"));
-    }
-
 
     public Oauth2TokenValidator(String identityURL, String userName, String password)
             throws MalformedURLException, AxisFault {
 
-        adminUserName = userName;
-        adminPassword = password;
-
-        objectFactory = new ObjectFactory();
+        String adminUserName = userName;
+        String adminPassword = password;
 
         //create service client with given url
         String targetEndpointUrl = identityURL + "/services/OAuth2TokenValidationService.OAuth2TokenValidationServiceHttpsSoap12Endpoint/";
