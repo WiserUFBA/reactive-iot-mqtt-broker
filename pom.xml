@@ -37,22 +37,6 @@
             <url>https://repo.eclipse.org/content/repositories/paho-releases/</url>
         </repository>
 
-        <!--<repository>-->
-            <!--<id>fili-repo</id>-->
-            <!--<url>http://rd.eimware.it/nexus/content/groups/public/</url>-->
-            <!--<releases>-->
-                <!--<enabled>true</enabled>-->
-            <!--</releases>-->
-            <!--<snapshots>-->
-                <!--<enabled>true</enabled>-->
-            <!--</snapshots>-->
-        <!--</repository>-->
-
-
-        <!--<repository>-->
-            <!--<id>wso2-public-repo</id>-->
-            <!--<url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>-->
-        <!--</repository>-->
         <repository>
             <id>wso2-maven2-repository</id>
             <url>http://dist.wso2.org/maven2</url>
@@ -67,12 +51,6 @@
             <version>${vertx.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>io.github.giovibal.wso2</groupId>-->
-            <!--<artifactId>wso2-token-validation-soap-client</artifactId>-->
-            <!--<version>1.0-SNAPSHOT</version>-->
-        <!--</dependency>-->
 
         <dependency>
             <groupId>org.apache.synapse</groupId>

@@ -22,15 +22,11 @@ public class Oauth2TokenValidator {
     private static String adminUserName;
     private static String adminPassword;
 
-//    private String wsdlLocation;
-
     private OAuth2TokenValidationService oAuth2TokenValidationService = null;
-//    private OAuth2TokenValidationServicePortType portType = null;
     private ObjectFactory objectFactory;
 
     public static void main(String[] args) throws Exception {
         String identityURL = "http://192.168.231.55:9763";
-//        String identityURL = "https://192.168.231.55:9443";
         String idp_userName="admin";
         String idp_password="d0_ut_d3s$";
         Oauth2TokenValidator oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
