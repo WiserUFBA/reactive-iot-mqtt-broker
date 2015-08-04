@@ -111,23 +111,23 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             vertx.eventBus().send(authorizationAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
                 if (res.succeeded()) {
                     JsonObject validationInfo = res.result().body();
-                    Container.logger().info(validationInfo);
+                    Container.logger().debug(validationInfo);
                     Boolean token_valid = validationInfo.getBoolean("token_valid", Boolean.FALSE);
                     String authorized_user = validationInfo.getString("authorized_user");
                     String error_msg = validationInfo.getString("error_msg");
-                    Container.logger().info("authenticated ===> " + token_valid);
+                    Container.logger().debug("authenticated ===> " + token_valid);
                     if (token_valid) {
                         String tenant = extractTenant(authorized_user);
                         _initTenant(tenant);
-                        Container.logger().info("authorized_user ===> " + authorized_user + ", tenant ===> " + tenant);
+                        Container.logger().debug("authorized_user ===> " + authorized_user + ", tenant ===> " + tenant);
                         _handleConnectMessage(connectMessage);
                         authHandler.handle(Boolean.TRUE);
                     } else {
-                        Container.logger().info("authenticated error ===> " + error_msg);
+                        Container.logger().debug("authenticated error ===> " + error_msg);
                         authHandler.handle(Boolean.FALSE);
                     }
                 } else {
-                    Container.logger().info("login failed !");
+                    Container.logger().debug("login failed !");
                     authHandler.handle(Boolean.FALSE);
                 }
             });
@@ -198,7 +198,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             long keepAliveMillis = keepAliveSeconds * 1500;
             keepAliveTimerID = vertx.setPeriodic(keepAliveMillis, tid -> {
                 if(keepAliveTimeEnded) {
-                    Container.logger().info("keep alive timer end");
+                    Container.logger().debug("keep alive timer end");
                     handleWillMessage();
                     if (keepaliveErrorHandler != null) {
                         keepaliveErrorHandler.handle(clientID);
@@ -212,10 +212,10 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
     private void stopKeepAliveTimer() {
         try {
-            Container.logger().info("keep alive cancel old timer: " + keepAliveTimerID);
+            Container.logger().debug("keep alive cancel old timer: " + keepAliveTimerID);
             boolean removed = vertx.cancelTimer(keepAliveTimerID);
             if (!removed) {
-                Container.logger().info("keep alive cancel old timer not removed: " + keepAliveTimerID);
+                Container.logger().warn("keep alive cancel old timer not removed: " + keepAliveTimerID);
             }
         } catch(Throwable e) {
             Container.logger().error("Cannot stop KeepAlive Timer with ID: "+keepAliveTimerID, e);
@@ -518,7 +518,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handleWillMessage() {
         // publish will message if present ...
         if(willMessage != null) {
-//            Container.logger().debug("publish will message ... topic[" + willMessage.getTopicName()+"]");
+            Container.logger().debug("publish will message ... topic[" + willMessage.getTopicName()+"]");
             handlePublishMessage(willMessage);
         }
     }
