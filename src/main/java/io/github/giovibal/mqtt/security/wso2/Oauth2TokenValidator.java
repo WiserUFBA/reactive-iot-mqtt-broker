@@ -18,8 +18,6 @@ import java.util.List;
  * Created by giova_000 on 12/02/2015.
  */
 public class Oauth2TokenValidator {
-//    private String adminUserName;
-//    private String adminPassword;
     private OAuth2TokenValidationService oAuth2TokenValidationService = null;
 
     public Oauth2TokenValidator(String identityURL, String userName, String password)
