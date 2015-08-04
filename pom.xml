@@ -47,9 +47,15 @@
                 <!--<enabled>true</enabled>-->
             <!--</snapshots>-->
         <!--</repository>-->
+
+
+        <!--<repository>-->
+            <!--<id>wso2-public-repo</id>-->
+            <!--<url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>-->
+        <!--</repository>-->
         <repository>
-            <id>wso2-public-repo</id>
-            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
+            <id>wso2-maven2-repository</id>
+            <url>http://dist.wso2.org/maven2</url>
         </repository>
     </repositories>
 
@@ -62,12 +68,22 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>io.github.giovibal.wso2</groupId>
-            <artifactId>wso2-token-validation-soap-client</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>io.github.giovibal.wso2</groupId>-->
+            <!--<artifactId>wso2-token-validation-soap-client</artifactId>-->
+            <!--<version>1.0-SNAPSHOT</version>-->
+        <!--</dependency>-->
 
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-core</artifactId>
+            <version>2.1.1-wso2v7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2.wso2</groupId>
+            <artifactId>axis2</artifactId>
+            <version>1.6.1.wso2v10</version>
+        </dependency>
         <dependency>
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>

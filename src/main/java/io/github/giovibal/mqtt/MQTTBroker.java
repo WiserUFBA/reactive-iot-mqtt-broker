@@ -1,6 +1,7 @@
 package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
+import io.github.giovibal.mqtt.security.AuthorizationVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Starter;

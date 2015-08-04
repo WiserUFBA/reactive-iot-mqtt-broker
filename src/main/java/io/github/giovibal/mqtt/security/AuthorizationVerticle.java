@@ -1,7 +1,9 @@
-package io.github.giovibal.mqtt;
+package io.github.giovibal.mqtt.security;
 
-import io.github.giovibal.wso2.Oauth2TokenValidator;
-import io.github.giovibal.wso2.TokenInfo;
+import io.github.giovibal.mqtt.ConfigParser;
+import io.github.giovibal.mqtt.Container;
+import io.github.giovibal.mqtt.security.wso2.Oauth2TokenValidator;
+import io.github.giovibal.mqtt.security.wso2.TokenInfo;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
