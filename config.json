@@ -13,7 +13,7 @@
       "security": {
         "enabled": true,
         "authorized_clients": ["testing.*"],
-        "idp_url": "http://192.168.1.55:9763",
+        "idp_url": "http://192.168.1.2:9763",
         "idp_username": "admin",
         "idp_password": "d0_ut_d3s$"
       }
@@ -25,7 +25,7 @@
       "security": {
         "enabled": true,
         "authorized_clients": ["testing.*"],
-        "idp_url": "http://192.168.231.55:9763",
+        "idp_url": "http://192.168.1.2:9763",
         "idp_username": "admin",
         "idp_password": "admin"
       }

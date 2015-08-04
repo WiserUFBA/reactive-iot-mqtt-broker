@@ -36,31 +36,20 @@
             <id>eclipse-paho-releases</id>
             <url>https://repo.eclipse.org/content/repositories/paho-releases/</url>
         </repository>
-        <repository>
-            <id>eclipse-paho-snapshots</id>
-            <url>https://repo.eclipse.org/content/repositories/paho-snapshots</url>
-        </repository>
 
-        <!--<repository>
-            <id>bintray</id>
-            <url>http://dl.bintray.com/andsel/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>-->
-
+        <!--<repository>-->
+            <!--<id>fili-repo</id>-->
+            <!--<url>http://rd.eimware.it/nexus/content/groups/public/</url>-->
+            <!--<releases>-->
+                <!--<enabled>true</enabled>-->
+            <!--</releases>-->
+            <!--<snapshots>-->
+                <!--<enabled>true</enabled>-->
+            <!--</snapshots>-->
+        <!--</repository>-->
         <repository>
-            <id>fili-repo</id>
-            <url>http://rd.eimware.it/nexus/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
+            <id>wso2-public-repo</id>
+            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
         </repository>
     </repositories>
 
@@ -70,17 +59,19 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-hazelcast</artifactId>
-            <version>${vertx.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.github.giovibal.wso2</groupId>
             <artifactId>wso2-token-validation-soap-client</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
+            <version>4.2.0</version>
         </dependency>
 
 
@@ -103,8 +94,6 @@
             <version>1.46</version>
             <scope>test</scope>
         </dependency>
-
-
 
     </dependencies>
 
@@ -172,6 +161,23 @@
 
     <profiles>
         <profile>
+            <id>vertx-embedded</id>
+            <activation>
+                <file>
+                    <exists>${basedir}/.vertx</exists>
+                </file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>io.vertx</groupId>
+                    <artifactId>vertx-core</artifactId>
+                    <version>${vertx.version}</version>
+                    <scope>compile</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
             <id>metrics</id>
             <activation>
                 <file>
@@ -186,6 +192,7 @@
                 </dependency>
             </dependencies>
         </profile>
+
 
         <profile>
             <id>docker</id>
@@ -216,9 +223,6 @@
                                             <includes>
                                                 <include>*-fat.jar</include>
                                             </includes>
-                                            <!--<excludes>-->
-                                                <!--<exclude>*-fat.jar</exclude>-->
-                                            <!--</excludes>-->
                                             <filtering>false</filtering>
                                         </resource>
                                     </resources>
@@ -242,26 +246,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
-                    <!--<plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>process-classes</id>
-                                <phase>process-classes</phase>
-                                <configuration>
-                                    <target>
-                                        <chmod file="target/bin/start.sh" perm="755"/>
-                                    </target>
-                                </configuration>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>-->
                 </plugins>
             </build>
         </profile>
@@ -271,10 +255,6 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
-            <!--<properties>-->
-                <!--<idp.url>http://192.168.231.55:9763</idp.url>-->
-            <!--</properties>-->
-
             <build>
                 <plugins>
                     <plugin>

@@ -61,6 +61,7 @@ public class AuthorizationVerticle extends AbstractVerticle {
 
         oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
 
+
         String address = AuthorizationVerticle.class.getName();
 
         MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(address, (Message<JsonObject> msg) -> {
