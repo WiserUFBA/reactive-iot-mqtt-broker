@@ -179,13 +179,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             }
         }
 
-//        setKeepAliveSeconds(connectMessage.getKeepAlive());
         startKeepAliveTimer(connectMessage.getKeepAlive());
+        Container.logger().info("New connection client : " + getClientInfo());
     }
-
-//    public void setKeepAliveSeconds(int keepAliveSeconds) {
-//        this.keepAliveSeconds = keepAliveSeconds;
-//    }
 
     private void startKeepAliveTimer(int keepAliveSeconds) {
         if(keepAliveSeconds > 0) {
@@ -212,10 +208,12 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
     private void stopKeepAliveTimer() {
         try {
-            Container.logger().debug("keep alive cancel old timer: " + keepAliveTimerID);
-            boolean removed = vertx.cancelTimer(keepAliveTimerID);
-            if (!removed) {
-                Container.logger().warn("keep alive cancel old timer not removed: " + keepAliveTimerID);
+            if(keepAliveTimerID!=0) {
+                Container.logger().debug("keep alive cancel old timer: " + keepAliveTimerID);
+                boolean removed = vertx.cancelTimer(keepAliveTimerID);
+                if (!removed) {
+                    Container.logger().warn("keep alive cancel old timer not removed: " + keepAliveTimerID);
+                }
             }
         } catch(Throwable e) {
             Container.logger().error("Cannot stop KeepAlive Timer with ID: "+keepAliveTimerID, e);
