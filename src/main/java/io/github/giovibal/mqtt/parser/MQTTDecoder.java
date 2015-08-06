@@ -2,7 +2,6 @@ package io.github.giovibal.mqtt.parser;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.CorruptedFrameException;
-import io.netty.util.AttributeKey;
 import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
@@ -18,9 +17,9 @@ import java.util.Map;
 public class MQTTDecoder {
 
     //3 = 3.1, 4 = 3.1.1
-    static final AttributeKey<Integer> PROTOCOL_VERSION = new AttributeKey<Integer>("version");
+//    static final AttributeKey<Integer> PROTOCOL_VERSION = new AttributeKey<Integer>("version");
 
-    private Map<Byte, DemuxDecoder> m_decoderMap = new HashMap<Byte, DemuxDecoder>();
+    private Map<Byte, DemuxDecoder> m_decoderMap = new HashMap<>();
 
     public MQTTDecoder() {
        m_decoderMap.put(AbstractMessage.CONNECT, new ConnectDecoder());

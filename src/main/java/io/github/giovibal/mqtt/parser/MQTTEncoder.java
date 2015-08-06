@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class MQTTEncoder {
     
-    private Map<Byte, DemuxEncoder> m_encoderMap = new HashMap<Byte, DemuxEncoder>();
+    private Map<Byte, DemuxEncoder> m_encoderMap = new HashMap<>();
     
     public MQTTEncoder() {
        m_encoderMap.put(AbstractMessage.CONNECT, new ConnectEncoder());
