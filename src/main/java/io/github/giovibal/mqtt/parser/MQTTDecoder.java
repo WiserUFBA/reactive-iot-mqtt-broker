@@ -2,6 +2,7 @@ package io.github.giovibal.mqtt.parser;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.CorruptedFrameException;
+import io.netty.util.AttributeKey;
 import io.vertx.core.buffer.Buffer;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 

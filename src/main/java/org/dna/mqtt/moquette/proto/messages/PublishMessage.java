@@ -51,6 +51,15 @@ public class PublishMessage extends MessageIDMessage {
     public ByteBuffer getPayload() {
         return m_payload;
     }
+    public String getPayloadAsString() {
+        try {
+            String ret = new String(m_payload.array(), "UTF-8");
+
+            return ret;
+        } catch(UnsupportedEncodingException e) {
+            return new String(m_payload.array());
+        }
+    }
 
     public void setPayload(ByteBuffer payload) {
         this.m_payload = payload;

@@ -168,12 +168,12 @@ public class Utils {
         return flags;
     }
 
-    static boolean isMQTT3_1_1(AttributeMap attrsMap) {
-        Attribute<Integer> versionAttr = attrsMap.attr(MQTTDecoder.PROTOCOL_VERSION);
-        Integer protocolVersion = versionAttr.get();
-        if (protocolVersion == null) {
-            return true;
-        }
-        return protocolVersion == VERSION_3_1_1;
-    }
+//    static boolean isMQTT3_1_1(AttributeMap attrsMap) {
+//        Attribute<Integer> versionAttr = attrsMap.attr(MQTTDecoder.PROTOCOL_VERSION);
+//        Integer protocolVersion = versionAttr.get();
+//        if (protocolVersion == null) {
+//            return true;
+//        }
+//        return protocolVersion == VERSION_3_1_1;
+//    }
 }
