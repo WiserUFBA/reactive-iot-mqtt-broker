@@ -2,9 +2,7 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
 import io.github.giovibal.mqtt.security.AuthorizationVerticle;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Starter;
+import io.vertx.core.*;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
@@ -75,7 +73,7 @@ public class MQTTBroker extends AbstractVerticle {
         try {
             JsonObject config = config();
 
-            // 1 store for 1 broker
+            // 1 store x 1 broker
             deployStoreVerticle(1);
 
             // 2 bridge server
@@ -93,21 +91,21 @@ public class MQTTBroker extends AbstractVerticle {
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
-
                 ConfigParser c = new ConfigParser(brokerConf);
                 boolean wsEnabled = c.isWsEnabled();
                 boolean securityEnabled = c.isSecurityEnabled();
 
                 if(securityEnabled) {
-                    // 2 auth for 1 broker-endpoint-conf that need an authenticator
+                    // 1 auth x 1 broker-endpoint-conf that need an authenticator
                     deployAuthorizationWorker(brokerConf, 1);
                 }
 
-                // MQTT over WebSocket
                 if (wsEnabled) {
+                    // MQTT over WebSocket
                     startWebsocketServer(c);
                 }
                 else {
+                    // MQTT over TCP
                     startTcpServer(c);
                 }
                 Container.logger().info(
@@ -137,14 +135,9 @@ public class MQTTBroker extends AbstractVerticle {
 
         if(tlsEnabled) {
             opt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                            .setKeyPath(keyPath)
-                            .setCertPath(certPath)
-            )
-//              .setClientAuthRequired(true)
-//              .setPemTrustOptions(new PemTrustOptions()
-//                  .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//              )
-            ;
+                .setKeyPath(keyPath)
+                .setCertPath(certPath)
+            );
         }
         NetServer netServer = vertx.createNetServer(opt);
         netServer.connectHandler(netSocket -> {
@@ -162,13 +155,12 @@ public class MQTTBroker extends AbstractVerticle {
 
         HttpServerOptions httpOpt = new HttpServerOptions()
                 .setTcpKeepAlive(true)
-//                .setMaxWebsocketFrameSize(1024)
                 .setWebsocketSubProtocol(wsSubProtocols)
                 .setPort(port);
         if(tlsEnabled) {
             httpOpt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()
-                            .setKeyPath(keyPath)
-                            .setCertPath(certPath)
+                .setKeyPath(keyPath)
+                .setCertPath(certPath)
             );
         }
         HttpServer http = vertx.createHttpServer(httpOpt);

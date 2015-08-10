@@ -194,7 +194,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             long keepAliveMillis = keepAliveSeconds * 1500;
             keepAliveTimerID = vertx.setPeriodic(keepAliveMillis, tid -> {
                 if(keepAliveTimeEnded) {
-                    Container.logger().debug("keep alive timer end");
+                    Container.logger().debug("keep-alive timer end");
                     handleWillMessage();
                     if (keepaliveErrorHandler != null) {
                         keepaliveErrorHandler.handle(clientID);
@@ -209,14 +209,14 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private void stopKeepAliveTimer() {
         try {
             if(keepAliveTimerID!=0) {
-                Container.logger().debug("keep alive cancel old timer: " + keepAliveTimerID);
+                Container.logger().debug("keep-alive cancel old timer: " + keepAliveTimerID);
                 boolean removed = vertx.cancelTimer(keepAliveTimerID);
                 if (!removed) {
-                    Container.logger().warn("keep alive cancel old timer not removed: " + keepAliveTimerID);
+                    Container.logger().warn("keep-alive cancel old timer not removed: " + keepAliveTimerID);
                 }
             }
         } catch(Throwable e) {
-            Container.logger().error("Cannot stop KeepAlive Timer with ID: "+keepAliveTimerID, e);
+            Container.logger().error("Cannot stop keep-alive timer with ID: "+keepAliveTimerID, e);
         }
     }
 
@@ -287,34 +287,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             return t;
         }
     }
-//    public static void main(String[] args) {
-//        String[] topics = {
-//                "/tenant.it/prova/topic",
-//                "tenant.it/prova/topic",
-//                "tenant.it",
-//                "/tenant.it",
-//                "/tenant.it/tenant.it",
-//                ""
-//        };
-//        for(String topic : topics) {
-//            String t;
-//            boolean slashFirst = topic.startsWith("/");
-//            if (slashFirst) {
-//                int idx = topic.indexOf('/', 1);
-//                if(idx>1)
-//                    t = topic.substring(1, idx);
-//                else
-//                    t = topic.substring(1);
-//            } else {
-//                int idx = topic.indexOf('/', 0);
-//                if(idx>0)
-//                    t = topic.substring(0, idx);
-//                else
-//                    t = topic;
-//            }
-//            System.out.println(t);
-//        }
-//    }
 
     public void handleSubscribeMessage(SubscribeMessage subscribeMessage) {
         try {
@@ -390,24 +362,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     @Override
     public void handle(Message<Buffer> message) {
         try {
-//            boolean isTenantSession = isTenantSession();
-//            boolean tenantMatch;
-//            if(isTenantSession) {
-//                boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
-//                if (containsTenantHeader) {
-//                    String tenantHeaderValue = message.headers().get(TENANT_HEADER);
-//                    tenantMatch =
-//                            tenant.equals(tenantHeaderValue)
-//                            || "".equals(tenantHeaderValue)
-//                    ;
-//                } else {
-//                    // if message doesn't contains header is not for a tenant-session
-//                    tenantMatch = false;
-//                }
-//            } else {
-//                // if this is not a tenant-session, receive all messages from all tenants
-//                tenantMatch = true;
-//            }
             boolean tenantMatch = tenantMatch(message);
             if(tenantMatch) {
                 Buffer in = message.body();
