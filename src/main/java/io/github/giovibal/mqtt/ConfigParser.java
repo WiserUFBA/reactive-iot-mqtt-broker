@@ -52,7 +52,7 @@ public class ConfigParser {
         }
         idpUrl = security.getString("idp_url", "http://192.168.231.55:9763");
         idpUsername = security.getString("idp_username", "admin");
-        idpPassword = security.getString("idp_password", "d0_ut_d3s$");
+        idpPassword = security.getString("idp_password", "admin");
 
         JsonObject tls = conf.getJsonObject("tls", new JsonObject());
         tlsKeyPath = tls.getString("keyPath");
