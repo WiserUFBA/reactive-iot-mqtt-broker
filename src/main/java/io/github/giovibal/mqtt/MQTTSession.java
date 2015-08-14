@@ -46,7 +46,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private PublishMessage willMessage;
 
 //    private int keepAliveSeconds;
-    private long keepAliveTimerID;
+    private long keepAliveTimerID = -1;
     private boolean keepAliveTimeEnded;
     private Handler<String> keepaliveErrorHandler;
 
@@ -185,7 +185,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     private void startKeepAliveTimer(int keepAliveSeconds) {
         if(keepAliveSeconds > 0) {
-            stopKeepAliveTimer();
+//            stopKeepAliveTimer();
             keepAliveTimeEnded = true;
             /*
              * If the Keep Alive value is non-zero and the Server does not receive a Control Packet from the Client
@@ -194,7 +194,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             long keepAliveMillis = keepAliveSeconds * 1500;
             keepAliveTimerID = vertx.setPeriodic(keepAliveMillis, tid -> {
                 if(keepAliveTimeEnded) {
-                    Container.logger().debug("keep-alive timer end");
+                    Container.logger().debug("keep-alive timer end " + getClientInfo());
                     handleWillMessage();
                     if (keepaliveErrorHandler != null) {
                         keepaliveErrorHandler.handle(clientID);
@@ -208,15 +208,13 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
     private void stopKeepAliveTimer() {
         try {
-            if(keepAliveTimerID!=0) {
-                Container.logger().debug("keep-alive cancel old timer: " + keepAliveTimerID);
-                boolean removed = vertx.cancelTimer(keepAliveTimerID);
-                if (!removed) {
-                    Container.logger().warn("keep-alive cancel old timer not removed: " + keepAliveTimerID);
-                }
+            Container.logger().debug("keep-alive cancel old timer: " + keepAliveTimerID + " " + getClientInfo());
+            boolean removed = vertx.cancelTimer(keepAliveTimerID);
+            if (!removed) {
+                Container.logger().warn("keep-alive cancel old timer not removed ID: " + keepAliveTimerID + " " + getClientInfo());
             }
         } catch(Throwable e) {
-            Container.logger().error("Cannot stop keep-alive timer with ID: "+keepAliveTimerID, e);
+            Container.logger().error("Cannot stop keep-alive timer with ID: "+keepAliveTimerID +" "+ getClientInfo(), e);
         }
     }
 
