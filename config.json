@@ -13,7 +13,7 @@
       "security": {
         "enabled": true,
         "authorized_clients": ["testing.*"],
-        "idp_url": "http://192.168.1.2:9763",
+        "idp_url": "http://localhost:9763",
         "idp_username": "admin",
         "idp_password": "admin"
       }
@@ -25,7 +25,7 @@
       "security": {
         "enabled": true,
         "authorized_clients": ["testing.*"],
-        "idp_url": "http://192.168.1.2:9763",
+        "idp_url": "http://localhost:9763",
         "idp_username": "admin",
         "idp_password": "admin"
       }
@@ -45,7 +45,7 @@
     "local_bridge_port": 7007
   },
   "bridge_client": {
-    "remote_bridge_host": "192.168.231.53",
+    "remote_bridge_host": "192.168.2.5",
     "remote_bridge_port": 7007
   }*/
 }
