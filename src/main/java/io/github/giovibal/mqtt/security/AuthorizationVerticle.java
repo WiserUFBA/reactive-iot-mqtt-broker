@@ -46,10 +46,6 @@ public class AuthorizationVerticle extends AbstractVerticle {
 //        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
 //        String trustStorePassword="wso2carbon";
 
-//        String identityURL = "http://is.eimware.it:80";
-//        String idp_userName="admin";
-//        String idp_password="d0_ut_d3s$";
-
         ConfigParser c = new ConfigParser(config());
         boolean securityEnabled = c.isSecurityEnabled();
         String identityURL = c.getIdpUrl();
