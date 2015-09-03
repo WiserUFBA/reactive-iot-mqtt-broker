@@ -1,5 +1,7 @@
-package io.github.giovibal.mqtt;
+package io.github.giovibal.mqtt.bridge;
 
+import io.github.giovibal.mqtt.Container;
+import io.github.giovibal.mqtt.MQTTSession;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;

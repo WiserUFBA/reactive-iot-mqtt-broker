@@ -1,5 +1,7 @@
 package io.github.giovibal.mqtt;
 
+import io.github.giovibal.mqtt.bridge.EventBusBridgeClientVerticle;
+import io.github.giovibal.mqtt.bridge.EventBusBridgeServerVerticle;
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
 import io.github.giovibal.mqtt.security.AuthorizationVerticle;
 import io.vertx.core.*;

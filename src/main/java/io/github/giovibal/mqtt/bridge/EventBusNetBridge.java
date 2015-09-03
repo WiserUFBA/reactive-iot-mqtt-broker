@@ -1,5 +1,7 @@
-package io.github.giovibal.mqtt;
+package io.github.giovibal.mqtt.bridge;
 
+import io.github.giovibal.mqtt.MQTTNetSocketWrapper;
+import io.github.giovibal.mqtt.NetSocketWrapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
@@ -14,8 +16,8 @@ import io.vertx.core.streams.Pump;
 public class EventBusNetBridge {
     private static final String BR_HEADER = "bridged";
 
-    private MessageConsumer<Buffer> consumer;
-    private MessageProducer<Buffer> producer;
+//    private MessageConsumer<Buffer> consumer;
+//    private MessageProducer<Buffer> producer;
     private NetSocket netSocket;
     private EventBus eventBus;
     private String eventBusAddress;

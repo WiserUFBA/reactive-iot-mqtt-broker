@@ -365,7 +365,12 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 Buffer in = message.body();
                 PublishMessage pm = (PublishMessage) decoder.dec(in);
                 // filter messages by of subscriptions of this client
-                handlePublishMessageReceived(pm);
+                if(pm== null) {
+                    Container.logger().warn("PublishMessage is null");
+                }
+                else {
+                    handlePublishMessageReceived(pm);
+                }
             }
         } catch (Throwable e) {
             Container.logger().error(e.getMessage(), e);
@@ -379,7 +384,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         /*
          * the Server MUST deliver the message to the Client respecting the maximum QoS of all the matching subscriptions
          */
-        List<Subscription> subs = getAllMatchingSubscriptions(publishMessage);
+        String topic = publishMessage.getTopicName();
+        List<Subscription> subs = getAllMatchingSubscriptions(topic);
         if(subs!=null && subs.size()>0) {
             publishMessageToThisClient = true;
             for (Subscription s : subs) {
@@ -404,9 +410,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         }
     }
 
-    private List<Subscription> getAllMatchingSubscriptions(PublishMessage pm) {
+    private List<Subscription> getAllMatchingSubscriptions(String topic) {
         List<Subscription> ret = new ArrayList<>();
-        String topic = pm.getTopicName();
+//        String topic = pm.getTopicName();
         if(matchingSubscriptionsCache.containsKey(topic)) {
             return matchingSubscriptionsCache.get(topic);
         }
