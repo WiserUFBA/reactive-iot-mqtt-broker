@@ -29,4 +29,9 @@ public class NetSocketWrapper {
             Container.logger().error(e.getMessage());
         }
     }
+
+    public void stop() {
+        // stop writing to socket
+        netSocket.drainHandler(null);
+    }
 }

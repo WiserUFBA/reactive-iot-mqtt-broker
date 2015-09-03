@@ -47,14 +47,17 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
             ;
         NetServer netServer = vertx.createNetServer(opt);
         netServer.connectHandler(netSocket -> {
+            final EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
             netSocket.closeHandler(aVoid -> {
-                Container.logger().error("Bridge Server - closed connection from client " + netSocket.writeHandlerID());
+                Container.logger().info("Bridge Server - closed connection from client " + netSocket.writeHandlerID());
+                ebnb.stop();
             });
             netSocket.exceptionHandler(throwable -> {
                 Container.logger().error("Bridge Server - Exception: " + throwable.getMessage(), throwable);
+                ebnb.stop();
             });
 
-            Container.logger().error("Bridge Server - new connection from client " + netSocket.writeHandlerID());
+            Container.logger().info("Bridge Server - new connection from client " + netSocket.writeHandlerID());
 //            // TODO: some sort of authentication with tenant
 //            try {
 //                X509Certificate[] certs = netSocket.peerCertificateChain();
@@ -80,8 +83,11 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 String cmd = h.toString();
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
-                    Container.logger().info("Bridge Server - start session with tenant: "+ tenant);
-                    new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
+                    Container.logger().info("Bridge Server - start session with tenant: " + tenant);
+//                    new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
+//                    ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
+                    ebnb.start();
+                    Container.logger().info("Bridge Server - bridgeUUID: " + ebnb.getBridgeUUID());
                     netSocket.resume();
                 } else {
                     tenant = cmd;
@@ -91,8 +97,6 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 parser.handle(buffer);
             });
 
-//            tenant = "cmroma.it";
-//            new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
         }).listen();
     }
 

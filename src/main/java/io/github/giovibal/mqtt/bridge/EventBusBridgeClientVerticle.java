@@ -69,19 +69,23 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
     public void handle(AsyncResult<NetSocket> netSocketAsyncResult) {
         if (netSocketAsyncResult.succeeded()) {
             connected = true;
-            Container.logger().info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort +"]");
+            Container.logger().info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort + "]");
             NetSocket netSocket = netSocketAsyncResult.result();
             netSocket.closeHandler(aVoid -> {
-                Container.logger().error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort +"]" + netSocket.writeHandlerID());
+                Container.logger().error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + netSocket.writeHandlerID());
                 connected = false;
             });
             netSocket.exceptionHandler(throwable -> {
                 Container.logger().error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
             });
 
-            netSocket.write(tenant+"\n");
-            netSocket.write("START SESSION"+"\n");
-            new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
+            netSocket.write(tenant + "\n");
+            netSocket.write("START SESSION" + "\n");
+            netSocket.pause();
+            EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
+            ebnb.start();
+            Container.logger().info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
+            netSocket.resume();
         } else {
             connected = false;
             String msg = "Bridge Client - not connected to server [" + remoteBridgeHost + ":" + remoteBridgePort +"]";

@@ -356,28 +356,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         return tenantMatch;
     }
 
-    private boolean tenantMatch(Message<Buffer> message) {
-        boolean isTenantSession = isTenantSession();
-        boolean tenantMatch;
-        if(isTenantSession) {
-            boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
-            if (containsTenantHeader) {
-                String tenantHeaderValue = message.headers().get(TENANT_HEADER);
-                tenantMatch =
-                        tenant.equals(tenantHeaderValue)
-                                || "".equals(tenantHeaderValue)
-                ;
-            } else {
-                // if message doesn't contains header is not for a tenant-session
-                tenantMatch = false;
-            }
-        } else {
-            // if this is not a tenant-session, receive all messages from all tenants
-            tenantMatch = true;
-        }
-        return tenantMatch;
-    }
-
     @Override
     public void handle(Message<Buffer> message) {
         try {
@@ -387,7 +365,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 PublishMessage pm = (PublishMessage) decoder.dec(in);
                 // filter messages by of subscriptions of this client
                 if(pm== null) {
-                    Container.logger().warn("PublishMessage is null");
+                    Container.logger().warn("PublishMessage is null, message.headers => "+ message.headers().entries()+"");
                 }
                 else {
                     handlePublishMessageReceived(pm);
