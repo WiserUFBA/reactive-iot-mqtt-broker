@@ -3,10 +3,7 @@ package io.github.giovibal.mqtt.bridge;
 import io.github.giovibal.mqtt.MQTTNetSocketWrapper;
 import io.github.giovibal.mqtt.NetSocketWrapper;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.MessageProducer;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
@@ -21,17 +18,23 @@ public class EventBusNetBridge {
     private NetSocket netSocket;
     private EventBus eventBus;
     private String eventBusAddress;
+    private String tenant;
 
-    public EventBusNetBridge(NetSocket netSocket, EventBus eventBus, String eventBusAddress) {
+    public EventBusNetBridge(NetSocket netSocket, EventBus eventBus, String eventBusAddress, String tenant) {
         this.eventBus = eventBus;
         this.netSocket = netSocket;
         this.eventBusAddress = eventBusAddress;
+        this.tenant = tenant;
     }
 
     public void start() {
 
+        DeliveryOptions deliveryOpt = new DeliveryOptions().addHeader(BR_HEADER, BR_HEADER);
+        if(tenant!=null) {
+            deliveryOpt.addHeader(MQTTSession.TENANT_HEADER, tenant);
+        }
         MessageConsumer<Buffer> consumer = eventBus.localConsumer(eventBusAddress);
-        MessageProducer<Buffer> producer = eventBus.publisher(eventBusAddress, new DeliveryOptions().addHeader(BR_HEADER, BR_HEADER));
+        MessageProducer<Buffer> producer = eventBus.publisher(eventBusAddress, deliveryOpt);
 
         // from remote tcp to local bus
         Pump.pump(netSocket, producer).start();
@@ -39,11 +42,41 @@ public class EventBusNetBridge {
         // from local bus to remote tcp
         NetSocketWrapper netSocketWrapper = new MQTTNetSocketWrapper(netSocket);
         consumer.handler(bufferMessage -> {
-            // filter bridged messages to prevent LOOP
             boolean isBridged = bufferMessage.headers() != null && bufferMessage.headers().contains(BR_HEADER);
             if (!isBridged) {
-                netSocketWrapper.sendMessageToClient(bufferMessage.body());
+                boolean tenantMatch = tenantMatch(bufferMessage);
+                if(tenantMatch) {
+                    netSocketWrapper.sendMessageToClient(bufferMessage.body());
+                }
             }
         });
+    }
+
+    // TODO: this method is equal to MQTTSession.isTenantSession, need refactoring
+    private boolean isTenantSession() {
+        boolean isTenantSession = tenant!=null && tenant.trim().length()>0;
+        return isTenantSession;
+    }
+    // TODO: this method is equal to MQTTSession.tenantMatch, need refactoring
+    private boolean tenantMatch(Message<Buffer> message) {
+        boolean isTenantSession = isTenantSession();
+        boolean tenantMatch;
+        if(isTenantSession) {
+            boolean containsTenantHeader = message.headers().contains(MQTTSession.TENANT_HEADER);
+            if (containsTenantHeader) {
+                String tenantHeaderValue = message.headers().get(MQTTSession.TENANT_HEADER);
+                tenantMatch =
+                        tenant.equals(tenantHeaderValue)
+                                || "".equals(tenantHeaderValue)
+                ;
+            } else {
+                // if message doesn't contains header is not for a tenant-session
+                tenantMatch = false;
+            }
+        } else {
+            // if this is not a tenant-session, receive all messages from all tenants
+            tenantMatch = true;
+        }
+        return tenantMatch;
     }
 }

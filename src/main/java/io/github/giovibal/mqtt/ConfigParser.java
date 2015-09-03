@@ -119,7 +119,6 @@ public class ConfigParser {
         String certPath = getTlsCertPath();
         boolean ret = keyPath!=null && keyPath.trim().length()>0 && certPath!=null && certPath.trim().length()>0;
         return ret;
-
     }
 
     public boolean isRetainSupport() {

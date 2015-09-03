@@ -334,6 +334,27 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         boolean isTenantSession = tenant!=null && tenant.trim().length()>0;
         return isTenantSession;
     }
+    private boolean tenantMatch(Message<Buffer> message) {
+        boolean isTenantSession = isTenantSession();
+        boolean tenantMatch;
+        if(isTenantSession) {
+            boolean containsTenantHeader = message.headers().contains(TENANT_HEADER);
+            if (containsTenantHeader) {
+                String tenantHeaderValue = message.headers().get(TENANT_HEADER);
+                tenantMatch =
+                        tenant.equals(tenantHeaderValue)
+                                || "".equals(tenantHeaderValue)
+                ;
+            } else {
+                // if message doesn't contains header is not for a tenant-session
+                tenantMatch = false;
+            }
+        } else {
+            // if this is not a tenant-session, receive all messages from all tenants
+            tenantMatch = true;
+        }
+        return tenantMatch;
+    }
 
     private boolean tenantMatch(Message<Buffer> message) {
         boolean isTenantSession = isTenantSession();
@@ -461,13 +482,14 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         shutdown();
     }
     public void shutdown() {
+        // stop timers
+        stopKeepAliveTimer();
+
         // deallocate this instance ...
         if(messageConsumer!=null && cleanSession) {
             messageConsumer.unregister();
             messageConsumer = null;
         }
-        // stop keepalive timer
-        stopKeepAliveTimer();
         vertx = null;
     }
 
