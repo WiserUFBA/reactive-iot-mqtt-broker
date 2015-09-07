@@ -38,6 +38,7 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
         int timeout = 1000;
         NetClientOptions opt = new NetClientOptions()
                 .setConnectTimeout(timeout) // 60 seconds
+                .setIdleTimeout(10) // 1 second
                 .setTcpKeepAlive(true)
 //                .setSsl(true)
 //                .setPemKeyCertOptions(new PemKeyCertOptions()
@@ -57,10 +58,8 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
     }
 
     private void checkConnection() {
-//        Container.logger().info("Bridge Client - check connection to server [" + remoteBridgeHost + ":" + remoteBridgePort +"] connected ["+connected+"] "+connectionTimerID);
         if(!connected) {
-            connected=true;// prevent duplicates
-            Container.logger().info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort +"] ... "+connectionTimerID);
+            Container.logger().info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort + "] ... " + connectionTimerID);
             netClient.connect(remoteBridgePort, remoteBridgeHost, this);
         }
     }
@@ -77,6 +76,7 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
             });
             netSocket.exceptionHandler(throwable -> {
                 Container.logger().error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
+                connected = false;
             });
 
             netSocket.write(tenant + "\n");

@@ -1,9 +1,6 @@
 package io.github.giovibal.mqtt.bridge;
 
-import io.github.giovibal.mqtt.Container;
-import io.github.giovibal.mqtt.MQTTNetSocketWrapper;
-import io.github.giovibal.mqtt.MQTTSession;
-import io.github.giovibal.mqtt.NetSocketWrapper;
+import io.github.giovibal.mqtt.*;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
@@ -29,7 +26,7 @@ public class EventBusNetBridge {
     private DeliveryOptions deliveryOpt;
     private MessageConsumer<Buffer> consumer;
     private MessageProducer<Buffer> producer;
-    private Pump fromRemoteTcpToLocalBus;
+    private MqttPump fromRemoteTcpToLocalBus;
     private NetSocketWrapper netSocketWrapper;
     private String bridgeUUID;
 
@@ -47,8 +44,13 @@ public class EventBusNetBridge {
 //        consumer = eventBus.localConsumer(eventBusAddress);
         consumer = eventBus.consumer(eventBusAddress);
         producer = eventBus.publisher(eventBusAddress, deliveryOpt);
-        fromRemoteTcpToLocalBus = Pump.pump(netSocket, producer);
+        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
         netSocketWrapper = new MQTTNetSocketWrapper(netSocket);
+
+        fromRemoteTcpToLocalBus.setListener(e -> {
+            Container.logger().warn("Corrupted message from bridge: "+ e.getMessage());
+            netSocket.close();
+        });
     }
 
     public void start() {

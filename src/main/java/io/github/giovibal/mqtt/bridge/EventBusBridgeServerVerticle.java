@@ -93,9 +93,7 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                     tenant = cmd;
                 }
             });
-            netSocket.handler(buffer -> {
-                parser.handle(buffer);
-            });
+            netSocket.handler(parser::handle);
 
         }).listen();
     }

@@ -54,9 +54,13 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     @Override
     public void onToken(byte[] token, boolean timeout) throws Exception {
         try {
-            Buffer buffer = Buffer.buffer(token);
-            AbstractMessage message = decoder.dec(buffer);
-            onMessageFromClient(message);
+            if(!timeout) {
+                Buffer buffer = Buffer.buffer(token);
+                AbstractMessage message = decoder.dec(buffer);
+                onMessageFromClient(message);
+            } else {
+                Container.logger().warn("Timeout occurred ...");
+            }
         } catch (Throwable ex) {
             String clientInfo = getClientInfo();
             Container.logger().error(clientInfo +", Bad error in processing the message", ex);
