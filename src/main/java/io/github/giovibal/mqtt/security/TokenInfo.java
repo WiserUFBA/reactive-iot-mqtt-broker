@@ -1,4 +1,4 @@
-package io.github.giovibal.mqtt.security.wso2;
+package io.github.giovibal.mqtt.security;
 
 import java.util.List;
 

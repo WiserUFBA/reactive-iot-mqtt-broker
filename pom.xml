@@ -21,9 +21,13 @@
 
         <!--Dependency versions-->
         <vertx.version>3.0.0</vertx.version>
+        <vertx.scope>provided</vertx.scope>
         <!--<vertx.testtools.version>2.0.3-final</vertx.testtools.version>-->
         <junit.version>4.11</junit.version>
         <paho.version>1.0.1</paho.version>
+        <paho.version>1.0.1</paho.version>
+
+        <wso2.scope>provided</wso2.scope>
     </properties>
 
 
@@ -49,30 +53,27 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
-            <scope>provided</scope>
+            <scope>${vertx.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-core</artifactId>
             <version>2.1.1-wso2v7</version>
+            <scope>${wso2.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2.wso2</groupId>
             <artifactId>axis2</artifactId>
             <version>1.6.1.wso2v10</version>
+            <scope>${wso2.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
             <version>4.2.0</version>
+            <scope>${wso2.scope}</scope>
         </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>org.mapdb</groupId>-->
-            <!--<artifactId>mapdb</artifactId>-->
-            <!--<version>2.0-beta6</version>-->
-        <!--</dependency>-->
 
         <!--Test dependencies-->
         <dependency>
@@ -160,20 +161,22 @@
 
     <profiles>
         <profile>
-            <id>vertx-embedded</id>
+            <id>include-vertx</id>
             <activation>
-                <file>
-                    <exists>${basedir}/.vertx</exists>
-                </file>
+                <activeByDefault>true</activeByDefault>
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>io.vertx</groupId>
-                    <artifactId>vertx-core</artifactId>
-                    <version>${vertx.version}</version>
-                    <scope>compile</scope>
-                </dependency>
-            </dependencies>
+            <properties>
+                <vertx.scope>compile</vertx.scope>
+            </properties>
+        </profile>
+        <profile>
+            <id>include-wso2-auth</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <wso2.scope>compile</wso2.scope>
+            </properties>
         </profile>
 
         <profile>

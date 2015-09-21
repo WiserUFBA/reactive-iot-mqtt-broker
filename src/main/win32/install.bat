@@ -30,12 +30,7 @@ if '%errorlevel%' NEQ '0' (
 :--------------------------------------
 
 :parse
-IF "%~1"=="install" GOTO install
-IF "%~1"=="uninstall" GOTO uninstall
-IF "%~1"=="start" GOTO start
-IF "%~1"=="stop" GOTO stop
-IF "%~1"=="status" GOTO status
-IF "%~1"=="" GOTO status
+GOTO install
 REM SHIFT
 :endparse
 GOTO eof

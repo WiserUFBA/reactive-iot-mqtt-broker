@@ -1,13 +1,11 @@
 package io.github.giovibal.mqtt.security;
 
-import io.github.giovibal.mqtt.ConfigParser;
-import io.github.giovibal.mqtt.Container;
-import io.github.giovibal.mqtt.security.wso2.Oauth2TokenValidator;
-import io.github.giovibal.mqtt.security.wso2.TokenInfo;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 /**
  * Created by giova_000 on 04/02/2015.
@@ -39,21 +37,25 @@ import io.vertx.core.json.JsonObject;
  */
 
 public class AuthorizationVerticle extends AbstractVerticle {
-    Oauth2TokenValidator oauth2Validator;
+
+    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
+
+    private Oauth2TokenValidator oauth2Validator;
+
     @Override
     public void start() throws Exception {
 
 //        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
 //        String trustStorePassword="wso2carbon";
 
-        ConfigParser c = new ConfigParser(config());
+        SecurityConfigParser c = new SecurityConfigParser(config());
         boolean securityEnabled = c.isSecurityEnabled();
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();
 
         if(!securityEnabled) {
-            Container.logger().debug("MQTT Authorization disabled");
+            logger.debug("MQTT Authorization disabled");
             return;
         }
 
@@ -87,6 +89,6 @@ public class AuthorizationVerticle extends AbstractVerticle {
 
         });
 
-        Container.logger().info("Startd MQTT Authorization, address: "+ consumer.address());
+        logger.info("Startd MQTT Authorization, address: " + consumer.address());
     }
 }

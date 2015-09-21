@@ -1,4 +1,4 @@
-package io.github.giovibal.mqtt.security.wso2;
+package io.github.giovibal.mqtt.security;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.Options;
@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by giova_000 on 12/02/2015.
+ * Created by Giovanni Baleani on 12/02/2015.
  */
 public class Oauth2TokenValidator {
     private OAuth2TokenValidationService oAuth2TokenValidationService = null;
