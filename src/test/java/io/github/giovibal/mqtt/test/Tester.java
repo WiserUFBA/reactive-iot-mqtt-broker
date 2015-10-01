@@ -16,14 +16,14 @@ public class Tester {
 //    static final String serverURL = "tcp://192.168.231.52:1883";
 //    static final String serverURL = "tcp://192.168.231.2:1883";
 
-//    static final String serverURL = "tcp://127.0.0.1:1884";
+    static final String serverURL = "tcp://127.0.0.1:1883";
 //    static final String serverURL = "tcp://192.168.231.53:1884";
 //    static final String serverURLSubscribers = "tcp://192.168.231.51:1886";
 //    static final String serverURLPublishers = "tcp://192.168.231.52:1886";
 
 //    static final String serverURL = "tcp://192.168.231.53:1883";
 //    static final String serverURL = "tcp://127.0.0.1:1883";
-    static final String serverURL = "tcp://192.168.200.11:1883";
+//    static final String serverURL = "tcp://192.168.200.11:1883";
 //    static final String serverURL = "ssl://iot.eimware.it:8883";
     static final String serverURLSubscribers = serverURL;
     static final String serverURLPublishers = serverURL;
@@ -39,7 +39,7 @@ public class Tester {
 //        test2(30, 100, 2, 0);
 
         stats("Num Clients / Num Messages Tests");
-//        test2(30, 100, 0, 1);
+        test2(30, 100, 0, 1);
 //        test2(100, 30, 0, 1);
 //        test2(3, 1000, 0, 1);
 //        test2(5, 1000, 0, 10);
@@ -116,7 +116,7 @@ public class Tester {
             Thread.sleep(sleepSeconds * 1000);
         }
 
-        cSubs.unsubcribe(topic);
+//        cSubs.unsubcribe(topic);
         cSubs.disconnect();
 
         cPubs.publishStats();
@@ -175,7 +175,7 @@ public class Tester {
 //                    e.printStackTrace();
 //                }
 //            }
-            o.setCleanSession(true);
+//            o.setCleanSession(true);
 //            try {
 //                o.setWill("$SYS/config", new String("{\"retain\":false}").getBytes("UTF-8"), 0, false);
 //            } catch (Throwable e) { e.printStackTrace(); }
