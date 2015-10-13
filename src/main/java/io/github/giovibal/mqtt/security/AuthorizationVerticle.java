@@ -1,5 +1,6 @@
 package io.github.giovibal.mqtt.security;
 
+import io.github.giovibal.mqtt.MQTTSession;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -62,7 +63,7 @@ public class AuthorizationVerticle extends AbstractVerticle {
         oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
 
 
-        String address = AuthorizationVerticle.class.getName();
+        String address = MQTTSession.AUTHORIZATION_ADDRESS;
 
         MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(address, (Message<JsonObject> msg) -> {
             JsonObject oauth2_token = msg.body();

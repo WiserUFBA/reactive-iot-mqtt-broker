@@ -26,6 +26,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
+    public static final String AUTHORIZATION_ADDRESS = "io.github.giovibal.mqtt.AuthorizationVerticle";
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -104,7 +105,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
         if(useOAuth2TokenValidation) {
             // AUTHENTICATION START
-            String authorizationAddress = "io.github.giovibal.mqtt.AuthorizationVerticle";
+            String authorizationAddress = AUTHORIZATION_ADDRESS;
             JsonObject oauth2_token_info = new JsonObject()
                     .put("access_token", username)
                     .put("refresh_token", password);

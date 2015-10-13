@@ -43,7 +43,8 @@
 
         <repository>
             <id>wso2-maven2-repository</id>
-            <url>http://dist.wso2.org/maven2</url>
+            <!--<url>http://dist.wso2.org/maven2</url>-->
+            <url>http://maven.wso2.org/nexus/content/groups/public/</url>
         </repository>
     </repositories>
 
@@ -56,22 +57,28 @@
             <scope>${vertx.scope}</scope>
         </dependency>
 
+        <!--<dependency>-->
+            <!--<groupId>org.apache.synapse</groupId>-->
+            <!--<artifactId>synapse-core</artifactId>-->
+            <!--<version>2.1.1-wso2v8</version>-->
+            <!--<scope>${wso2.scope}</scope>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.axis2.wso2</groupId>-->
+            <!--<artifactId>axis2</artifactId>-->
+            <!--<version>1.6.1.wso2v11</version>-->
+            <!--<scope>${wso2.scope}</scope>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.wso2.carbon</groupId>-->
+            <!--<artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>-->
+            <!--<version>4.2.0</version>-->
+            <!--<scope>${wso2.scope}</scope>-->
+        <!--</dependency>-->
         <dependency>
-            <groupId>org.apache.synapse</groupId>
-            <artifactId>synapse-core</artifactId>
-            <version>2.1.1-wso2v7</version>
-            <scope>${wso2.scope}</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.axis2.wso2</groupId>
-            <artifactId>axis2</artifactId>
-            <version>1.6.1.wso2v10</version>
-            <scope>${wso2.scope}</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon</groupId>
+            <groupId>org.wso2.carbon.commons</groupId>
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
-            <version>4.2.0</version>
+            <version>4.4.7</version>
             <scope>${wso2.scope}</scope>
         </dependency>
 

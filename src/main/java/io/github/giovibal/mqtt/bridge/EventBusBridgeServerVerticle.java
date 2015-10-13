@@ -21,7 +21,7 @@ import javax.security.cert.X509Certificate;
  */
 public class EventBusBridgeServerVerticle extends AbstractVerticle {
 
-    private String tenant;
+//    private String tenant;
 
     @Override
     public void start() throws Exception {
@@ -47,7 +47,7 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
             ;
         NetServer netServer = vertx.createNetServer(opt);
         netServer.connectHandler(netSocket -> {
-            final EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
+            final EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address);
             netSocket.closeHandler(aVoid -> {
                 Container.logger().info("Bridge Server - closed connection from client " + netSocket.writeHandlerID());
                 ebnb.stop();
@@ -83,14 +83,15 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 String cmd = h.toString();
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
-                    Container.logger().info("Bridge Server - start session with tenant: " + tenant);
+                    Container.logger().info("Bridge Server - start session with tenant: " + ebnb.getTenant());
 //                    new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
 //                    ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
                     ebnb.start();
                     Container.logger().info("Bridge Server - bridgeUUID: " + ebnb.getBridgeUUID());
                     netSocket.resume();
                 } else {
-                    tenant = cmd;
+                    String tenant = cmd;
+                    ebnb.setTenant(tenant);
                 }
             });
             netSocket.handler(parser::handle);

@@ -82,7 +82,8 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
             netSocket.write(tenant + "\n");
             netSocket.write("START SESSION" + "\n");
             netSocket.pause();
-            EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
+            EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address);
+            ebnb.setTenant(tenant);
             ebnb.start();
             Container.logger().info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
             netSocket.resume();

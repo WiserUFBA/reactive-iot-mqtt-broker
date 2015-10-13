@@ -1,13 +1,12 @@
 package io.github.giovibal.mqtt.bridge;
 
-import io.github.giovibal.mqtt.*;
-import io.github.giovibal.mqtt.parser.MQTTDecoder;
+import io.github.giovibal.mqtt.Container;
+import io.github.giovibal.mqtt.MQTTNetSocketWrapper;
+import io.github.giovibal.mqtt.MQTTSession;
+import io.github.giovibal.mqtt.NetSocketWrapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.streams.Pump;
-import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
-import org.dna.mqtt.moquette.proto.messages.PublishMessage;
 
 import java.util.UUID;
 
@@ -30,11 +29,11 @@ public class EventBusNetBridge {
     private NetSocketWrapper netSocketWrapper;
     private String bridgeUUID;
 
-    public EventBusNetBridge(NetSocket netSocket, EventBus eventBus, String eventBusAddress, String tenant) {
+    public EventBusNetBridge(NetSocket netSocket, EventBus eventBus, String eventBusAddress) {
         this.eventBus = eventBus;
         this.netSocket = netSocket;
         this.eventBusAddress = eventBusAddress;
-        this.tenant = tenant;
+//        this.tenant = tenant;
 
         bridgeUUID = UUID.randomUUID().toString();
         deliveryOpt = new DeliveryOptions().addHeader(BR_HEADER, bridgeUUID);
@@ -138,4 +137,13 @@ public class EventBusNetBridge {
 //            Container.logger().error(e.getMessage(), e);
 //        }
 //    }
+
+
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+
+    public String getTenant() {
+        return tenant;
+    }
 }

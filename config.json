@@ -10,43 +10,17 @@
     },
     {
       "tcp_port": 1884,
+      "retain_support": false,
       "security": {
         "enabled": true,
         "authorized_clients": ["testing.*"],
-        "idp_url": "http://localhost:9763",
+        "idp_url": "http://192.168.231.53:9763",
         "idp_username": "admin",
-        "idp_password": "admin"
+        "idp_password": "d0_ut_d3s$"
       }
-    },
-    {
-      "tcp_port": 11884,
-      "websocket_enabled": true,
-      "websocket_subprotocols": "mqtt,mqttv3.1",
-      "security": {
-        "enabled": true,
-        "authorized_clients": ["testing.*"],
-        "idp_url": "http://localhost:9763",
-        "idp_username": "admin",
-        "idp_password": "admin"
-      }
-    },
-    {
-      "tcp_port": 1885,
-      "retain_support": false
-    },
-    {
-      "tcp_port": 11885,
-      "websocket_enabled": true,
-      "websocket_subprotocols": "mqtt,mqttv3.1",
-      "retain_support": false
     }
-  ]/*,
+  ],
   "bridge_server": {
     "local_bridge_port": 7007
-  },
-  "bridge_client": {
-    "remote_bridge_host": "192.168.2.5",
-    "remote_bridge_port": 7007,
-    "remote_bridge_tenant": "demo.it"
-  }*/
+  }
 }

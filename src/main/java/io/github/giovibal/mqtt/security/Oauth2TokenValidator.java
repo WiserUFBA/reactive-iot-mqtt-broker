@@ -8,6 +8,7 @@ import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.wso2.carbon.identity.oauth2.stub.OAuth2TokenValidationService;
 import org.wso2.carbon.identity.oauth2.stub.OAuth2TokenValidationServiceStub;
 import org.wso2.carbon.identity.oauth2.stub.dto.OAuth2TokenValidationRequestDTO;
+import org.wso2.carbon.identity.oauth2.stub.dto.OAuth2TokenValidationRequestDTO_OAuth2AccessToken;
 import org.wso2.carbon.identity.oauth2.stub.dto.OAuth2TokenValidationResponseDTO;
 
 import java.net.MalformedURLException;
@@ -81,8 +82,10 @@ public class Oauth2TokenValidator {
 
     private OAuth2TokenValidationRequestDTO createRequestTokenDTO(String access_token) {
         OAuth2TokenValidationRequestDTO req = new OAuth2TokenValidationRequestDTO();
-        req.setTokenType("bearer");
-        req.setAccessToken(access_token);
+        OAuth2TokenValidationRequestDTO_OAuth2AccessToken token = new OAuth2TokenValidationRequestDTO_OAuth2AccessToken();
+        token.setTokenType("bearer");
+        token.setIdentifier(access_token);
+        req.setAccessToken(token);
         return req;
     }
 }
