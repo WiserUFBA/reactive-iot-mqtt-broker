@@ -40,14 +40,14 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
                 .setConnectTimeout(timeout) // 60 seconds
                 .setIdleTimeout(10) // 1 second
                 .setTcpKeepAlive(true)
-//                .setSsl(true)
-//                .setPemKeyCertOptions(new PemKeyCertOptions()
-//                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
-//                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
-//                )
-//                .setPemTrustOptions(new PemTrustOptions()
-//                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                )
+                .setSsl(true)
+                .setPemKeyCertOptions(new PemKeyCertOptions()
+                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
+                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
+                )
+                .setPemTrustOptions(new PemTrustOptions()
+                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+                )
             ;
 
         netClient = vertx.createNetClient(opt);

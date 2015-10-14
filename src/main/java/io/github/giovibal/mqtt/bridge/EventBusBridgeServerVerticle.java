@@ -4,10 +4,7 @@ import io.github.giovibal.mqtt.Container;
 import io.github.giovibal.mqtt.MQTTSession;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 
 import javax.naming.InvalidNameException;
@@ -35,15 +32,16 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
         NetServerOptions opt = new NetServerOptions()
                 .setTcpKeepAlive(true)
                 .setPort(localBridgePort)
-//                .setSsl(true)
-//                .setPemKeyCertOptions(new PemKeyCertOptions()
-//                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key")
-//                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt")
-//                )
-//                .setClientAuthRequired(true)
-//                .setPemTrustOptions(new PemTrustOptions()
-//                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                )
+                // TODO: parametrizzare questi certificati per fare una prova "tenantizzata"
+                .setSsl(true)
+                .setPemKeyCertOptions(new PemKeyCertOptions()
+                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key")
+                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt")
+                )
+                .setClientAuthRequired(true)
+                .setPemTrustOptions(new PemTrustOptions()
+                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+                )
             ;
         NetServer netServer = vertx.createNetServer(opt);
         netServer.connectHandler(netSocket -> {
@@ -58,26 +56,8 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
             });
 
             Container.logger().info("Bridge Server - new connection from client " + netSocket.writeHandlerID());
-//            // TODO: some sort of authentication with tenant
-//            try {
-//                X509Certificate[] certs = netSocket.peerCertificateChain();
-//                for(X509Certificate c : certs) {
-//                    String dn = c.getSubjectDN().getName();// info del DEVICE/TENANT
-//                    try {
-//                        LdapName ldapDN = new LdapName(dn);
-//                        for (Rdn rdn : ldapDN.getRdns()) {
-//                            System.out.println(rdn.getType() + " -> " + rdn.getValue());
-//                            if(rdn.getType().equals("CN")) {
-//                                tenant = rdn.getValue().toString();
-//                            }
-//                        }
-//                    } catch (InvalidNameException in) {
-//                        in.printStackTrace();
-//                    }
-//                }
-//            } catch (SSLPeerUnverifiedException e) {
-//                e.printStackTrace();
-//            }
+
+
 
             final RecordParser parser = RecordParser.newDelimited("\n", h -> {
                 String cmd = h.toString();
@@ -89,6 +69,11 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                     netSocket.resume();
                 } else {
                     String tenant = cmd;
+                    //TODO: testare
+                    String tenantFromCert = extractTenantFromCert(netSocket);
+                    if(!tenant.equals(tenantFromCert))
+                        throw new IllegalAccessError("Bridge Authentication Failed for tenant: "+ tenant +"/"+ tenantFromCert);
+
                     ebnb.setTenant(tenant);
                 }
             });
@@ -100,5 +85,39 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
     @Override
     public void stop() throws Exception {
 
+    }
+
+    private String extractTenantFromCert(NetSocket netSocket) {
+        String tenant = null;
+        try {
+            X509Certificate[] certs = netSocket.peerCertificateChain();
+            for(X509Certificate c : certs) {
+                String dn = c.getSubjectDN().getName();// info del DEVICE/TENANT
+                tenant = getTenantFromDN(dn);
+            }
+        } catch (SSLPeerUnverifiedException e) {
+            e.printStackTrace();
+        }
+        return tenant;
+    }
+
+    private String getTenantFromDN(String dn) {
+        String tenant = selectFromDN(dn, "CN");
+        return tenant;
+    }
+    private String selectFromDN(String dn, String rdnType) {
+        String value = null;
+        try {
+            LdapName ldapDN = new LdapName(dn);
+            for (Rdn rdn : ldapDN.getRdns()) {
+                System.out.println(rdn.getType() + " -> " + rdn.getValue());
+                if(rdn.getType().equals(rdnType)) {
+                    value = rdn.getValue().toString();
+                }
+            }
+        } catch (InvalidNameException in) {
+            in.printStackTrace();
+        }
+        return value;
     }
 }
