@@ -84,8 +84,6 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
                     Container.logger().info("Bridge Server - start session with tenant: " + ebnb.getTenant());
-//                    new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant).start();
-//                    ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address, tenant);
                     ebnb.start();
                     Container.logger().info("Bridge Server - bridgeUUID: " + ebnb.getBridgeUUID());
                     netSocket.resume();

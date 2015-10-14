@@ -1,7 +1,5 @@
 package io.github.giovibal.mqtt.persistence;
 
-import io.github.giovibal.mqtt.ITopicsManager;
-import io.github.giovibal.mqtt.MQTTJson;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.vertx.core.AsyncResult;
@@ -23,15 +21,11 @@ import java.util.List;
 public class StoreManager {
 
     private Vertx vertx;
-//    private String tenant;
-//    private ITopicsManager topicsManager;
     private MQTTEncoder encoder;
     private MQTTDecoder decoder;
 
-    public StoreManager(Vertx vertx, String tenant, ITopicsManager topicsManager) {
+    public StoreManager(Vertx vertx) {
         this.vertx = vertx;
-//        this.tenant = tenant;
-//        this.topicsManager = topicsManager;
         this.encoder = new MQTTEncoder();
         this.decoder = new MQTTDecoder();
     }

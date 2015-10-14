@@ -4,6 +4,7 @@ import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.StoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
+import io.github.giovibal.mqtt.security.AuthorizationClient;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -60,6 +61,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
         this.matchingSubscriptionsCache = new HashMap<>();
+
+        this.topicsManager = new MQTTTopicsManagerOptimized();
+        this.storeManager = new StoreManager(this.vertx);
     }
 
     private String extractTenant(String username) {
@@ -105,30 +109,41 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
         if(useOAuth2TokenValidation) {
             // AUTHENTICATION START
-            String authorizationAddress = AUTHORIZATION_ADDRESS;
-            JsonObject oauth2_token_info = new JsonObject()
-                    .put("access_token", username)
-                    .put("refresh_token", password);
-            vertx.eventBus().send(authorizationAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
-                if (res.succeeded()) {
-                    JsonObject validationInfo = res.result().body();
-                    Container.logger().debug(validationInfo);
-                    Boolean token_valid = validationInfo.getBoolean("token_valid", Boolean.FALSE);
-                    String authorized_user = validationInfo.getString("authorized_user");
-                    String error_msg = validationInfo.getString("error_msg");
-                    Container.logger().debug("authenticated ===> " + token_valid);
-                    if (token_valid) {
-                        String tenant = extractTenant(authorized_user);
-                        _initTenant(tenant);
-                        Container.logger().debug("authorized_user ===> " + authorized_user + ", tenant ===> " + tenant);
-                        _handleConnectMessage(connectMessage);
-                        authHandler.handle(Boolean.TRUE);
-                    } else {
-                        Container.logger().debug("authenticated error ===> " + error_msg);
-                        authHandler.handle(Boolean.FALSE);
-                    }
+//            String authorizationAddress = AUTHORIZATION_ADDRESS;
+//            JsonObject oauth2_token_info = new JsonObject()
+//                    .put("access_token", username)
+//                    .put("refresh_token", password);
+//            vertx.eventBus().send(authorizationAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
+//                if (res.succeeded()) {
+//                    JsonObject validationInfo = res.result().body();
+//                    Container.logger().debug(validationInfo);
+//                    Boolean token_valid = validationInfo.getBoolean("token_valid", Boolean.FALSE);
+//                    String authorized_user = validationInfo.getString("authorized_user");
+//                    String error_msg = validationInfo.getString("error_msg");
+//                    Container.logger().debug("authenticated ===> " + token_valid);
+//                    if (token_valid) {
+//                        String tenant = extractTenant(authorized_user);
+//                        _initTenant(tenant);
+//                        Container.logger().debug("authorized_user ===> " + authorized_user + ", tenant ===> " + tenant);
+//                        _handleConnectMessage(connectMessage);
+//                        authHandler.handle(Boolean.TRUE);
+//                    } else {
+//                        Container.logger().debug("authenticated error ===> " + error_msg);
+//                        authHandler.handle(Boolean.FALSE);
+//                    }
+//                } else {
+//                    Container.logger().debug("login failed !");
+//                    authHandler.handle(Boolean.FALSE);
+//                }
+//            });
+            AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), AUTHORIZATION_ADDRESS);
+            auth.authorize(username, password, validationInfo -> {
+                if (validationInfo.token_valid) {
+                    String tenant = validationInfo.tenant;
+                    _initTenant(tenant);
+                    _handleConnectMessage(connectMessage);
+                    authHandler.handle(Boolean.TRUE);
                 } else {
-                    Container.logger().debug("login failed !");
                     authHandler.handle(Boolean.FALSE);
                 }
             });
@@ -151,8 +166,8 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         if(tenant == null)
             throw new IllegalStateException("Tenant cannot be null");
         this.tenant = tenant;
-        this.topicsManager = new MQTTTopicsManagerOptimized();
-        this.storeManager = new StoreManager(this.vertx, this.tenant, this.topicsManager);
+//        this.topicsManager = new MQTTTopicsManagerOptimized();
+//        this.storeManager = new StoreManager(this.vertx);
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {
