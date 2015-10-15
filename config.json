@@ -10,6 +10,9 @@
     }
   ],
   "bridge_server": {
-    "local_bridge_port": 7007
+    "local_bridge_port": 7007,
+    "ssl_cert_key": "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.key",
+    "ssl_cert": "C:\\Sviluppo\\Certificati-SSL\\device1\\device1.crt",
+    "ssl_trust": "C:/Sviluppo/Certificati-SSL/CA/rootCA.pem"
   }
 }

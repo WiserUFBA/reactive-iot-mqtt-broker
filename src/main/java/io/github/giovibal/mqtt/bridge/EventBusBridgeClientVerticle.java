@@ -2,14 +2,12 @@ package io.github.giovibal.mqtt.bridge;
 
 import io.github.giovibal.mqtt.Container;
 import io.github.giovibal.mqtt.MQTTSession;
+import io.github.giovibal.mqtt.security.CertInfo;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.streams.Pump;
 
 /**
  * Created by giova_000 on 15/07/2015.
@@ -38,17 +36,32 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
         int timeout = 1000;
         NetClientOptions opt = new NetClientOptions()
                 .setConnectTimeout(timeout) // 60 seconds
-                .setIdleTimeout(10) // 1 second
                 .setTcpKeepAlive(true)
                 .setSsl(true)
-                .setPemKeyCertOptions(new PemKeyCertOptions()
-                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
-                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
-                )
-                .setPemTrustOptions(new PemTrustOptions()
-                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-                )
+//                .setPemKeyCertOptions(new PemKeyCertOptions()
+//                                .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
+//                                .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
+//                )
+//                .setPemTrustOptions(new PemTrustOptions()
+//                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+//                )
             ;
+
+        String ssl_cert_key = conf.getString("ssl_cert_key");
+        String ssl_cert = conf.getString("ssl_cert");
+        String ssl_trust = conf.getString("ssl_trust");
+        if(ssl_cert_key != null && ssl_cert != null && ssl_trust != null) {
+            opt.setSsl(true)
+                    .setPemKeyCertOptions(new PemKeyCertOptions()
+                                    .setKeyPath(ssl_cert_key)
+                                    .setCertPath(ssl_cert)
+                    )
+                    .setPemTrustOptions(new PemTrustOptions()
+                                    .addCertPath(ssl_trust)
+                    )
+            ;
+            tenant = new CertInfo(ssl_cert).getTenant();
+        }
 
         netClient = vertx.createNetClient(opt);
         netClient.connect(remoteBridgePort, remoteBridgeHost, this);
@@ -78,7 +91,7 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
                 Container.logger().error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
                 connected = false;
             });
-
+//            tenant = new CertInfo("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt").getTenant();
             netSocket.write(tenant + "\n");
             netSocket.write("START SESSION" + "\n");
             netSocket.pause();
