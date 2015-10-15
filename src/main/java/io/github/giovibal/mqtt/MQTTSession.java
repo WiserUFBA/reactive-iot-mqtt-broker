@@ -37,7 +37,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private String protoName;
     private boolean cleanSession;
     private String tenant;
-    private boolean useOAuth2TokenValidation;
+    private boolean securityEnabled;
     private boolean retainSupport;
     private MessageConsumer<Buffer> messageConsumer;
     private Handler<PublishMessage> publishMessageHandler;
@@ -56,7 +56,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         this.vertx = vertx;
         this.decoder = new MQTTDecoder();
         this.encoder = new MQTTEncoder();
-        this.useOAuth2TokenValidation = config.isSecurityEnabled();
+        this.securityEnabled = config.isSecurityEnabled();
         this.retainSupport = config.isRetainSupport();
         this.subscriptions = new LinkedHashMap<>();
         this.qosUtils = new QOSUtils();
@@ -107,7 +107,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         String username = connectMessage.getUsername();
         String password = connectMessage.getPassword();
 
-        if(useOAuth2TokenValidation) {
+        if(securityEnabled) {
             // AUTHENTICATION START
 //            String authorizationAddress = AUTHORIZATION_ADDRESS;
 //            JsonObject oauth2_token_info = new JsonObject()

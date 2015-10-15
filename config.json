@@ -11,6 +11,16 @@
       }
     },
     {
+      "tcp_port": 1884,
+      "security": {
+        "enabled": true,
+        "authorized_clients": ["testing.*"],
+        "idp_url": "http://idp.eimware.it",
+        "idp_username": "admin",
+        "idp_password": "d0_ut_d3s$"
+      }
+    },
+    {
       "tcp_port": 11883,
       "websocket_enabled": true,
       "websocket_subprotocols": "mqtt,mqttv3.1"

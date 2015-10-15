@@ -40,12 +40,12 @@ public class MQTTBroker extends AbstractVerticle {
                         result.cause().printStackTrace();
                     } else {
                         String deploymentID = result.result();
-                        Container.logger().debug(c.getSimpleName() + ": " + deploymentID);
+                        Container.logger().info(c.getSimpleName() + ": " + deploymentID);
                     }
                 }
         );
     }
-    private void deployAuthorizationWorker(JsonObject config, int instances) {
+    private void deployAuthorizationVerticle(JsonObject config, int instances) {
         deployVerticle(AuthorizationVerticle.class,
                 new DeploymentOptions().setWorker(true).setInstances(instances).setConfig(config)
         );
@@ -92,6 +92,7 @@ public class MQTTBroker extends AbstractVerticle {
                 deployBridgeClientVerticle(bridgeClientConf, 1);
             }
 
+
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
@@ -101,7 +102,7 @@ public class MQTTBroker extends AbstractVerticle {
 
                 if(securityEnabled) {
                     // 1 auth x 1 broker-endpoint-conf that need an authenticator
-                    deployAuthorizationWorker(brokerConf, 1);
+                    deployAuthorizationVerticle(brokerConf, 1);
                 }
 
                 if (wsEnabled) {
