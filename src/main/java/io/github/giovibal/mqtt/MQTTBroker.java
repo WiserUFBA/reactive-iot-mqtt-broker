@@ -3,7 +3,6 @@ package io.github.giovibal.mqtt;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeClientVerticle;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeServerVerticle;
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
-import io.github.giovibal.mqtt.security.impl.AuthorizationVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Starter;
@@ -14,6 +13,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+
+import java.util.Set;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -32,7 +33,18 @@ public class MQTTBroker extends AbstractVerticle {
         System.exit(0);
     }
 
-
+    private void deployVerticle(String c, DeploymentOptions opt) {
+        vertx.deployVerticle(c, opt,
+                result -> {
+                    if (result.failed()) {
+                        result.cause().printStackTrace();
+                    } else {
+                        String deploymentID = result.result();
+                        Container.logger().debug(c + ": " + deploymentID);
+                    }
+                }
+        );
+    }
     private void deployVerticle(Class c, DeploymentOptions opt) {
         vertx.deployVerticle(c.getName(), opt,
                 result -> {
@@ -40,14 +52,18 @@ public class MQTTBroker extends AbstractVerticle {
                         result.cause().printStackTrace();
                     } else {
                         String deploymentID = result.result();
-                        Container.logger().info(c.getSimpleName() + ": " + deploymentID);
+                        Container.logger().debug(c.getSimpleName() + ": " + deploymentID);
                     }
                 }
         );
     }
     private void deployAuthorizationVerticle(JsonObject config, int instances) {
-        deployVerticle(AuthorizationVerticle.class,
-                new DeploymentOptions().setWorker(true).setInstances(instances).setConfig(config)
+        String clazz = config.getString("verticle");
+        deployVerticle(clazz,
+                new DeploymentOptions()
+                        .setWorker(true)
+                        .setInstances(instances)
+                        .setConfig(config)
         );
     }
     private void deployStoreVerticle(int instances) {
@@ -92,18 +108,26 @@ public class MQTTBroker extends AbstractVerticle {
                 deployBridgeClientVerticle(bridgeClientConf, 1);
             }
 
+            // 4 authenticators
+            if(config.containsKey("authenticators")) {
+                JsonArray authenticators = config.getJsonArray("authenticators", new JsonArray());
+                int size = authenticators.size();
+                for(int i=0; i<size; i++) {
+                    JsonObject authConf = authenticators.getJsonObject(i);
+                    deployAuthorizationVerticle(authConf, 1);
+                }
+            }
 
             JsonArray brokers = config.getJsonArray("brokers");
             for(int i=0; i<brokers.size(); i++) {
                 JsonObject brokerConf = brokers.getJsonObject(i);
                 ConfigParser c = new ConfigParser(brokerConf);
                 boolean wsEnabled = c.isWsEnabled();
-                boolean securityEnabled = c.isSecurityEnabled();
-
-                if(securityEnabled) {
-                    // 1 auth x 1 broker-endpoint-conf that need an authenticator
-                    deployAuthorizationVerticle(brokerConf, 1);
-                }
+//                boolean securityEnabled = c.isSecurityEnabled();
+//                if(securityEnabled) {
+//                    // 1 auth x 1 broker-endpoint-conf that need an authenticator
+//                    deployAuthorizationVerticle(brokerConf, 1);
+//                }
 
                 if (wsEnabled) {
                     // MQTT over WebSocket

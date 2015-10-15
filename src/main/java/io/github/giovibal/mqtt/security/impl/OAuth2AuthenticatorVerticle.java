@@ -1,7 +1,6 @@
 package io.github.giovibal.mqtt.security.impl;
 
-import io.github.giovibal.mqtt.MQTTSession;
-import io.vertx.core.AbstractVerticle;
+import io.github.giovibal.mqtt.security.AuthorizationClient;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
@@ -37,19 +36,16 @@ import io.vertx.core.logging.LoggerFactory;
  curl -k -H "Authorization:Bearer 8676b434c458d46e9a84303a68e4af95" "http://192.168.231.57:8280/sp/config/graph?tenant=test"
  */
 
-public class AuthorizationVerticle extends AbstractVerticle {
+public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
 
     private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
 
     private Oauth2TokenValidator oauth2Validator;
 
     @Override
-    public void start() throws Exception {
+    public void startAuthenticator(String address, JsonObject conf) throws Exception {
 
-//        String trustStorePath="C:\\Software\\WSO2\\wso2carbon.jks";
-//        String trustStorePassword="wso2carbon";
-
-        SecurityConfigParser c = new SecurityConfigParser(config());
+        SecurityConfigParser c = new SecurityConfigParser(conf);
         boolean securityEnabled = c.isSecurityEnabled();
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
@@ -62,13 +58,10 @@ public class AuthorizationVerticle extends AbstractVerticle {
 
         oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
 
-
-        String address = MQTTSession.AUTHORIZATION_ADDRESS;
-
         MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(address, (Message<JsonObject> msg) -> {
             JsonObject oauth2_token = msg.body();
-            String access_token = oauth2_token.getString("access_token");
-            String refresh_token = oauth2_token.getString("refresh_token");
+            String access_token = oauth2_token.getString("username");
+            String refresh_token = oauth2_token.getString("password");
 
             // token validation
             JsonObject json = new JsonObject();
@@ -76,13 +69,20 @@ public class AuthorizationVerticle extends AbstractVerticle {
             try {
                 tokanIsValid = oauth2Validator.tokenIsValid(access_token);
                 TokenInfo info = oauth2Validator.getTokenInfo(access_token);
-                json.put("token_valid", tokanIsValid);
-                json.put("authorized_user", info.getAuthorizedUser());
-                json.put("error_msg", info.getErrorMsg());
+//                json.put("auth_valid", tokanIsValid);
+//                json.put("authorized_user", info.getAuthorizedUser());
+//                json.put("error_msg", info.getErrorMsg());
+//                json.put("scope", info.getScope());
+//                json.put("expiry_time", info.getExpiryTime());
+                AuthorizationClient.ValidationInfo vi = new AuthorizationClient.ValidationInfo();
+                vi.auth_valid = tokanIsValid;
+                vi.authorized_user = info.getAuthorizedUser();
+                vi.error_msg = info.getErrorMsg();
+
+                json = vi.toJson();
                 json.put("scope", info.getScope());
                 json.put("expiry_time", info.getExpiryTime());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 

@@ -5,14 +5,12 @@ import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.github.giovibal.mqtt.persistence.StoreManager;
 import io.github.giovibal.mqtt.persistence.Subscription;
 import io.github.giovibal.mqtt.security.AuthorizationClient;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
@@ -27,7 +25,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
-    public static final String AUTHORIZATION_ADDRESS = "io.github.giovibal.mqtt.AuthorizationVerticle";
+//    public static final String AUTHORIZATION_ADDRESS = "io.github.giovibal.mqtt.OAuth2AuthenticatorVerticle";
 
     private Vertx vertx;
     private MQTTDecoder decoder;
@@ -38,6 +36,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     private boolean cleanSession;
     private String tenant;
     private boolean securityEnabled;
+    private String authenticatorAddress;
     private boolean retainSupport;
     private MessageConsumer<Buffer> messageConsumer;
     private Handler<PublishMessage> publishMessageHandler;
@@ -64,6 +63,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 
         this.topicsManager = new MQTTTopicsManagerOptimized();
         this.storeManager = new StoreManager(this.vertx);
+        this.authenticatorAddress = config.getAuthenticatorAddress();
     }
 
     private String extractTenant(String username) {
@@ -108,37 +108,9 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         String password = connectMessage.getPassword();
 
         if(securityEnabled) {
-            // AUTHENTICATION START
-//            String authorizationAddress = AUTHORIZATION_ADDRESS;
-//            JsonObject oauth2_token_info = new JsonObject()
-//                    .put("access_token", username)
-//                    .put("refresh_token", password);
-//            vertx.eventBus().send(authorizationAddress, oauth2_token_info, (AsyncResult<Message<JsonObject>> res) -> {
-//                if (res.succeeded()) {
-//                    JsonObject validationInfo = res.result().body();
-//                    Container.logger().debug(validationInfo);
-//                    Boolean token_valid = validationInfo.getBoolean("token_valid", Boolean.FALSE);
-//                    String authorized_user = validationInfo.getString("authorized_user");
-//                    String error_msg = validationInfo.getString("error_msg");
-//                    Container.logger().debug("authenticated ===> " + token_valid);
-//                    if (token_valid) {
-//                        String tenant = extractTenant(authorized_user);
-//                        _initTenant(tenant);
-//                        Container.logger().debug("authorized_user ===> " + authorized_user + ", tenant ===> " + tenant);
-//                        _handleConnectMessage(connectMessage);
-//                        authHandler.handle(Boolean.TRUE);
-//                    } else {
-//                        Container.logger().debug("authenticated error ===> " + error_msg);
-//                        authHandler.handle(Boolean.FALSE);
-//                    }
-//                } else {
-//                    Container.logger().debug("login failed !");
-//                    authHandler.handle(Boolean.FALSE);
-//                }
-//            });
-            AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), AUTHORIZATION_ADDRESS);
+            AuthorizationClient auth = new AuthorizationClient(vertx.eventBus(), authenticatorAddress);
             auth.authorize(username, password, validationInfo -> {
-                if (validationInfo.token_valid) {
+                if (validationInfo.auth_valid) {
                     String tenant = validationInfo.tenant;
                     _initTenant(tenant);
                     _handleConnectMessage(connectMessage);
@@ -166,8 +138,6 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         if(tenant == null)
             throw new IllegalStateException("Tenant cannot be null");
         this.tenant = tenant;
-//        this.topicsManager = new MQTTTopicsManagerOptimized();
-//        this.storeManager = new StoreManager(this.vertx);
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {

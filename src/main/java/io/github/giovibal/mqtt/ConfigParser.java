@@ -16,13 +16,8 @@ public class ConfigParser {
     private boolean wsEnabled;
     private String wsSubProtocols;
     private boolean retainSupport;
-
+    private String authenticatorAddress;
     private boolean securityEnabled;
-//    private List<String> authorizedClients;
-//    private String idpUrl;
-//    private String idpUsername;
-//    private String idpPassword;
-
     private String tlsKeyPath;
     private String tlsCertPath;
 
@@ -38,19 +33,8 @@ public class ConfigParser {
         wsSubProtocols = conf.getString("websocket_subprotocols", "mqtt,mqttv3.1");
         retainSupport = conf.getBoolean("retain_support", true);
 
-        JsonObject security = conf.getJsonObject("security", new JsonObject());
-        securityEnabled = security.getBoolean("enabled", false);
-//        JsonArray authorizedClientsArr = security.getJsonArray("authorized_clients", new JsonArray().add("testing.*"));
-//        if(authorizedClientsArr != null) {
-//            authorizedClients = new ArrayList<>();
-//            for(int i=0; i<authorizedClientsArr.size(); i++) {
-//                String item = authorizedClientsArr.getString(i);
-//                authorizedClients.add(item);
-//            }
-//        }
-//        idpUrl = security.getString("idp_url", "http://192.168.231.55:9763");
-//        idpUsername = security.getString("idp_username", "admin");
-//        idpPassword = security.getString("idp_password", "admin");
+        authenticatorAddress = conf.getString("authenticator_address");
+        securityEnabled = authenticatorAddress!=null && authenticatorAddress.trim().length()>0;
 
         JsonObject tls = conf.getJsonObject("tls", new JsonObject());
         tlsKeyPath = tls.getString("keyPath");
@@ -69,36 +53,13 @@ public class ConfigParser {
         return wsSubProtocols;
     }
 
+    public String getAuthenticatorAddress() {
+        return authenticatorAddress;
+    }
+
     public boolean isSecurityEnabled() {
         return securityEnabled;
     }
-
-//    public List<String> getAuthorizedClients() {
-//        return authorizedClients;
-//    }
-//
-//    public String getIdpUrl() {
-//        return idpUrl;
-//    }
-//
-//    public String getIdpUsername() {
-//        return idpUsername;
-//    }
-//
-//    public String getIdpPassword() {
-//        return idpPassword;
-//    }
-//
-//    public boolean isAuthorizedClient(String clientID) {
-//        if(authorizedClients!=null) {
-//            for(String ac : authorizedClients) {
-//                if(clientID.matches(ac)) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
 
     public String getTlsKeyPath() {
         return tlsKeyPath;
