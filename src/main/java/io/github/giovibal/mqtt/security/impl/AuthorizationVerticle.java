@@ -1,4 +1,4 @@
-package io.github.giovibal.mqtt.security;
+package io.github.giovibal.mqtt.security.impl;
 
 import io.github.giovibal.mqtt.MQTTSession;
 import io.vertx.core.AbstractVerticle;

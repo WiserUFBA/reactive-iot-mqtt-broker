@@ -1,7 +1,6 @@
 package io.github.giovibal.mqtt.security;
 
 import io.github.giovibal.mqtt.Container;
-import io.github.giovibal.mqtt.MQTTSession;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
@@ -16,7 +15,6 @@ public class AuthorizationClient {
     private EventBus eventBus;
     private String authorizationAddress;
     private Handler<Boolean> handler;
-
 
     public AuthorizationClient(EventBus eventBus, String authorizationAddress) {
         this.eventBus = eventBus;
