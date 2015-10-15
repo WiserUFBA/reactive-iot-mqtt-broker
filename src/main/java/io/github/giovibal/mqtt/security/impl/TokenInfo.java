@@ -1,45 +1,45 @@
-package io.github.giovibal.mqtt.security;
+package io.github.giovibal.mqtt.security.impl;
 
 import java.util.List;
 
 /**
  * Created by giova_000 on 19/02/2015.
  */
-public class TokenInfo {
+class TokenInfo {
     private String authorizedUser;
     private List<String> scope;
     private Long expiryTime;
     private String errorMsg;
 
-    public String getAuthorizedUser() {
+    String getAuthorizedUser() {
         return authorizedUser;
     }
 
-    public void setAuthorizedUser(String authorizedUser) {
+    void setAuthorizedUser(String authorizedUser) {
         this.authorizedUser = authorizedUser;
     }
 
-    public List<String> getScope() {
+    List<String> getScope() {
         return scope;
     }
 
-    public void setScope(List<String> scope) {
+    void setScope(List<String> scope) {
         this.scope = scope;
     }
 
-    public Long getExpiryTime() {
+    Long getExpiryTime() {
         return expiryTime;
     }
 
-    public void setExpiryTime(Long expiryTime) {
+    void setExpiryTime(Long expiryTime) {
         this.expiryTime = expiryTime;
     }
 
-    public String getErrorMsg() {
+    String getErrorMsg() {
         return errorMsg;
     }
 
-    public void setErrorMsg(String errorMsg) {
+    void setErrorMsg(String errorMsg) {
         this.errorMsg = errorMsg;
     }
 

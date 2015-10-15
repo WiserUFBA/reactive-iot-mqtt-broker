@@ -1,4 +1,4 @@
-package io.github.giovibal.mqtt.security;
+package io.github.giovibal.mqtt.security.impl;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.Options;
@@ -7,9 +7,7 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.wso2.carbon.identity.oauth2.stub.OAuth2TokenValidationService;
 import org.wso2.carbon.identity.oauth2.stub.OAuth2TokenValidationServiceStub;
-import org.wso2.carbon.identity.oauth2.stub.dto.OAuth2TokenValidationRequestDTO;
-import org.wso2.carbon.identity.oauth2.stub.dto.OAuth2TokenValidationRequestDTO_OAuth2AccessToken;
-import org.wso2.carbon.identity.oauth2.stub.dto.OAuth2TokenValidationResponseDTO;
+import org.wso2.carbon.identity.oauth2.stub.dto.*;
 
 import java.net.MalformedURLException;
 import java.util.Arrays;
@@ -20,10 +18,12 @@ import java.util.List;
  */
 public class Oauth2TokenValidator {
     private OAuth2TokenValidationService oAuth2TokenValidationService = null;
+    private String identityURL;
 
     public Oauth2TokenValidator(String identityURL, String userName, String password)
             throws MalformedURLException, AxisFault {
 
+        this.identityURL = identityURL;
         String adminUserName = userName;
         String adminPassword = password;
 
@@ -79,7 +79,6 @@ public class Oauth2TokenValidator {
     }
 
 
-
     private OAuth2TokenValidationRequestDTO createRequestTokenDTO(String access_token) {
         OAuth2TokenValidationRequestDTO req = new OAuth2TokenValidationRequestDTO();
         OAuth2TokenValidationRequestDTO_OAuth2AccessToken token = new OAuth2TokenValidationRequestDTO_OAuth2AccessToken();
@@ -88,4 +87,29 @@ public class Oauth2TokenValidator {
         req.setAccessToken(token);
         return req;
     }
+
+
+//    /*FIXIT: does not work*/
+//    public TokenInfo authorize(String username, String password) throws Exception {
+//        String targetEndpointUrl = identityURL + "/services/OAuth2Service.OAuth2ServiceHttpsSoap12Endpoint";
+//        OAuth2ServiceStub oauth2 = new OAuth2ServiceStub(targetEndpointUrl);
+//        OAuth2AuthorizeReqDTO req = new OAuth2AuthorizeReqDTO();
+//        req.setUsername(username);
+//        req.setPassword(password);
+//        req.addScopes("mqtt");
+//
+//        OAuth2AuthorizeRespDTO resp = oauth2.authorize(req);
+//
+//        String authorizedUser = username;
+//        List<String> scope = Arrays.asList( resp.getScope() );
+//        Long expiryTime = resp.getValidityPeriod();
+//        String errorMsg = resp.getErrorMsg();
+//
+//        TokenInfo tinfo = new TokenInfo();
+//        tinfo.setAuthorizedUser(authorizedUser);
+//        tinfo.setScope(scope);
+//        tinfo.setErrorMsg(errorMsg);
+//        tinfo.setExpiryTime(expiryTime);
+//        return tinfo;
+//    }
 }

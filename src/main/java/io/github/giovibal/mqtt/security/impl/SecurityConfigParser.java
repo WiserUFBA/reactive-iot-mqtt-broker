@@ -1,4 +1,4 @@
-package io.github.giovibal.mqtt.security;
+package io.github.giovibal.mqtt.security.impl;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -17,13 +17,10 @@ public class SecurityConfigParser {
     private String idpUsername;
     private String idpPassword;
 
-
-    public SecurityConfigParser() { }
-
-    public SecurityConfigParser(JsonObject conf) {
+    SecurityConfigParser(JsonObject conf) {
         parse(conf);
     }
-    public void parse(JsonObject conf) {
+    void parse(JsonObject conf) {
         JsonObject security = conf.getJsonObject("security", new JsonObject());
         securityEnabled = security.getBoolean("enabled", false);
         JsonArray authorizedClientsArr = security.getJsonArray("authorized_clients", new JsonArray().add("testing.*"));
@@ -40,27 +37,27 @@ public class SecurityConfigParser {
     }
 
 
-    public boolean isSecurityEnabled() {
+    boolean isSecurityEnabled() {
         return securityEnabled;
     }
 
-    public List<String> getAuthorizedClients() {
+    List<String> getAuthorizedClients() {
         return authorizedClients;
     }
 
-    public String getIdpUrl() {
+    String getIdpUrl() {
         return idpUrl;
     }
 
-    public String getIdpUsername() {
+    String getIdpUsername() {
         return idpUsername;
     }
 
-    public String getIdpPassword() {
+    String getIdpPassword() {
         return idpPassword;
     }
 
-    public boolean isAuthorizedClient(String clientID) {
+    boolean isAuthorizedClient(String clientID) {
         if(authorizedClients!=null) {
             for(String ac : authorizedClients) {
                 if(clientID.matches(ac)) {
