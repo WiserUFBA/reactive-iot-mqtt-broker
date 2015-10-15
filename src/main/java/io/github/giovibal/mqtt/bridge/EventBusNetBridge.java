@@ -1,12 +1,12 @@
 package io.github.giovibal.mqtt.bridge;
 
-import io.github.giovibal.mqtt.Container;
 import io.github.giovibal.mqtt.MQTTNetSocketWrapper;
 import io.github.giovibal.mqtt.MQTTSession;
 import io.github.giovibal.mqtt.NetSocketWrapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pump;
 
 import java.util.UUID;
 
@@ -16,8 +16,6 @@ import java.util.UUID;
 public class EventBusNetBridge {
     private static final String BR_HEADER = "bridged";
 
-//    private MessageConsumer<Buffer> consumer;
-//    private MessageProducer<Buffer> producer;
     private NetSocket netSocket;
     private EventBus eventBus;
     private String eventBusAddress;
@@ -25,7 +23,8 @@ public class EventBusNetBridge {
     private DeliveryOptions deliveryOpt;
     private MessageConsumer<Buffer> consumer;
     private MessageProducer<Buffer> producer;
-    private MqttPump fromRemoteTcpToLocalBus;
+//    private MqttPump fromRemoteTcpToLocalBus;
+    private Pump fromRemoteTcpToLocalBus;
     private NetSocketWrapper netSocketWrapper;
     private String bridgeUUID;
 
@@ -33,23 +32,22 @@ public class EventBusNetBridge {
         this.eventBus = eventBus;
         this.netSocket = netSocket;
         this.eventBusAddress = eventBusAddress;
-//        this.tenant = tenant;
 
         bridgeUUID = UUID.randomUUID().toString();
         deliveryOpt = new DeliveryOptions().addHeader(BR_HEADER, bridgeUUID);
         if(tenant!=null) {
             deliveryOpt.addHeader(MQTTSession.TENANT_HEADER, tenant);
         }
-//        consumer = eventBus.localConsumer(eventBusAddress);
         consumer = eventBus.consumer(eventBusAddress);
         producer = eventBus.publisher(eventBusAddress, deliveryOpt);
-        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
+//        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
+        fromRemoteTcpToLocalBus = Pump.pump(netSocket, producer);
         netSocketWrapper = new MQTTNetSocketWrapper(netSocket);
 
-        fromRemoteTcpToLocalBus.setListener(e -> {
-            Container.logger().warn("Corrupted message from bridge: "+ e.getMessage());
-            netSocket.close();
-        });
+//        fromRemoteTcpToLocalBus.setListener(e -> {
+//            Container.logger().warn("Corrupted message from bridge: "+ e.getMessage());
+//            netSocket.close();
+//        });
     }
 
     public void start() {
@@ -60,7 +58,6 @@ public class EventBusNetBridge {
 
         // from local bus to remote tcp
         consumer.handler(bufferMessage -> {
-//            debug(bufferMessage);
             boolean isBridged = bufferMessage.headers() != null
                     && bufferMessage.headers().contains(BR_HEADER)
                     && bufferMessage.headers().get(BR_HEADER).equals(bridgeUUID)
@@ -116,27 +113,6 @@ public class EventBusNetBridge {
         consumer.handler(null);// stop read from bus
     }
 
-
-//    private void debug(Message<Buffer> bufferMessage) {
-//        try {
-//            Buffer copy = bufferMessage.body().copy();
-//            MQTTDecoder dec = new MQTTDecoder();
-//            AbstractMessage am = dec.dec(copy);
-//            if(am!=null) {
-//                if (am instanceof PublishMessage) {
-//                    PublishMessage pm = (PublishMessage) am;
-//                    String s = pm.getPayloadAsString();
-//                    Container.logger().info(s);
-//                } else {
-//                    Container.logger().error(am.getClass().getSimpleName() + " " + am.isDupFlag());
-//                }
-//            } else {
-//                Container.logger().error("Cannot decode message");
-//            }
-//        } catch(Throwable e) {
-//            Container.logger().error(e.getMessage(), e);
-//        }
-//    }
 
 
     public void setTenant(String tenant) {

@@ -10,7 +10,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
 /**
- * Created by giova_000 on 15/07/2015.
+ * Created by Giovanni Bleani on 15/07/2015.
  */
 public class EventBusBridgeClientVerticle extends AbstractVerticle implements Handler<AsyncResult<NetSocket>> {
 

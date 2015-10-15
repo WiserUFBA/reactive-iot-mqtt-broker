@@ -9,11 +9,9 @@ import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 
 /**
- * Created by giova_000 on 15/07/2015.
+ * Created by Giovanni Baleani on 15/07/2015.
  */
 public class EventBusBridgeServerVerticle extends AbstractVerticle {
-
-//    private String tenant;
 
     @Override
     public void start() throws Exception {
