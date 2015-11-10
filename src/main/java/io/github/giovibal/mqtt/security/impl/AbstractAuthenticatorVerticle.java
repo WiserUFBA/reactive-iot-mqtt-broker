@@ -1,5 +1,6 @@
 package io.github.giovibal.mqtt.security.impl;
 
+import io.github.giovibal.mqtt.ConfigParser;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -15,7 +16,7 @@ public abstract class AbstractAuthenticatorVerticle extends AbstractVerticle {
     @Override
     public void start() throws Exception {
 
-        String address = config().getString("address");
+        String address = config().getString("address", this.getClass().getName());
         if(address!=null && address.trim().length()>0) {
             startAuthenticator(address, config());
         }

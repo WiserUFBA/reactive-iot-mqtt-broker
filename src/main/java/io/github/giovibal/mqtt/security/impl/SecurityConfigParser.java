@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class SecurityConfigParser {
 
-    private boolean securityEnabled;
+//    private boolean securityEnabled;
     private List<String> authorizedClients;
     private String idpUrl;
     private String idpUsername;
@@ -22,7 +22,7 @@ public class SecurityConfigParser {
     }
     void parse(JsonObject conf) {
         JsonObject security = conf.getJsonObject("security", new JsonObject());
-        securityEnabled = security.getBoolean("enabled", false);
+//        securityEnabled = security.getBoolean("enabled", false);
         JsonArray authorizedClientsArr = security.getJsonArray("authorized_clients", new JsonArray().add("testing.*"));
         if(authorizedClientsArr != null) {
             authorizedClients = new ArrayList<>();
@@ -37,9 +37,9 @@ public class SecurityConfigParser {
     }
 
 
-    boolean isSecurityEnabled() {
-        return securityEnabled;
-    }
+//    boolean isSecurityEnabled() {
+//        return securityEnabled;
+//    }
 
     List<String> getAuthorizedClients() {
         return authorizedClients;

@@ -46,15 +46,15 @@ public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
     public void startAuthenticator(String address, JsonObject conf) throws Exception {
 
         SecurityConfigParser c = new SecurityConfigParser(conf);
-        boolean securityEnabled = c.isSecurityEnabled();
+//        boolean securityEnabled = c.isSecurityEnabled();
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();
 
-        if(!securityEnabled) {
-            logger.debug("MQTT Authorization disabled");
-            return;
-        }
+//        if(!securityEnabled) {
+//            logger.debug("MQTT Authorization disabled");
+//            return;
+//        }
 
         oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
 
