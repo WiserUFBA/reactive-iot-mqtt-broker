@@ -326,17 +326,4 @@
         </profile>
     </profiles>
 
-    <distributionManagement>
-        <repository>
-            <id>fili-deployment</id>
-            <name>Internal Releases</name>
-            <url>http://rd.eimware.it/nexus/content/repositories/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>fili-deployment</id>
-            <name>Internal Releases</name>
-            <url>http://rd.eimware.it/nexus/content/repositories/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
-
 </project>
