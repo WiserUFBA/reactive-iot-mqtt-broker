@@ -1,7 +1,5 @@
 package io.github.giovibal.mqtt.parser;
 
-import io.github.giovibal.mqtt.Container;
-import io.github.giovibal.mqtt.ConversionUtility;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.CorruptedFrameException;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
@@ -47,9 +45,8 @@ abstract class DemuxDecoder {
                 String hexExpected = Integer.toHexString(expectedFlags);
                 String hexReceived = Integer.toHexString(flags);
                 String msg = String.format("Received a message with fixed header flags (%s) != expected (%s)", hexReceived, hexExpected);
-
-                String hex = ConversionUtility.toHexString(in.array(), " ");
-                Container.logger().warn(hex);
+//                String hex = ConversionUtility.toHexString(in.array(), " ");
+//                Container.logger().warn(hex);
                 throw new CorruptedFrameException(msg);
             }
         }

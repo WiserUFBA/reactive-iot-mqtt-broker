@@ -350,7 +350,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 Buffer in = message.body();
                 PublishMessage pm = (PublishMessage) decoder.dec(in);
                 // filter messages by of subscriptions of this client
-                if(pm== null) {
+                if(pm == null) {
                     Container.logger().warn("PublishMessage is null, message.headers => "+ message.headers().entries()+"");
                 }
                 else {

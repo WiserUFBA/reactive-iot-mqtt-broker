@@ -44,10 +44,12 @@ public class CertInfo {
 
     public String getTenant() {
         String tenant = null;
-        for(X509Certificate c : certs) {
-            String dn = c.getSubjectDN().getName();// info del DEVICE/TENANT
-            tenant = getTenantFromDN(dn);
-            Container.logger().info("Cert Info - " + c.getSerialNumber() + " " + dn);
+        if(certs!=null) {
+            for (X509Certificate c : certs) {
+                String dn = c.getSubjectDN().getName();// info del DEVICE/TENANT
+                tenant = getTenantFromDN(dn);
+                Container.logger().info("Cert Info - " + c.getSerialNumber() + " " + dn);
+            }
         }
         Container.logger().info("Cert Info - tenant found: "+ tenant);
         return tenant;

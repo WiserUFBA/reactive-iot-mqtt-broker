@@ -27,24 +27,16 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
 
         JsonObject conf = config();
 
-        remoteBridgeHost = conf.getString("remote_bridge_host", "192.168.231.53");
+        remoteBridgeHost = conf.getString("remote_bridge_host", "iot.eimware.it");
         remoteBridgePort = conf.getInteger("remote_bridge_port", 7007);
         address = MQTTSession.ADDRESS;
-        tenant = conf.getString("remote_bridge_tenant", "cmroma.it");
+        tenant = conf.getString("remote_bridge_tenant");
 
         // [TCP <- BUS] listen BUS write to TCP
         int timeout = 1000;
         NetClientOptions opt = new NetClientOptions()
                 .setConnectTimeout(timeout) // 60 seconds
                 .setTcpKeepAlive(true)
-                .setSsl(true)
-//                .setPemKeyCertOptions(new PemKeyCertOptions()
-//                                .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
-//                                .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
-//                )
-//                .setPemTrustOptions(new PemTrustOptions()
-//                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                )
             ;
 
         String ssl_cert_key = conf.getString("ssl_cert_key");

@@ -32,8 +32,12 @@ public class EventBusNetBridge {
         this.eventBus = eventBus;
         this.netSocket = netSocket;
         this.eventBusAddress = eventBusAddress;
+        this.bridgeUUID = UUID.randomUUID().toString();
 
-        bridgeUUID = UUID.randomUUID().toString();
+//        init();
+    }
+
+    public void init() {
         deliveryOpt = new DeliveryOptions().addHeader(BR_HEADER, bridgeUUID);
         if(tenant!=null) {
             deliveryOpt.addHeader(MQTTSession.TENANT_HEADER, tenant);
@@ -43,14 +47,10 @@ public class EventBusNetBridge {
 //        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
         fromRemoteTcpToLocalBus = Pump.pump(netSocket, producer);
         netSocketWrapper = new MQTTNetSocketWrapper(netSocket);
-
-//        fromRemoteTcpToLocalBus.setListener(e -> {
-//            Container.logger().warn("Corrupted message from bridge: "+ e.getMessage());
-//            netSocket.close();
-//        });
     }
 
     public void start() {
+        init();
         netSocket.pause();
         consumer.pause();
         // from remote tcp to local bus

@@ -77,6 +77,7 @@
         <!--</dependency>-->
         <dependency>
             <groupId>org.wso2.carbon.commons</groupId>
+            <!--<groupId>org.wso2.carbon.identity</groupId>-->
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
             <version>4.4.7</version>
             <scope>${wso2.scope}</scope>
@@ -130,7 +131,6 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <!--<Main-Class>io.github.giovibal.mqtt.MQTTBroker</Main-Class>-->
                                         <Main-Class>io.vertx.core.Starter</Main-Class>
                                         <Main-Verticle>io.github.giovibal.mqtt.MQTTBroker</Main-Verticle>
                                     </manifestEntries>

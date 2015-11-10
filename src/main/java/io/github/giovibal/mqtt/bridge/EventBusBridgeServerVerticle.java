@@ -69,8 +69,10 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 } else {
                     String tenant = cmd;
                     String tenantFromCert = new CertInfo(netSocket).getTenant();
-                    if(!tenant.equals(tenantFromCert))
-                        throw new IllegalAccessError("Bridge Authentication Failed for tenant: "+ tenant +"/"+ tenantFromCert);
+//                    if(!tenant.equals(tenantFromCert))
+//                        throw new IllegalAccessError("Bridge Authentication Failed for tenant: "+ tenant +"/"+ tenantFromCert);
+                    if(tenantFromCert != null)
+                        tenant = tenantFromCert;
 
                     ebnb.setTenant(tenant);
                 }
