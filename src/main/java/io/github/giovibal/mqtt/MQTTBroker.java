@@ -1,19 +1,27 @@
 package io.github.giovibal.mqtt;
 
+import com.hazelcast.config.Config;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeClientVerticle;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeServerVerticle;
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Starter;
+import io.vertx.core.*;
+import io.vertx.core.cli.CLI;
+import io.vertx.core.cli.CommandLine;
+import io.vertx.core.cli.Option;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.launcher.CommandLineUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,17 +29,6 @@ import java.util.Set;
  * The Main Verticle
  */
 public class MQTTBroker extends AbstractVerticle {
-
-
-    public static void main(String[] args) {
-        start(args);
-    }
-    public static void start(String[] args) {
-        Starter.main(args);
-    }
-    public static void stop(String[] args) {
-        System.exit(0);
-    }
 
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,
