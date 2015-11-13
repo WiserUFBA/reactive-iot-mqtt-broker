@@ -4,6 +4,7 @@ import io.github.giovibal.mqtt.Container;
 import io.github.giovibal.mqtt.MQTTSession;
 import io.github.giovibal.mqtt.security.CertInfo;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
@@ -33,13 +34,13 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
         String ssl_trust = conf.getString("ssl_trust");
         if(ssl_cert_key != null && ssl_cert != null && ssl_trust != null) {
             opt.setSsl(true).setClientAuthRequired(true)
-              .setPemKeyCertOptions(new PemKeyCertOptions()
+                .setPemKeyCertOptions(new PemKeyCertOptions()
                     .setKeyPath(ssl_cert_key)
                     .setCertPath(ssl_cert)
-              )
-              .setPemTrustOptions(new PemTrustOptions()
+                )
+                .setPemTrustOptions(new PemTrustOptions()
                     .addCertPath(ssl_trust)
-              )
+                )
             ;
         }
         NetServer netServer = vertx.createNetServer(opt);

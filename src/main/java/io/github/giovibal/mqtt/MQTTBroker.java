@@ -184,7 +184,8 @@ public class MQTTBroker extends AbstractVerticle {
 
         HttpServerOptions httpOpt = new HttpServerOptions()
                 .setTcpKeepAlive(true)
-                .setWebsocketSubProtocol(wsSubProtocols)
+                .setWebsocketSubProtocols(wsSubProtocols)
+//                .setWebsocketSubProtocol(wsSubProtocols)
                 .setPort(port);
         if(tlsEnabled) {
             httpOpt.setSsl(true).setPemKeyCertOptions(new PemKeyCertOptions()

@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by giovanni on 08/04/2014.
  */
 public class Tester {
-    static final String serverURL = "tcp://192.168.200.11:1883";
+    static final String serverURL = "tcp://192.168.231.2:1883";
     static final String serverURLSubscribers = serverURL;
     static final String serverURLPublishers = serverURL;
 
@@ -27,7 +27,7 @@ public class Tester {
 //        test2(30, 100, 2, 0);
 
         stats("Num Clients / Num Messages Tests");
-        test2(30, 100, 0, 1);
+        test2(3, 10, 0, 1);
 //        test2(100, 30, 0, 1);
 //        test2(3, 1000, 0, 1);
 //        test2(5, 1000, 0, 10);
