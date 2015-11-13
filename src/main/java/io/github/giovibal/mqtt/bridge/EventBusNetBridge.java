@@ -44,8 +44,8 @@ public class EventBusNetBridge {
         }
         consumer = eventBus.consumer(eventBusAddress);
         producer = eventBus.publisher(eventBusAddress, deliveryOpt);
-//        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
-        fromRemoteTcpToLocalBus = Pump.pump(netSocket, producer);
+        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
+//        fromRemoteTcpToLocalBus = Pump.pump(netSocket, producer);
         netSocketWrapper = new MQTTNetSocketWrapper(netSocket);
     }
 
