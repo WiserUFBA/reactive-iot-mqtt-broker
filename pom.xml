@@ -178,9 +178,7 @@
         <profile>
             <id>metrics</id>
             <activation>
-                <file>
-                    <exists>${basedir}/.metrics</exists>
-                </file>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <dependencies>
                 <dependency>
