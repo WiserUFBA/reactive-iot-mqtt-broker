@@ -19,13 +19,20 @@ public class MQTTNetSocket extends MQTTSocket {
     public void start() {
 //        netSocket.setWriteQueueMaxSize(1000);
         netSocket.handler(this);
+        netSocket.exceptionHandler(event -> {
+            String clientInfo = getClientInfo();
+            Container.logger().info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID() + " error: " + event.getMessage());
+            handleWillMessage();
+            shutdown();
+        });
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
-            Container.logger().debug(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
+            Container.logger().info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
             handleWillMessage();
             shutdown();
         });
     }
+
 
     @Override
     protected void sendMessageToClient(Buffer bytes) {

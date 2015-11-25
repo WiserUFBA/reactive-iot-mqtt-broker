@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by giovanni on 08/04/2014.
  */
 public class Tester {
-    static final String serverURL = "tcp://192.168.231.2:1883";
+    static final String serverURL = "tcp://localhost:1883";
     static final String serverURLSubscribers = serverURL;
     static final String serverURLPublishers = serverURL;
 
@@ -27,7 +27,10 @@ public class Tester {
 //        test2(30, 100, 2, 0);
 
         stats("Num Clients / Num Messages Tests");
-        test2(3, 10, 0, 1);
+        for(int i=0; i<5; i++) {
+            test2(200, 5, 0, 1);
+            Thread.sleep(40*1000);
+        }
 //        test2(100, 30, 0, 1);
 //        test2(3, 1000, 0, 1);
 //        test2(5, 1000, 0, 10);
@@ -77,13 +80,22 @@ public class Tester {
     }
 
 
-    public static void test2(int numClients, int numMessagesToPublishPerClient, int qos, long sleepSeconds) throws Exception {
+    private static String generateRandomTopic(String pattern) {
+        String rnd = UUID.randomUUID().toString();
+        String topic = pattern;
+        while(topic.contains("RND"))
+            topic = topic.replaceFirst("RND", rnd);
+        return topic;
+    }
+
+    public static void test2(int numClients, int numMessagesToPublishPerClient, int qos, long sleepMilliSeconds) throws Exception {
         stats("");
         stats("------------------------------------------------------------------");
-        stats("Test clients: "+ numClients +" num msg: "+ numMessagesToPublishPerClient +" qos: "+ qos +" sleep: "+sleepSeconds +" seconds");
+        stats("Test clients: "+ numClients +", num msg: "+ numMessagesToPublishPerClient +", qos: "+ qos +" sleep: "+sleepMilliSeconds +" millis.");
         stats("------------------------------------------------------------------");
-        String topic = "test/untopic/a";
-        String topicFilter = "test/+/a";
+//        String topic = "test/untopic/a";
+        String topic = generateRandomTopic("test/RND/RND/a");
+        String topicFilter = "test/+/+/a";
 
         long t1,t2,t3;
         t1=System.currentTimeMillis();
@@ -95,17 +107,17 @@ public class Tester {
         Tester cPubs = new Tester(numClients, "PUBS", serverURLPublishers);
         cPubs.connect();
 
-        cPubs.publish(numMessagesToPublishPerClient, topic, qos, false);
-//        cPubs.publish(numMessagesToPublishPerClient, topic, qos, true);
+        boolean retain = true;
+        cPubs.publish(numMessagesToPublishPerClient, topic, qos, retain);
         cPubs.disconnect();
 
-        if(sleepSeconds>0) {
-            log("Sleep for " + sleepSeconds + " seconds ...");
-            Thread.sleep(sleepSeconds * 1000);
+        if(sleepMilliSeconds>0) {
+            log("Sleep for " + sleepMilliSeconds + " millis ...");
+            Thread.sleep(sleepMilliSeconds);
         }
 
 //        cSubs.unsubcribe(topic);
-        cSubs.disconnect();
+//        cSubs.disconnect();
 
         cPubs.publishStats();
         cSubs.subscribeStats();

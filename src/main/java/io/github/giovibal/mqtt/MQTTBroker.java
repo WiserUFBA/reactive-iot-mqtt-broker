@@ -30,6 +30,8 @@ import java.util.Set;
  */
 public class MQTTBroker extends AbstractVerticle {
 
+    private static final int IDLE_TIMEOUT_SECONDS = 30;
+
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,
                 result -> {
@@ -157,6 +159,7 @@ public class MQTTBroker extends AbstractVerticle {
         // MQTT over TCP
         NetServerOptions opt = new NetServerOptions()
                 .setTcpKeepAlive(true)
+                .setIdleTimeout(IDLE_TIMEOUT_SECONDS) // in seconds; 0 means "don't timeout".
                 .setPort(port);
 
         if(tlsEnabled) {
@@ -181,6 +184,7 @@ public class MQTTBroker extends AbstractVerticle {
 
         HttpServerOptions httpOpt = new HttpServerOptions()
                 .setTcpKeepAlive(true)
+                .setIdleTimeout(IDLE_TIMEOUT_SECONDS) // in seconds; 0 means "don't timeout".
                 .setWebsocketSubProtocols(wsSubProtocols)
 //                .setWebsocketSubProtocol(wsSubProtocols)
                 .setPort(port);
