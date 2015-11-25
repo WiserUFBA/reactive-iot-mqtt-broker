@@ -1,28 +1,17 @@
 package io.github.giovibal.mqtt;
 
-import com.hazelcast.config.Config;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeClientVerticle;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeServerVerticle;
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
-import io.vertx.core.*;
-import io.vertx.core.cli.CLI;
-import io.vertx.core.cli.CommandLine;
-import io.vertx.core.cli.Option;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.launcher.CommandLineUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
-
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Created by giovanni on 11/04/2014.
@@ -30,7 +19,7 @@ import java.util.Set;
  */
 public class MQTTBroker extends AbstractVerticle {
 
-    private static final int IDLE_TIMEOUT_SECONDS = 30;
+    private static final int IDLE_TIMEOUT_SECONDS = 120;
 
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,

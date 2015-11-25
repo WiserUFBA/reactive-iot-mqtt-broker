@@ -24,7 +24,12 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        start(args);
+        try {
+            start(args);
+        } catch (VirtualMachineError ve) {
+            Container.logger().fatal("VirtualMachineError "+ ve.getMessage() +", exit.");
+            System.exit(-1);
+        }
     }
 
     static CommandLine cli(String[] args) {
@@ -43,9 +48,9 @@ public class Main {
                                 .setRequired(false)
                 )
                 .addOption(new Option()
-                                .setLongName("hazelcast-address")
-                                .setShortName("ha")
-                                .setDescription("vert.x hazelcast ip address of this node (es. -ha 10.0.0.1)")
+                                .setLongName("hazelcast-host")
+                                .setShortName("hh")
+                                .setDescription("vert.x hazelcast ip address of this node (es. -hh 10.0.0.1)")
                                 .setRequired(false)
                                 .setMultiValued(true)
                 )
@@ -80,6 +85,7 @@ public class Main {
 
         String confFilePath = commandLine.getOptionValue("c");
         String hazelcastConfFilePath = commandLine.getOptionValue("hc");
+        String clusterHost = commandLine.getOptionValue("hh");
         List<String> hazelcastMembers = commandLine.getOptionValues("hm");
 
         DeploymentOptions deploymentOptions = new DeploymentOptions();
@@ -108,12 +114,28 @@ public class Main {
                         tcpIp.addMember(member);
                     }
                     tcpIp.setEnabled(true);
-                    Container.logger().info("Hazelcast tcp-ip members: "+ tcpIp.getMembers());
                 }
 
                 ClusterManager mgr = new HazelcastClusterManager(hazelcastConfig);
 
                 VertxOptions options = new VertxOptions().setClusterManager(mgr).setClustered(true);
+                if(clusterHost != null) {
+                    options.setClusterHost(clusterHost);
+                }
+
+                Container.logger().info("Hazelcast public address: " +
+                        hazelcastConfig.getNetworkConfig().getPublicAddress());
+                Container.logger().info("Hazelcast tcp-ip members: " +
+                        hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().getMembers());
+                Container.logger().info("Hazelcast port: " +
+                        hazelcastConfig.getNetworkConfig().getPort());
+                Container.logger().info("Hazelcast poutbound ports: " +
+                        hazelcastConfig.getNetworkConfig().getOutboundPorts());
+                Container.logger().info("Hazelcast interfaces: " +
+                        hazelcastConfig.getNetworkConfig().getInterfaces());
+                Container.logger().info("Hazelcast network config: " +
+                        hazelcastConfig.getNetworkConfig().toString());
+
                 Vertx.clusteredVertx(options, res -> {
                     if (res.succeeded()) {
                         Vertx vertx = res.result();
