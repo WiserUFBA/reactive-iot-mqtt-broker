@@ -7,7 +7,9 @@
       "11883/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "11883" }],
       "1884/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "1884" }],
       "11884/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "11884" }],
-      "8000/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "8000" }]
+      "8000/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "8000" }],
+      "8000/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "7007" }],
+      "8000/tcp": [{ "HostIp": "0.0.0.0", "HostPort": "5701" }]
     }
   }
 }

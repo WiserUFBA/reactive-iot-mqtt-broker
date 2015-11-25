@@ -1,29 +1,22 @@
 # A simple example showing how the vertx image can be used.
 
-FROM vertx/vertx3:3.0.0
+FROM java:8
 
-# Set the location of the verticles
-ENV VERTICLE_HOME /usr/verticles
-
-# Set the name of the verticle to deploy
-ENV VERTICLE_NAME io.github.giovibal.mqtt.MQTTBroker
-
-# Set vertx option
-ENV VERTX_OPTIONS "-conf $VERTICLE_HOME/config.json"
-
-# Set Vertx/Java Opts
-#ENV VERTX_OPTS="-agentlib:jdwp=transport=dt_socket,address=8000,suspend=n,server=y"
-ENV VERTX_OPTS=""
+WORKDIR /opt
 
 # Copy resources
-COPY vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar $VERTICLE_HOME/mqtt-broker.jar
-COPY config.json $VERTICLE_HOME/config.json
+COPY vertx-mqtt-broker-mod-2.2-SNAPSHOT-fat.jar mqtt-broker.jar
+COPY config.json config.json
+COPY cluster.xml cluster.xml
+COPY logging.properties logging.properties
+COPY entrypoint.sh entrypoint.sh
 
-# Expose ports
-EXPOSE 1883 11883 1884 11884 1885 11885 7007
-#EXPOSE 8000
+RUN chmod +x entrypoint.sh
 
+# Expose ports (5701 is hazelcast)
+EXPOSE 1883 11883 1884 11884 1885 11885 7007 5701
 
 # We use the "sh -c" to turn around https://github.com/docker/docker/issues/5509 - variable not expanded
 ENTRYPOINT ["sh", "-c"]
-CMD ["vertx run $VERTICLE_NAME -instances 1 -cp $VERTICLE_HOME/*.jar $VERTX_OPTIONS"]
+#CMD ["java -Dhazelcast.ip=${IP} -Dhazelcast.public.address=${PUBLIC_ADDRESS} -jar mqtt-broker.jar -c config.json -hc cluster.xml -hh ${IP} -hm 192.168.231.52 192.168.231.51"]
+CMD ["./entrypoint.sh", "${PUBLIC_ADDRESS}", "${CLUSTER_MEMBERS}"]

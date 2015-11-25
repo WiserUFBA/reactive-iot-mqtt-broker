@@ -7,38 +7,6 @@
       "tcp_port": 11883,
       "websocket_enabled": true,
       "websocket_subprotocols": "mqtt,mqttv3.1"
-    },
-    {
-      "tcp_port": 1884,
-      "security": {
-        "enabled": true,
-        "authorized_clients": ["mqtt-bridge-.*","testing.*"],
-        "idp_url": "http://localhost:9763",
-        "idp_username": "admin",
-        "idp_password": "admin"
-      }
-    },
-    {
-      "tcp_port": 11884,
-      "websocket_enabled": true,
-      "websocket_subprotocols": "mqtt,mqttv3.1",
-      "security": {
-        "enabled": true,
-        "authorized_clients": ["mqtt-bridge-.*","testing.*"],
-        "idp_url": "http://localhost:9763",
-        "idp_username": "admin",
-        "idp_password": "admin"
-      }
-    },
-    {
-      "tcp_port": 1885,
-      "retain_support": false
-    },
-    {
-      "tcp_port": 11885,
-      "websocket_enabled": true,
-      "websocket_subprotocols": "mqtt,mqttv3.1",
-      "retain_support": false
     }
   ],
   "bridge_server": {
