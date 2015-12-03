@@ -18,7 +18,9 @@ public class ConfigParser {
     private boolean securityEnabled;
     private String tlsKeyPath;
     private String tlsCertPath;
+    private int socketIdleTimeout;
 
+    private static final int IDLE_TIMEOUT_SECONDS = 30;
 
     public ConfigParser() { }
 
@@ -37,6 +39,7 @@ public class ConfigParser {
         JsonObject tls = conf.getJsonObject("tls", new JsonObject());
         tlsKeyPath = tls.getString("keyPath");
         tlsCertPath = tls.getString("certPath");
+        socketIdleTimeout = conf.getInteger("socket_idle_timeout", IDLE_TIMEOUT_SECONDS);
     }
 
     public int getPort() {
@@ -99,5 +102,9 @@ public class ConfigParser {
         if(idx>=0)
             s = s.substring(0, idx);
         return s;
+    }
+
+    public int getSocketIdleTimeout() {
+        return socketIdleTimeout;
     }
 }

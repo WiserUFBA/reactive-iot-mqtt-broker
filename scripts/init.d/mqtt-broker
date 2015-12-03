@@ -11,6 +11,7 @@ set -e
 # Short-Description:    MQTT Broker v2.0
 ### END INIT INFO
 
+# -XX:OnOutOfMemoryError="kill -9 %p
 
 DAEMON_PATH="/mnt/data/mqtt-broker"
 DAEMON="/mnt/data/vert.x-3.0.0/bin/vertx"

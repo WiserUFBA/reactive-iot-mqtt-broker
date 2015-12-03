@@ -4,6 +4,7 @@ import io.github.giovibal.mqtt.Container;
 import io.github.giovibal.mqtt.MQTTSession;
 import io.github.giovibal.mqtt.security.CertInfo;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Handler;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -21,11 +22,13 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
 
         String address = MQTTSession.ADDRESS;
         Integer localBridgePort = conf.getInteger("local_bridge_port", 7007);
+        int idelTimeout = conf.getInteger("socket_idle_timeout", 30);
 
 
         // [TCP -> BUS] listen TCP publish to BUS
         NetServerOptions opt = new NetServerOptions()
                 .setTcpKeepAlive(true)
+                .setIdleTimeout(idelTimeout)
                 .setPort(localBridgePort)
         ;
 
@@ -33,7 +36,7 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
         String ssl_cert = conf.getString("ssl_cert");
         String ssl_trust = conf.getString("ssl_trust");
         if(ssl_cert_key != null && ssl_cert != null && ssl_trust != null) {
-            opt.setSsl(true).setClientAuthRequired(true)
+            opt.setSsl(true).setClientAuth(ClientAuth.REQUIRED)
                 .setPemKeyCertOptions(new PemKeyCertOptions()
                     .setKeyPath(ssl_cert_key)
                     .setCertPath(ssl_cert)
@@ -47,7 +50,7 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
         netServer.connectHandler(netSocket -> {
             final EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address);
             netSocket.closeHandler(aVoid -> {
-                Container.logger().info("Bridge Server - closed connection from client " + netSocket.writeHandlerID());
+                Container.logger().info("Bridge Server - closed connection from client ip: " + netSocket.remoteAddress());
                 ebnb.stop();
             });
             netSocket.exceptionHandler(throwable -> {
@@ -55,7 +58,7 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 ebnb.stop();
             });
 
-            Container.logger().info("Bridge Server - new connection from client " + netSocket.writeHandlerID());
+            Container.logger().info("Bridge Server - new connection from client ip: " + netSocket.remoteAddress());
 
 
 
@@ -63,9 +66,8 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 String cmd = h.toString();
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
-                    Container.logger().info("Bridge Server - start session with tenant: " + ebnb.getTenant());
                     ebnb.start();
-                    Container.logger().info("Bridge Server - bridgeUUID: " + ebnb.getBridgeUUID());
+                    Container.logger().info("Bridge Server - start session with tenant: " + ebnb.getTenant() +", ip: " + netSocket.remoteAddress() +", bridgeUUID: " + ebnb.getBridgeUUID());
                     netSocket.resume();
                 } else {
                     String tenant = cmd;

@@ -24,12 +24,7 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        try {
-            start(args);
-        } catch (VirtualMachineError ve) {
-            Container.logger().fatal("VirtualMachineError "+ ve.getMessage() +", exit.");
-            System.exit(-1);
-        }
+        start(args);
     }
 
     static CommandLine cli(String[] args) {

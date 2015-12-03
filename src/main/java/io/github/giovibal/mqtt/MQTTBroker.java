@@ -19,7 +19,7 @@ import io.vertx.core.net.PemKeyCertOptions;
  */
 public class MQTTBroker extends AbstractVerticle {
 
-    private static final int IDLE_TIMEOUT_SECONDS = 120;
+
 
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,
@@ -111,12 +111,6 @@ public class MQTTBroker extends AbstractVerticle {
                 JsonObject brokerConf = brokers.getJsonObject(i);
                 ConfigParser c = new ConfigParser(brokerConf);
                 boolean wsEnabled = c.isWsEnabled();
-//                boolean securityEnabled = c.isSecurityEnabled();
-//                if(securityEnabled) {
-//                    // 1 auth x 1 broker-endpoint-conf that need an authenticator
-//                    deployAuthorizationVerticle(brokerConf, 1);
-//                }
-
                 if (wsEnabled) {
                     // MQTT over WebSocket
                     startWebsocketServer(c);
@@ -127,7 +121,8 @@ public class MQTTBroker extends AbstractVerticle {
                 }
                 Container.logger().info(
                         "Startd Broker ==> [port: " + c.getPort() + "]" +
-                                " [" + c.getFeatursInfo() + "] "
+                                " [" + c.getFeatursInfo() + "] " +
+                                " [socket_idle_timeout:" + c.getSocketIdleTimeout() + "] "
                 );
             }
 
@@ -144,11 +139,12 @@ public class MQTTBroker extends AbstractVerticle {
         String keyPath = c.getTlsKeyPath();
         String certPath = c.getTlsCertPath();
         boolean tlsEnabled = c.isTlsEnabled();
+        int idleTimeout = c.getSocketIdleTimeout();
 
         // MQTT over TCP
         NetServerOptions opt = new NetServerOptions()
                 .setTcpKeepAlive(true)
-                .setIdleTimeout(IDLE_TIMEOUT_SECONDS) // in seconds; 0 means "don't timeout".
+                .setIdleTimeout(idleTimeout) // in seconds; 0 means "don't timeout".
                 .setPort(port);
 
         if(tlsEnabled) {
@@ -170,10 +166,11 @@ public class MQTTBroker extends AbstractVerticle {
         String keyPath = c.getTlsKeyPath();
         String certPath = c.getTlsCertPath();
         boolean tlsEnabled = c.isTlsEnabled();
+        int idleTimeout = c.getSocketIdleTimeout();
 
         HttpServerOptions httpOpt = new HttpServerOptions()
                 .setTcpKeepAlive(true)
-                .setIdleTimeout(IDLE_TIMEOUT_SECONDS) // in seconds; 0 means "don't timeout".
+                .setIdleTimeout(idleTimeout) // in seconds; 0 means "don't timeout".
                 .setWebsocketSubProtocols(wsSubProtocols)
 //                .setWebsocketSubProtocol(wsSubProtocols)
                 .setPort(port);

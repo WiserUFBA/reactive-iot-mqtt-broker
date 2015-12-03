@@ -11,6 +11,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageProducer;
+import io.vertx.core.json.JsonObject;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
@@ -240,6 +242,16 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 tenant = "";
             DeliveryOptions opt = new DeliveryOptions().addHeader(TENANT_HEADER, publishTenant);
             vertx.eventBus().publish(ADDRESS, msg, opt);
+
+//            NOT TESTED... It's only a code sample trying to resolve "No pong from server" error messages in production ...
+//            MessageProducer<Buffer> producer = vertx.eventBus().publisher(ADDRESS);
+//            producer.deliveryOptions(opt);
+//            producer.write(msg);
+//            if (producer.writeQueueFull()) {
+////                producer.pause();
+////                producer.drainHandler( done -> producer.resume());
+//            }
+
         } catch(Throwable e) {
             Container.logger().error(e.getMessage());
         }
