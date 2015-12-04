@@ -20,7 +20,7 @@ public class ConfigParser {
     private String tlsCertPath;
     private int socketIdleTimeout;
 
-    private static final int IDLE_TIMEOUT_SECONDS = 30;
+    private static final int IDLE_TIMEOUT_SECONDS = 120;
 
     public ConfigParser() { }
 
