@@ -1,0 +1,9 @@
+/var/log/mqtt-broker.log
+{
+    daily
+    rotate 7
+    copytruncate
+    compress
+    missingok
+    sharedscripts
+}
