@@ -87,29 +87,4 @@ public class Oauth2TokenValidator {
         req.setAccessToken(token);
         return req;
     }
-
-
-//    /*FIXIT: does not work*/
-//    public TokenInfo authorize(String username, String password) throws Exception {
-//        String targetEndpointUrl = identityURL + "/services/OAuth2Service.OAuth2ServiceHttpsSoap12Endpoint";
-//        OAuth2ServiceStub oauth2 = new OAuth2ServiceStub(targetEndpointUrl);
-//        OAuth2AuthorizeReqDTO req = new OAuth2AuthorizeReqDTO();
-//        req.setUsername(username);
-//        req.setPassword(password);
-//        req.addScopes("mqtt");
-//
-//        OAuth2AuthorizeRespDTO resp = oauth2.authorize(req);
-//
-//        String authorizedUser = username;
-//        List<String> scope = Arrays.asList( resp.getScope() );
-//        Long expiryTime = resp.getValidityPeriod();
-//        String errorMsg = resp.getErrorMsg();
-//
-//        TokenInfo tinfo = new TokenInfo();
-//        tinfo.setAuthorizedUser(authorizedUser);
-//        tinfo.setScope(scope);
-//        tinfo.setErrorMsg(errorMsg);
-//        tinfo.setExpiryTime(expiryTime);
-//        return tinfo;
-//    }
 }

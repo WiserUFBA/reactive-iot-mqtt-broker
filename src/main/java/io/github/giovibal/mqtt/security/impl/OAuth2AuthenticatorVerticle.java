@@ -8,7 +8,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 /**
- * Created by giova_000 on 04/02/2015.
+ * Created by Giovanni Baleani on 04/02/2015.
  */
 
 /**
@@ -46,15 +46,9 @@ public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
     public void startAuthenticator(String address, JsonObject conf) throws Exception {
 
         SecurityConfigParser c = new SecurityConfigParser(conf);
-//        boolean securityEnabled = c.isSecurityEnabled();
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();
-
-//        if(!securityEnabled) {
-//            logger.debug("MQTT Authorization disabled");
-//            return;
-//        }
 
         oauth2Validator = new Oauth2TokenValidator(identityURL, idp_userName, idp_password);
 
@@ -69,11 +63,6 @@ public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
             try {
                 tokanIsValid = oauth2Validator.tokenIsValid(access_token);
                 TokenInfo info = oauth2Validator.getTokenInfo(access_token);
-//                json.put("auth_valid", tokanIsValid);
-//                json.put("authorized_user", info.getAuthorizedUser());
-//                json.put("error_msg", info.getErrorMsg());
-//                json.put("scope", info.getScope());
-//                json.put("expiry_time", info.getExpiryTime());
                 AuthorizationClient.ValidationInfo vi = new AuthorizationClient.ValidationInfo();
                 vi.auth_valid = tokanIsValid;
                 vi.authorized_user = info.getAuthorizedUser();
@@ -83,7 +72,7 @@ public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
                 json.put("scope", info.getScope());
                 json.put("expiry_time", info.getExpiryTime());
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.fatal(e.getMessage(), e);
             }
 
             msg.reply(json);
