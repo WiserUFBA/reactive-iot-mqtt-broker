@@ -56,7 +56,7 @@
       "address": "mqtt.authenticator.oauth2.apifest",
       "security": {
         "authorized_clients": ["testing.*"],
-        "idp_url": "http://192.168.0.214:8080/oauth20/tokens"
+        "idp_url": "http://192.168.0.214:8182/is/token"
       }
     }
   ]
