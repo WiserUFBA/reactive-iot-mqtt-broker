@@ -16,6 +16,8 @@ public class SecurityConfigParser {
     private String idpUrl;
     private String idpUsername;
     private String idpPassword;
+    private String appKey;
+    private String appSecret;
 
     SecurityConfigParser(JsonObject conf) {
         parse(conf);
@@ -34,6 +36,8 @@ public class SecurityConfigParser {
         idpUrl = security.getString("idp_url", "http://192.168.231.55:9763");
         idpUsername = security.getString("idp_username", "admin");
         idpPassword = security.getString("idp_password", "admin");
+        appKey = security.getString("app_key", "a");
+        appSecret = security.getString("app_secret", "12345");
     }
 
 
@@ -55,6 +59,14 @@ public class SecurityConfigParser {
 
     String getIdpPassword() {
         return idpPassword;
+    }
+
+    String getAppKey() {
+        return appKey;
+    }
+
+    String getAppSecret() {
+        return appSecret;
     }
 
     boolean isAuthorizedClient(String clientID) {

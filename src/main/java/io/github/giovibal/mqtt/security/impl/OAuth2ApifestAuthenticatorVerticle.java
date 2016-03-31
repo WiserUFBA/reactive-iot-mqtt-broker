@@ -6,6 +6,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -50,11 +51,13 @@ public class OAuth2ApifestAuthenticatorVerticle extends AbstractAuthenticatorVer
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();
+        String app_key = c.getAppKey();
+        String app_secret = c.getAppSecret();
 
         MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(address, (Message<JsonObject> msg) -> {
             JsonObject oauth2_token = msg.body();
-            String access_token = oauth2_token.getString("username");
-            String refresh_token = oauth2_token.getString("password");
+            String username = oauth2_token.getString("username");
+            String password = oauth2_token.getString("password");
 
             // token validation
             try {
@@ -62,8 +65,8 @@ public class OAuth2ApifestAuthenticatorVerticle extends AbstractAuthenticatorVer
                 HttpClient httpClient = vertx.createHttpClient(opt);
                 URL url = new URL(identityURL);
 
-                String uri = url.getPath() + "/validate?token=" + access_token;
-                httpClient.get(url.getPort(), url.getHost(), uri, resp -> {
+                String uri = url.getPath() + "/validate?token=" + username;
+                HttpClientRequest validateReq = httpClient.get(url.getPort(), url.getHost(), uri, resp -> {
                     resp.exceptionHandler(e -> {
                         logger.fatal(e.getMessage(), e);
 
@@ -102,7 +105,64 @@ public class OAuth2ApifestAuthenticatorVerticle extends AbstractAuthenticatorVer
 
                         msg.reply(json);
                     });
-                }).end();
+                });
+
+
+                HttpClientRequest loginReq = httpClient.post(url.getPort(), url.getHost(), url.getPath(), resp -> {
+                    resp.exceptionHandler(e -> {
+                        logger.fatal(e.getMessage(), e);
+
+                        AuthorizationClient.ValidationInfo vi = new AuthorizationClient.ValidationInfo();
+                        vi.auth_valid = false;
+                        vi.authorized_user = "";
+                        vi.error_msg = e.getMessage();
+                        msg.reply(vi.toJson());
+                    });
+                    resp.bodyHandler(totalBuffer -> {
+                        String jsonResponse = totalBuffer.toString("UTF-8");
+                        logger.info(jsonResponse);
+                            /*
+                            {
+                              "access_token": "3a826d62b293f744436617464e893d06b81f95fb39fb971da28bb4d1d1900f61",
+                              "refresh_token": "681ab7f865503ca9640739bf4f7a837537daa5cdf11e3a2ff0b3940683598f99",
+                              "token_type": "Bearer",
+                              "expires_in": "120",
+                              "scope": "sp",
+                              "refresh_expires_in": "300"
+                            }
+                             */
+                        JsonObject j = new JsonObject(jsonResponse);
+                        String new_access_token = j.getString("access_token");
+                        String new_refresh_token = j.getString("refresh_token");
+                        String token_type = j.getString("token_type");
+                        String expires_in = j.getString("expires_in");
+                        String scope = j.getString("scope");
+                        String refresh_expires_in = j.getString("refresh_expires_in");
+
+                        AuthorizationClient.ValidationInfo vi = new AuthorizationClient.ValidationInfo();
+                        vi.auth_valid = true;
+                        vi.authorized_user = username;
+                        vi.error_msg = "";
+
+                        JsonObject json = new JsonObject();
+                        json = vi.toJson();
+                        json.put("scope", scope);
+                        json.put("expiry_time", expires_in);
+
+                        msg.reply(json);
+                    });
+                })
+                .putHeader("Content-Type", "application/x-www-form-urlencoded")
+                .write("&grant_type=password&username="+username+"&password="+password+"&scope=sp&client_id="+app_key+"&client_secret="+app_secret+"")
+                ;
+
+                if(username.contains("@")) {
+                    loginReq.end();
+                }
+                else {
+                    validateReq.end();
+                }
+
             } catch (Throwable e) {
                 logger.fatal(e.getMessage(), e);
 
