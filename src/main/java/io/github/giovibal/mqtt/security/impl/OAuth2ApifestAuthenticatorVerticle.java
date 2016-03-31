@@ -87,7 +87,7 @@ public class OAuth2ApifestAuthenticatorVerticle extends AbstractAuthenticatorVer
                         String clientId = j.getString("clientId");
                         String codeId = j.getString("codeId");
                         String userId = j.getString("userId");
-                        String created = j.getString("created");
+                        Long created = j.getLong("created");
                         String refreshExpiresIn = j.getString("refreshExpiresIn");
 
                         AuthorizationClient.ValidationInfo vi = new AuthorizationClient.ValidationInfo();
