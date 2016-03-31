@@ -151,13 +151,13 @@ public class OAuth2ApifestAuthenticatorVerticle extends AbstractAuthenticatorVer
 
                         msg.reply(json);
                     });
-                })
-                .putHeader("Content-Type", "application/x-www-form-urlencoded")
-                .write("&grant_type=password&username="+username+"&password="+password+"&scope=sp&client_id="+app_key+"&client_secret="+app_secret+"")
-                ;
+                });
 
                 if(username.contains("@")) {
-                    loginReq.end();
+                    String data = "grant_type=password&username=" + username + "&password=" + password + "&scope=sp&client_id=" + app_key + "&client_secret=" + app_secret+"";
+                    loginReq.putHeader("Content-Type", "application/x-www-form-urlencoded");
+                    loginReq.putHeader("content-length", "");
+                    loginReq.end(data, "UTF-8");
                 }
                 else {
                     validateReq.end();
