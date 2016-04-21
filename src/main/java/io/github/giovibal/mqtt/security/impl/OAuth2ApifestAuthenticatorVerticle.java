@@ -1,16 +1,12 @@
 package io.github.giovibal.mqtt.security.impl;
 
 import io.github.giovibal.mqtt.security.AuthorizationClient;
-import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 import java.net.URL;
 
@@ -40,14 +36,13 @@ import java.net.URL;
  }
  */
 
-public class OAuth2ApifestAuthenticatorVerticle extends AbstractAuthenticatorVerticle {
+public class OAuth2ApifestAuthenticatorVerticle extends AuthenticatorVerticle {
 
-    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
+//    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
 
     @Override
-    public void startAuthenticator(String address, JsonObject conf) throws Exception {
+    public void startAuthenticator(String address, AuthenticatorConfig c) throws Exception {
 
-        SecurityConfigParser c = new SecurityConfigParser(conf);
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();

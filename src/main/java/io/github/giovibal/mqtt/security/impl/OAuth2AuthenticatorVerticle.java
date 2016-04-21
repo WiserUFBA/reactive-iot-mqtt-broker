@@ -3,9 +3,8 @@ package io.github.giovibal.mqtt.security.impl;
 import io.github.giovibal.mqtt.security.AuthorizationClient;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 /**
  * Created by Giovanni Baleani on 04/02/2015.
@@ -36,16 +35,15 @@ import io.vertx.core.logging.LoggerFactory;
  curl -k -H "Authorization:Bearer 8676b434c458d46e9a84303a68e4af95" "http://192.168.231.57:8280/sp/config/graph?tenant=test"
  */
 
-public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
+public class OAuth2AuthenticatorVerticle extends AuthenticatorVerticle {
 
-    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
+//    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
 
     private Oauth2TokenValidator oauth2Validator;
 
     @Override
-    public void startAuthenticator(String address, JsonObject conf) throws Exception {
+    public void startAuthenticator(String address, AuthenticatorConfig c) throws Exception {
 
-        SecurityConfigParser c = new SecurityConfigParser(conf);
         String identityURL = c.getIdpUrl();
         String idp_userName = c.getIdpUsername();
         String idp_password = c.getIdpPassword();
@@ -56,7 +54,6 @@ public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
             JsonObject oauth2_token = msg.body();
             String access_token = oauth2_token.getString("username");
             String refresh_token = oauth2_token.getString("password");
-
             // token validation
             JsonObject json = new JsonObject();
             Boolean tokanIsValid = Boolean.FALSE;
@@ -74,9 +71,7 @@ public class OAuth2AuthenticatorVerticle extends AbstractAuthenticatorVerticle {
             } catch (Exception e) {
                 logger.fatal(e.getMessage(), e);
             }
-
             msg.reply(json);
-
         });
 
         logger.info("Startd MQTT Authorization, address: " + consumer.address());

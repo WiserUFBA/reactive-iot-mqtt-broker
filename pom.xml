@@ -10,23 +10,13 @@
     <name>Project - vertx-mqtt-broker-mod</name>
     <url>http://maven.apache.org</url>
 
-    <!--<parent>-->
-        <!--<groupId>org.sonatype.oss</groupId>-->
-        <!--<artifactId>oss-parent</artifactId>-->
-        <!--<version>7</version>-->
-    <!--</parent>-->
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <!--Dependency versions-->
-        <vertx.version>3.1.0</vertx.version>
+        <vertx.version>3.2.1</vertx.version>
         <vertx.scope>provided</vertx.scope>
-        <!--<vertx.testtools.version>2.0.3-final</vertx.testtools.version>-->
         <junit.version>4.11</junit.version>
         <paho.version>1.0.1</paho.version>
         <paho.version>1.0.1</paho.version>
-
         <wso2.scope>provided</wso2.scope>
     </properties>
 
@@ -40,10 +30,8 @@
             <id>eclipse-paho-releases</id>
             <url>https://repo.eclipse.org/content/repositories/paho-releases/</url>
         </repository>
-
         <repository>
             <id>wso2-maven2-repository</id>
-            <!--<url>http://dist.wso2.org/maven2</url>-->
             <url>http://maven.wso2.org/nexus/content/groups/public/</url>
         </repository>
     </repositories>
@@ -65,7 +53,6 @@
 
         <dependency>
             <groupId>org.wso2.carbon.commons</groupId>
-            <!--<groupId>org.wso2.carbon.identity</groupId>-->
             <artifactId>org.wso2.carbon.identity.oauth.stub</artifactId>
             <version>4.4.7</version>
             <scope>${wso2.scope}</scope>

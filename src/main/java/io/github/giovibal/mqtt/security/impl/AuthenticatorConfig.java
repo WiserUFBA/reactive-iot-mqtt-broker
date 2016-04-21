@@ -9,9 +9,8 @@ import java.util.List;
 /**
  * Created by giova_000 on 23/02/2015.
  */
-public class SecurityConfigParser {
+public class AuthenticatorConfig {
 
-//    private boolean securityEnabled;
     private List<String> authorizedClients;
     private String idpUrl;
     private String idpUsername;
@@ -19,13 +18,12 @@ public class SecurityConfigParser {
     private String appKey;
     private String appSecret;
 
-    SecurityConfigParser(JsonObject conf) {
+    public AuthenticatorConfig(JsonObject conf) {
         parse(conf);
     }
-    void parse(JsonObject conf) {
+    public void parse(JsonObject conf) {
         JsonObject security = conf.getJsonObject("security", new JsonObject());
-//        securityEnabled = security.getBoolean("enabled", false);
-        JsonArray authorizedClientsArr = security.getJsonArray("authorized_clients", new JsonArray().add("testing.*"));
+        JsonArray authorizedClientsArr = security.getJsonArray("authorized_clients", new JsonArray());
         if(authorizedClientsArr != null) {
             authorizedClients = new ArrayList<>();
             for(int i=0; i<authorizedClientsArr.size(); i++) {
@@ -33,43 +31,38 @@ public class SecurityConfigParser {
                 authorizedClients.add(item);
             }
         }
-        idpUrl = security.getString("idp_url", "http://192.168.231.55:9763");
+        idpUrl = security.getString("idp_url", "http://localhost:9763");
         idpUsername = security.getString("idp_username", "admin");
         idpPassword = security.getString("idp_password", "admin");
         appKey = security.getString("app_key", "a");
         appSecret = security.getString("app_secret", "12345");
     }
 
-
-//    boolean isSecurityEnabled() {
-//        return securityEnabled;
-//    }
-
-    List<String> getAuthorizedClients() {
+    public List<String> getAuthorizedClients() {
         return authorizedClients;
     }
 
-    String getIdpUrl() {
+    public String getIdpUrl() {
         return idpUrl;
     }
 
-    String getIdpUsername() {
+    public String getIdpUsername() {
         return idpUsername;
     }
 
-    String getIdpPassword() {
+    public String getIdpPassword() {
         return idpPassword;
     }
 
-    String getAppKey() {
+    public String getAppKey() {
         return appKey;
     }
 
-    String getAppSecret() {
+    public String getAppSecret() {
         return appSecret;
     }
 
-    boolean isAuthorizedClient(String clientID) {
+    public boolean isAuthorizedClient(String clientID) {
         if(authorizedClients!=null) {
             for(String ac : authorizedClients) {
                 if(clientID.matches(ac)) {

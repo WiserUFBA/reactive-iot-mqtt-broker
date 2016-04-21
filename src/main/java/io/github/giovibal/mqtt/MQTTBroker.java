@@ -46,7 +46,8 @@ public class MQTTBroker extends AbstractVerticle {
         );
     }
     private void deployAuthorizationVerticle(JsonObject config, int instances) {
-        String clazz = config.getString("verticle", io.github.giovibal.mqtt.security.impl.OAuth2AuthenticatorVerticle.class.getName());
+//        String clazz = config.getString("verticle", io.github.giovibal.mqtt.security.impl.OAuth2AuthenticatorVerticle.class.getName());
+        String clazz = config.getString("verticle");
         deployVerticle(clazz,
                 new DeploymentOptions()
                         .setWorker(true)
