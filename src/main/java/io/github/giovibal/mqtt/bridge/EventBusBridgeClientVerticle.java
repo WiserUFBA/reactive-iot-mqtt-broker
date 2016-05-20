@@ -7,6 +7,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
@@ -14,9 +17,9 @@ import io.vertx.core.streams.Pump;
 /**
  * Created by giova_000 on 15/07/2015.
  */
-public class EventBusBridgeClientVerticle extends AbstractVerticle implements Handler<AsyncResult<NetSocket>> {
+public class EventBusBridgeClientVerticle extends AbstractVerticle implements Handler<WebSocket> {
 
-    private NetClient netClient;
+    private HttpClient netClient;
     private String remoteBridgeHost;
     private Integer remoteBridgePort;
     private String address;
@@ -36,22 +39,29 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
 
         // [TCP <- BUS] listen BUS write to TCP
         int timeout = 1000;
-        NetClientOptions opt = new NetClientOptions()
+//        NetClientOptions opt = new NetClientOptions()
+//                .setConnectTimeout(timeout) // 60 seconds
+//                .setIdleTimeout(10) // 1 second
+//                .setTcpKeepAlive(true)
+////                .setSsl(true)
+////                .setPemKeyCertOptions(new PemKeyCertOptions()
+////                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
+////                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
+////                )
+////                .setPemTrustOptions(new PemTrustOptions()
+////                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
+////                )
+//            ;
+
+        HttpClientOptions opt = new HttpClientOptions()
                 .setConnectTimeout(timeout) // 60 seconds
                 .setIdleTimeout(10) // 1 second
                 .setTcpKeepAlive(true)
-//                .setSsl(true)
-//                .setPemKeyCertOptions(new PemKeyCertOptions()
-//                    .setKeyPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it_pkcs8.key")
-//                    .setCertPath("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt")
-//                )
-//                .setPemTrustOptions(new PemTrustOptions()
-//                    .addCertPath("C:\\Sviluppo\\Certificati-SSL\\CA\\rootCA.pem")
-//                )
             ;
 
-        netClient = vertx.createNetClient(opt);
-        netClient.connect(remoteBridgePort, remoteBridgeHost, this);
+        netClient = vertx.createHttpClient(opt);
+        //netClient.connect(remoteBridgePort, remoteBridgeHost, this);
+        netClient.websocket(remoteBridgePort, remoteBridgeHost, "/bridge", this);
         connectionTimerID = vertx.setPeriodic(timeout*2, aLong -> {
             checkConnection();
         });
@@ -60,43 +70,45 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
     private void checkConnection() {
         if(!connected) {
             Container.logger().info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort + "] ... " + connectionTimerID);
-            netClient.connect(remoteBridgePort, remoteBridgeHost, this);
+//            netClient.connect(remoteBridgePort, remoteBridgeHost, this);
+            netClient.websocket(remoteBridgePort, remoteBridgeHost, "/bridge", this);
         }
     }
 
     @Override
-    public void handle(AsyncResult<NetSocket> netSocketAsyncResult) {
-        if (netSocketAsyncResult.succeeded()) {
+    public void handle(WebSocket netSocketAsyncResult) {
+//        if (netSocketAsyncResult.succeeded()) {
             connected = true;
             Container.logger().info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort + "]");
-            NetSocket netSocket = netSocketAsyncResult.result();
-            netSocket.closeHandler(aVoid -> {
-                Container.logger().error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + netSocket.writeHandlerID());
+//            WebSocket webSocket = netSocketAsyncResult.result();
+            WebSocket webSocket = netSocketAsyncResult;
+            webSocket.closeHandler(aVoid -> {
+                Container.logger().error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + webSocket.textHandlerID());
                 connected = false;
             });
-            netSocket.exceptionHandler(throwable -> {
+            webSocket.exceptionHandler(throwable -> {
                 Container.logger().error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
                 connected = false;
             });
 
-            netSocket.write(tenant + "\n");
-            netSocket.write("START SESSION" + "\n");
-            netSocket.pause();
-            EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address);
+            webSocket.writeFinalTextFrame(tenant + "\n");
+            webSocket.writeFinalTextFrame("START SESSION" + "\n");
+            webSocket.pause();
+            EventBusWebsocketBridge ebnb = new EventBusWebsocketBridge(webSocket, vertx.eventBus(), address);
             ebnb.setTenant(tenant);
             ebnb.start();
             Container.logger().info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
-            netSocket.resume();
-        } else {
-            connected = false;
-            String msg = "Bridge Client - not connected to server [" + remoteBridgeHost + ":" + remoteBridgePort +"]";
-            Throwable e = netSocketAsyncResult.cause();
-            if (e != null) {
-                Container.logger().error(msg, e);
-            } else {
-                Container.logger().error(msg);
-            }
-        }
+            webSocket.resume();
+//        } else {
+//            connected = false;
+//            String msg = "Bridge Client - not connected to server [" + remoteBridgeHost + ":" + remoteBridgePort +"]";
+//            Throwable e = netSocketAsyncResult.cause();
+//            if (e != null) {
+//                Container.logger().error(msg, e);
+//            } else {
+//                Container.logger().error(msg);
+//            }
+//        }
     }
 
     @Override
