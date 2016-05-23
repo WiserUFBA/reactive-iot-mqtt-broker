@@ -2,6 +2,8 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.bridge.EventBusBridgeClientVerticle;
 import io.github.giovibal.mqtt.bridge.EventBusBridgeServerVerticle;
+import io.github.giovibal.mqtt.bridge.EventBusBridgeWebsocketClientVerticle;
+import io.github.giovibal.mqtt.bridge.EventBusBridgeWebsocketServerVerticle;
 import io.github.giovibal.mqtt.persistence.StoreVerticle;
 import io.github.giovibal.mqtt.security.AuthorizationVerticle;
 import io.vertx.core.AbstractVerticle;
@@ -57,12 +59,12 @@ public class MQTTBroker extends AbstractVerticle {
     }
 
     private void deployBridgeServerVerticle(JsonObject config, int instances) {
-        deployVerticle(EventBusBridgeServerVerticle.class,
+        deployVerticle(EventBusBridgeWebsocketServerVerticle.class,
                 new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config)
         );
     }
     private void deployBridgeClientVerticle(JsonObject config, int instances) {
-        deployVerticle(EventBusBridgeClientVerticle.class,
+        deployVerticle(EventBusBridgeWebsocketClientVerticle.class,
                 new DeploymentOptions().setWorker(false).setInstances(instances).setConfig(config)
         );
     }
