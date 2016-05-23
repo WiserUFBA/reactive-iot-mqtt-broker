@@ -33,8 +33,6 @@ public class EventBusNetBridge {
         this.netSocket = netSocket;
         this.eventBusAddress = eventBusAddress;
         this.bridgeUUID = UUID.randomUUID().toString();
-
-//        init();
     }
 
     public void init() {
@@ -101,7 +99,7 @@ public class EventBusNetBridge {
         return tenantMatch;
     }
 
-    public String getBridgeUUID() {
+    String getBridgeUUID() {
         return bridgeUUID;
     }
 

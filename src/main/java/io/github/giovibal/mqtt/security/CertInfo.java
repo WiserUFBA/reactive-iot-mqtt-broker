@@ -1,6 +1,8 @@
 package io.github.giovibal.mqtt.security;
 
 import io.github.giovibal.mqtt.Container;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.NetSocket;
 
 import javax.naming.InvalidNameException;
@@ -21,6 +23,14 @@ public class CertInfo {
 
     public CertInfo(X509Certificate[] certs) {
         this.certs = certs;
+    }
+
+    public CertInfo(ServerWebSocket webSocket) {
+        try {
+            this.certs = webSocket.peerCertificateChain();
+        } catch(SSLPeerUnverifiedException e) {
+            Container.logger().error(e.getMessage(), e);
+        }
     }
 
     public CertInfo(NetSocket netSocket) {

@@ -3,10 +3,8 @@ package io.github.giovibal.mqtt.bridge;
 import io.github.giovibal.mqtt.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pump;
 
 import java.util.UUID;
 
@@ -16,48 +14,46 @@ import java.util.UUID;
 public class EventBusWebsocketBridge {
     private static final String BR_HEADER = "bridged";
 
-    private WebSocketBase netSocket;
+    private WebSocketBase webSocket;
     private EventBus eventBus;
     private String eventBusAddress;
     private String tenant;
     private DeliveryOptions deliveryOpt;
     private MessageConsumer<Buffer> consumer;
     private MessageProducer<Buffer> producer;
-    private MqttPump fromRemoteTcpToLocalBus;
+//    private MqttPump fromRemoteTcpToLocalBus;
+    private Pump fromRemoteTcpToLocalBus;
     private WebSocketWrapper netSocketWrapper;
     private String bridgeUUID;
 
-//    public EventBusWebsocketBridge(WebSocket netSocket, EventBus eventBus, String eventBusAddress) {
-    public EventBusWebsocketBridge(WebSocketBase netSocket, EventBus eventBus, String eventBusAddress) {
+    public EventBusWebsocketBridge(WebSocketBase webSocket, EventBus eventBus, String eventBusAddress) {
         this.eventBus = eventBus;
-        this.netSocket = netSocket;
+        this.webSocket = webSocket;
         this.eventBusAddress = eventBusAddress;
+        this.bridgeUUID = UUID.randomUUID().toString();
+    }
 
-        bridgeUUID = UUID.randomUUID().toString();
+    public void init() {
         deliveryOpt = new DeliveryOptions().addHeader(BR_HEADER, bridgeUUID);
         if(tenant!=null) {
             deliveryOpt.addHeader(MQTTSession.TENANT_HEADER, tenant);
         }
         consumer = eventBus.consumer(eventBusAddress);
         producer = eventBus.publisher(eventBusAddress, deliveryOpt);
-        fromRemoteTcpToLocalBus = new MqttPump(netSocket, producer);
-        netSocketWrapper = new MQTTWebSocketWrapper(netSocket);
-
-        fromRemoteTcpToLocalBus.setListener(e -> {
-            Container.logger().warn("Corrupted message from bridge: "+ e.getMessage());
-            netSocket.close();
-        });
+        fromRemoteTcpToLocalBus = new MqttPump(webSocket, producer);
+//        fromRemoteTcpToLocalBus = Pump.pump(webSocket, producer);
+        netSocketWrapper = new MQTTWebSocketWrapper(webSocket);
     }
 
     public void start() {
-        netSocket.pause();
+        init();
+        webSocket.pause();
         consumer.pause();
         // from remote tcp to local bus
         fromRemoteTcpToLocalBus.start();
 
         // from local bus to remote tcp
         consumer.handler(bufferMessage -> {
-//            debug(bufferMessage);
             boolean isBridged = bufferMessage.headers() != null
                     && bufferMessage.headers().contains(BR_HEADER)
                     && bufferMessage.headers().get(BR_HEADER).equals(bridgeUUID)
@@ -70,7 +66,7 @@ public class EventBusWebsocketBridge {
             }
         });
         consumer.resume();
-        netSocket.resume();
+        webSocket.resume();
     }
 
     // TODO: this method is equal to MQTTSession.isTenantSession, need refactoring
@@ -101,7 +97,7 @@ public class EventBusWebsocketBridge {
         return tenantMatch;
     }
 
-    public String getBridgeUUID() {
+    String getBridgeUUID() {
         return bridgeUUID;
     }
 
@@ -113,27 +109,6 @@ public class EventBusWebsocketBridge {
         consumer.handler(null);// stop read from bus
     }
 
-
-//    private void debug(Message<Buffer> bufferMessage) {
-//        try {
-//            Buffer copy = bufferMessage.body().copy();
-//            MQTTDecoder dec = new MQTTDecoder();
-//            AbstractMessage am = dec.dec(copy);
-//            if(am!=null) {
-//                if (am instanceof PublishMessage) {
-//                    PublishMessage pm = (PublishMessage) am;
-//                    String s = pm.getPayloadAsString();
-//                    Container.logger().info(s);
-//                } else {
-//                    Container.logger().error(am.getClass().getSimpleName() + " " + am.isDupFlag());
-//                }
-//            } else {
-//                Container.logger().error("Cannot decode message");
-//            }
-//        } catch(Throwable e) {
-//            Container.logger().error(e.getMessage(), e);
-//        }
-//    }
 
 
     public void setTenant(String tenant) {

@@ -12,7 +12,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vertx.version>3.2.1</vertx.version>
+        <!--<vertx.version>3.2.1</vertx.version>-->
+        <vertx.version>3.1.0</vertx.version>
         <vertx.scope>provided</vertx.scope>
         <junit.version>4.11</junit.version>
         <paho.version>1.0.1</paho.version>

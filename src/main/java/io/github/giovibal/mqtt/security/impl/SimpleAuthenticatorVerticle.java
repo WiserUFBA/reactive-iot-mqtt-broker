@@ -10,7 +10,7 @@ import io.vertx.core.json.JsonObject;
 public class SimpleAuthenticatorVerticle extends AuthenticatorVerticle {
     private JsonObject users;
     @Override
-    public void startAuthenticator(String address, JsonObject config) throws Exception {
+    public void startAuthenticator(String address, AuthenticatorConfig c) throws Exception {
 
         users = config().getJsonObject("users", new JsonObject());
 
@@ -40,4 +40,5 @@ public class SimpleAuthenticatorVerticle extends AuthenticatorVerticle {
             msg.reply(json);
         });
     }
+
 }

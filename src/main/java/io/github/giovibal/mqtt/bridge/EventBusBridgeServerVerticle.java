@@ -4,10 +4,12 @@ import io.github.giovibal.mqtt.Container;
 import io.github.giovibal.mqtt.MQTTSession;
 import io.github.giovibal.mqtt.security.CertInfo;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Handler;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.parsetools.RecordParser;
 
 /**
