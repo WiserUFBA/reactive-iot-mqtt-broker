@@ -10,6 +10,8 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 
@@ -17,6 +19,8 @@ import io.vertx.core.net.PemTrustOptions;
  * Created by Giovanni Bleani on 15/07/2015.
  */
 public class EventBusBridgeWebsocketClientVerticle extends AbstractVerticle implements Handler<WebSocket> {
+
+    private static Logger logger = LoggerFactory.getLogger(EventBusBridgeWebsocketClientVerticle.class);
 
     private HttpClient netClient;
     private String remoteBridgeHost;
@@ -70,7 +74,7 @@ public class EventBusBridgeWebsocketClientVerticle extends AbstractVerticle impl
 
     private void checkConnection() {
         if(!connected) {
-            Container.logger().info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort + "] ... " + connectionTimerID);
+            logger.info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort + "] ... " + connectionTimerID);
             netClient.websocket(remoteBridgePort, remoteBridgeHost, remoteBridgePath, this);
         }
     }
@@ -79,14 +83,14 @@ public class EventBusBridgeWebsocketClientVerticle extends AbstractVerticle impl
     public void handle(WebSocket webSocket) {
 //        if (netSocketAsyncResult.succeeded()) {
             connected = true;
-            Container.logger().info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort + "]");
+            logger.info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort + "]");
 //            WebSocket webSocket = netSocketAsyncResult.result();
             webSocket.closeHandler(aVoid -> {
-                Container.logger().error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + webSocket.textHandlerID());
+                logger.error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + webSocket.textHandlerID());
                 connected = false;
             });
             webSocket.exceptionHandler(throwable -> {
-                Container.logger().error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
+                logger.error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
                 connected = false;
             });
 
@@ -96,16 +100,16 @@ public class EventBusBridgeWebsocketClientVerticle extends AbstractVerticle impl
             EventBusWebsocketBridge ebnb = new EventBusWebsocketBridge(webSocket, vertx.eventBus(), address);
             ebnb.setTenant(tenant);
             ebnb.start();
-            Container.logger().info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
+            logger.info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
             webSocket.resume();
 //        } else {
 //            connected = false;
 //            String msg = "Bridge Client - not connected to server [" + remoteBridgeHost + ":" + remoteBridgePort +"]";
 //            Throwable e = netSocketAsyncResult.cause();
 //            if (e != null) {
-//                Container.logger().error(msg, e);
+//                logger.error(msg, e);
 //            } else {
-//                Container.logger().error(msg);
+//                logger.error(msg);
 //            }
 //        }
     }

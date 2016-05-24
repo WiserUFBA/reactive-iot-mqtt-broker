@@ -9,6 +9,8 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.parsetools.RecordParser;
@@ -18,6 +20,8 @@ import io.vertx.core.parsetools.RecordParser;
  */
 public class EventBusBridgeWebsocketServerVerticle extends AbstractVerticle {
 
+    private static Logger logger = LoggerFactory.getLogger(EventBusBridgeWebsocketServerVerticle.class);
+    
     @Override
     public void start() throws Exception {
 
@@ -53,22 +57,22 @@ public class EventBusBridgeWebsocketServerVerticle extends AbstractVerticle {
         netServer.websocketHandler( (ServerWebSocket webSocket) -> {
             final EventBusWebsocketBridge ebnb = new EventBusWebsocketBridge(webSocket, vertx.eventBus(), address);
             webSocket.closeHandler(aVoid -> {
-                Container.logger().info("Bridge Server - closed connection from client " + webSocket.textHandlerID());
+                logger.info("Bridge Server - closed connection from client " + webSocket.textHandlerID());
                 ebnb.stop();
             });
             webSocket.exceptionHandler(throwable -> {
-                Container.logger().error("Bridge Server - Exception: " + throwable.getMessage(), throwable);
+                logger.error("Bridge Server - Exception: " + throwable.getMessage(), throwable);
                 ebnb.stop();
             });
 
-            Container.logger().info("Bridge Server - new connection from client " + webSocket.textHandlerID());
+            logger.info("Bridge Server - new connection from client " + webSocket.textHandlerID());
 
             final RecordParser parser = RecordParser.newDelimited("\n", h -> {
                 String cmd = h.toString();
                 if ("START SESSION".equalsIgnoreCase(cmd)) {
                     webSocket.pause();
                     ebnb.start();
-                    Container.logger().info("Bridge Server - bridgeUUID: " + ebnb.getBridgeUUID());
+                    logger.info("Bridge Server - bridgeUUID: " + ebnb.getBridgeUUID());
                     webSocket.resume();
                 } else {
                     String tenant = cmd;

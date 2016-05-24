@@ -3,12 +3,16 @@ package io.github.giovibal.mqtt;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 /**
  * Created by giovanni on 07/05/2014.
  */
 public class MQTTWebSocket extends MQTTSocket {
-
+    
+    private static Logger logger = LoggerFactory.getLogger(MQTTWebSocket.class);
+    
     private ServerWebSocket netSocket;
 
     public MQTTWebSocket(Vertx vertx, ConfigParser config, ServerWebSocket netSocket) {
@@ -20,13 +24,13 @@ public class MQTTWebSocket extends MQTTSocket {
         netSocket.handler(this);
         netSocket.exceptionHandler(event -> {
             String clientInfo = getClientInfo();
-            Container.logger().info(clientInfo + ", web-socket closed ... " + netSocket.binaryHandlerID() + " error: " + event.getMessage());
+            logger.info(clientInfo + ", web-socket closed ... " + netSocket.binaryHandlerID() + " error: " + event.getMessage());
             handleWillMessage();
             shutdown();
         });
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
-            Container.logger().info(clientInfo + ", web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
+            logger.info(clientInfo + ", web-socket closed ... "+ netSocket.binaryHandlerID() +" "+ netSocket.textHandlerID());
             shutdown();
         });
     }
@@ -40,12 +44,12 @@ public class MQTTWebSocket extends MQTTSocket {
                 netSocket.drainHandler( done -> netSocket.resume() );
             }
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
     protected void closeConnection() {
-        Container.logger().debug("web-socket will be closed ... " + netSocket.binaryHandlerID() + " " + netSocket.textHandlerID());
+        logger.debug("web-socket will be closed ... " + netSocket.binaryHandlerID() + " " + netSocket.textHandlerID());
         if(session!=null) {
             session.handleWillMessage();
         }

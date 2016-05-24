@@ -3,6 +3,8 @@ package io.github.giovibal.mqtt.security;
 import io.github.giovibal.mqtt.Container;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocket;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 
 import javax.naming.InvalidNameException;
@@ -19,6 +21,9 @@ import java.io.FileNotFoundException;
  * Created by giova_000 on 15/10/2015.
  */
 public class CertInfo {
+
+    private static Logger logger = LoggerFactory.getLogger(CertInfo.class);
+
     private X509Certificate[] certs;
 
     public CertInfo(X509Certificate[] certs) {
@@ -29,7 +34,7 @@ public class CertInfo {
         try {
             this.certs = webSocket.peerCertificateChain();
         } catch(SSLPeerUnverifiedException e) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -37,7 +42,7 @@ public class CertInfo {
         try {
             this.certs = netSocket.peerCertificateChain();
         } catch(SSLPeerUnverifiedException e) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -47,7 +52,7 @@ public class CertInfo {
             X509Certificate cert = X509Certificate.getInstance(file);
             this.certs = new X509Certificate[]{cert};
         } catch(FileNotFoundException|CertificateException e) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -58,10 +63,10 @@ public class CertInfo {
             for (X509Certificate c : certs) {
                 String dn = c.getSubjectDN().getName();// info del DEVICE/TENANT
                 tenant = getTenantFromDN(dn);
-                Container.logger().info("Cert Info - " + c.getSerialNumber() + " " + dn);
+                logger.info("Cert Info - " + c.getSerialNumber() + " " + dn);
             }
         }
-        Container.logger().info("Cert Info - tenant found: "+ tenant);
+        logger.info("Cert Info - tenant found: "+ tenant);
         return tenant;
     }
 
@@ -74,7 +79,7 @@ public class CertInfo {
         try {
             LdapName ldapDN = new LdapName(dn);
             for (Rdn rdn : ldapDN.getRdns()) {
-//                Container.logger().info(rdn.getType() + " -> " + rdn.getValue());
+//                logger.info(rdn.getType() + " -> " + rdn.getValue());
                 if(rdn.getType().equals(rdnType)) {
                     value = rdn.getValue().toString();
                 }

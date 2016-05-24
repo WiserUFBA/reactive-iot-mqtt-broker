@@ -11,9 +11,10 @@ import io.vertx.core.streams.Pump;
 import java.util.UUID;
 
 /**
- * Created by giova_000 on 15/07/2015.
+ * Created by Giovanni Baleani on 15/07/2015.
  */
 public class EventBusNetBridge {
+
     private static final String BR_HEADER = "bridged";
 
     private NetSocket netSocket;

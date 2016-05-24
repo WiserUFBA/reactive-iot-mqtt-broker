@@ -6,15 +6,18 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 /**
  * Created by giova_000 on 14/10/2015.
  */
 public class AuthorizationClient {
+    
+    private static Logger logger = LoggerFactory.getLogger(AuthorizationClient.class);
 
     private EventBus eventBus;
     private String authenticatorAddress;
-//    private Handler<Boolean> handler;
 
     public AuthorizationClient(EventBus eventBus, String authenticatorAddress) {
         this.eventBus = eventBus;
@@ -30,18 +33,18 @@ public class AuthorizationClient {
             ValidationInfo vi = new ValidationInfo();
             if (res.succeeded()) {
                 JsonObject validationInfo = res.result().body();
-                Container.logger().debug(validationInfo);
+                logger.debug(validationInfo);
                 vi.fromJson(validationInfo);
-                Container.logger().debug("authenticated ===> " + vi.auth_valid);
+                logger.debug("authenticated ===> " + vi.auth_valid);
                 if (vi.auth_valid) {
-                    Container.logger().debug("authorized_user ===> " + vi.authorized_user + ", tenant ===> " + vi.tenant);
+                    logger.debug("authorized_user ===> " + vi.authorized_user + ", tenant ===> " + vi.tenant);
                     authHandler.handle(vi);
                 } else {
-                    Container.logger().debug("authenticated error ===> " + vi.error_msg);
+                    logger.debug("authenticated error ===> " + vi.error_msg);
                     authHandler.handle(vi);
                 }
             } else {
-                Container.logger().debug("login failed !");
+                logger.debug("login failed !");
                 vi.auth_valid = Boolean.FALSE;
                 authHandler.handle(vi);
             }

@@ -12,8 +12,6 @@ import io.vertx.core.json.JsonObject;
 
 public class OAuth2AuthenticatorVerticle extends AuthenticatorVerticle {
 
-//    private static Logger logger = LoggerFactory.getLogger("mqtt-broker-log");
-
     private Oauth2TokenValidator oauth2Validator;
 
     @Override

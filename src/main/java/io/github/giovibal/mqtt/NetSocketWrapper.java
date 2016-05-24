@@ -1,6 +1,8 @@
 package io.github.giovibal.mqtt;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
@@ -8,6 +10,8 @@ import io.vertx.core.streams.Pump;
  * Created by giova_000 on 29/06/2015.
  */
 public class NetSocketWrapper {
+
+    private static Logger logger = LoggerFactory.getLogger(NetSocketWrapper.class);
 
     private NetSocket netSocket;
 
@@ -26,7 +30,7 @@ public class NetSocketWrapper {
                 netSocket.drainHandler( done -> netSocket.resume() );
             }
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage(), e);
         }
     }
 

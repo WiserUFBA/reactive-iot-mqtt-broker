@@ -11,6 +11,8 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -21,7 +23,7 @@ import io.vertx.core.net.PemKeyCertOptions;
  */
 public class MQTTBroker extends AbstractVerticle {
 
-
+    private Logger logger = LoggerFactory.getLogger(MQTTBroker.class);
 
     private void deployVerticle(String c, DeploymentOptions opt) {
         vertx.deployVerticle(c, opt,
@@ -30,7 +32,7 @@ public class MQTTBroker extends AbstractVerticle {
                         result.cause().printStackTrace();
                     } else {
                         String deploymentID = result.result();
-                        Container.logger().debug(c + ": " + deploymentID);
+                        logger.debug(c + ": " + deploymentID);
                     }
                 }
         );
@@ -42,7 +44,7 @@ public class MQTTBroker extends AbstractVerticle {
                         result.cause().printStackTrace();
                     } else {
                         String deploymentID = result.result();
-                        Container.logger().debug(c.getSimpleName() + ": " + deploymentID);
+                        logger.debug(c.getSimpleName() + ": " + deploymentID);
                     }
                 }
         );
@@ -122,7 +124,7 @@ public class MQTTBroker extends AbstractVerticle {
                     // MQTT over TCP
                     startTcpServer(c);
                 }
-                Container.logger().info(
+                logger.info(
                         "Startd Broker ==> [port: " + c.getPort() + "]" +
                                 " [" + c.getFeatursInfo() + "] " +
                                 " [socket_idle_timeout:" + c.getSocketIdleTimeout() + "] "
@@ -130,7 +132,7 @@ public class MQTTBroker extends AbstractVerticle {
             }
 
         } catch(Exception e ) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
 
     }

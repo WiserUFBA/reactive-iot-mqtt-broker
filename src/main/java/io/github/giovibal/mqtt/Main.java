@@ -8,6 +8,8 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.*;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 import org.apache.commons.io.FileUtils;
@@ -23,6 +25,8 @@ import java.util.List;
  */
 public class Main {
 
+    private static Logger logger = LoggerFactory.getLogger(Main.class);
+    
     public static void main(String[] args) {
         start(args);
     }
@@ -90,7 +94,7 @@ public class Main {
                 JsonObject config = new JsonObject(json);
                 deploymentOptions.setConfig(config);
             } catch(IOException e) {
-                Container.logger().fatal(e.getMessage(),e);
+                logger.fatal(e.getMessage(),e);
             }
         }
 
@@ -118,17 +122,17 @@ public class Main {
                     options.setClusterHost(clusterHost);
                 }
 
-                Container.logger().info("Hazelcast public address: " +
+                logger.info("Hazelcast public address: " +
                         hazelcastConfig.getNetworkConfig().getPublicAddress());
-                Container.logger().info("Hazelcast tcp-ip members: " +
+                logger.info("Hazelcast tcp-ip members: " +
                         hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().getMembers());
-                Container.logger().info("Hazelcast port: " +
+                logger.info("Hazelcast port: " +
                         hazelcastConfig.getNetworkConfig().getPort());
-                Container.logger().info("Hazelcast poutbound ports: " +
+                logger.info("Hazelcast poutbound ports: " +
                         hazelcastConfig.getNetworkConfig().getOutboundPorts());
-                Container.logger().info("Hazelcast interfaces: " +
+                logger.info("Hazelcast interfaces: " +
                         hazelcastConfig.getNetworkConfig().getInterfaces());
-                Container.logger().info("Hazelcast network config: " +
+                logger.info("Hazelcast network config: " +
                         hazelcastConfig.getNetworkConfig().toString());
 
                 Vertx.clusteredVertx(options, res -> {
@@ -137,11 +141,11 @@ public class Main {
                         vertx.deployVerticle(MQTTBroker.class.getName(), deploymentOptions);
                     } else {
                         // failed!
-                        Container.logger().fatal(res.cause().getMessage(), res.cause());
+                        logger.fatal(res.cause().getMessage(), res.cause());
                     }
                 });
             } catch (FileNotFoundException e) {
-                Container.logger().fatal(e.getMessage(), e);
+                logger.fatal(e.getMessage(), e);
             }
         } else {
             VertxOptions options = new VertxOptions();

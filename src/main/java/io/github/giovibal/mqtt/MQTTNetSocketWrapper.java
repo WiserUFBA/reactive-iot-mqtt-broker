@@ -2,6 +2,8 @@ package io.github.giovibal.mqtt;
 
 import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
@@ -9,6 +11,8 @@ import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
  * Created by giova_000 on 29/06/2015.
  */
 public class MQTTNetSocketWrapper extends NetSocketWrapper {
+
+    private static Logger logger = LoggerFactory.getLogger(MQTTNetSocketWrapper.class);
 
     private MQTTEncoder encoder = new MQTTEncoder();
 
@@ -21,7 +25,7 @@ public class MQTTNetSocketWrapper extends NetSocketWrapper {
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 }

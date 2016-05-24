@@ -3,11 +3,15 @@ package io.github.giovibal.mqtt;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 /**
  * Created by giova_000 on 29/06/2015.
  */
 public class WebSocketWrapper {
+
+    private static Logger logger = LoggerFactory.getLogger(WebSocketWrapper.class);
 
     private WebSocketBase webSocket;
 
@@ -26,7 +30,7 @@ public class WebSocketWrapper {
                 webSocket.drainHandler(done -> webSocket.resume() );
             }
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage(), e);
         }
     }
 

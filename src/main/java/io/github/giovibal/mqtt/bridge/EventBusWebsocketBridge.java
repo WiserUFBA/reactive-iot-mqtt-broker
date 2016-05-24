@@ -1,6 +1,8 @@
 package io.github.giovibal.mqtt.bridge;
 
-import io.github.giovibal.mqtt.*;
+import io.github.giovibal.mqtt.MQTTSession;
+import io.github.giovibal.mqtt.MQTTWebSocketWrapper;
+import io.github.giovibal.mqtt.WebSocketWrapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.http.WebSocketBase;
@@ -9,7 +11,7 @@ import io.vertx.core.streams.Pump;
 import java.util.UUID;
 
 /**
- * Created by giova_000 on 15/07/2015.
+ * Created by Giovanni Baleani on 15/07/2015.
  */
 public class EventBusWebsocketBridge {
     private static final String BR_HEADER = "bridged";

@@ -1,11 +1,14 @@
 package io.github.giovibal.mqtt.parser;
 
 import io.github.giovibal.mqtt.Container;
+import io.github.giovibal.mqtt.MQTTNetSocketWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeMap;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import org.dna.mqtt.moquette.proto.messages.AbstractMessage;
 
 import java.io.UnsupportedEncodingException;
@@ -15,6 +18,8 @@ import java.io.UnsupportedEncodingException;
  * @author andrea
  */
 public class Utils {
+
+    private static Logger logger = LoggerFactory.getLogger(Utils.class);
 
     public static final int MAX_LENGTH_LIMIT = 268435455;
 
@@ -130,8 +135,7 @@ public class Utils {
             //NB every Java platform has got UTF-8 encoding by default, so this
             //exception are never raised.
         } catch (UnsupportedEncodingException ex) {
-//            LoggerFactory.getLogger(Utils.class).error(null, ex);
-            Container.logger().error("Unsupported Encoding", ex);
+            logger.error("Unsupported Encoding", ex);
             return null;
         }
         //Utils.writeWord(out, raw.length);

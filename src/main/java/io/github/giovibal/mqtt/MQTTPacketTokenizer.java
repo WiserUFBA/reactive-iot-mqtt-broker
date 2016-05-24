@@ -1,5 +1,8 @@
 package io.github.giovibal.mqtt;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.LinkedHashSet;
 
@@ -8,6 +11,7 @@ import java.util.LinkedHashSet;
  * MQTT Protocol tokenizer.
  */
 public class MQTTPacketTokenizer {
+
     public static void main(String[] args) {
         MQTTPacketTokenizer tokenizer = new MQTTPacketTokenizer();
         tokenizer.registerListener(new MQTTPacketTokenizer.MqttTokenizerListener() {

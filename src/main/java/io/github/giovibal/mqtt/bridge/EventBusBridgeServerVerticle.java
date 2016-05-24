@@ -6,6 +6,8 @@ import io.github.giovibal.mqtt.security.CertInfo;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -16,6 +18,8 @@ import io.vertx.core.parsetools.RecordParser;
  * Created by Giovanni Baleani on 15/07/2015.
  */
 public class EventBusBridgeServerVerticle extends AbstractVerticle {
+
+    private static Logger logger = LoggerFactory.getLogger(EventBusBridgeServerVerticle.class);
 
     @Override
     public void start() throws Exception {
@@ -52,15 +56,15 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
         netServer.connectHandler(netSocket -> {
             final EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address);
             netSocket.closeHandler(aVoid -> {
-                Container.logger().info("Bridge Server - closed connection from client ip: " + netSocket.remoteAddress());
+                logger.info("Bridge Server - closed connection from client ip: " + netSocket.remoteAddress());
                 ebnb.stop();
             });
             netSocket.exceptionHandler(throwable -> {
-                Container.logger().error("Bridge Server - Exception: " + throwable.getMessage(), throwable);
+                logger.error("Bridge Server - Exception: " + throwable.getMessage(), throwable);
                 ebnb.stop();
             });
 
-            Container.logger().info("Bridge Server - new connection from client ip: " + netSocket.remoteAddress());
+            logger.info("Bridge Server - new connection from client ip: " + netSocket.remoteAddress());
 
 
 
@@ -69,7 +73,7 @@ public class EventBusBridgeServerVerticle extends AbstractVerticle {
                 if("START SESSION".equalsIgnoreCase(cmd)) {
                     netSocket.pause();
                     ebnb.start();
-                    Container.logger().info("Bridge Server - start session with tenant: " + ebnb.getTenant() +", ip: " + netSocket.remoteAddress() +", bridgeUUID: " + ebnb.getBridgeUUID());
+                    logger.info("Bridge Server - start session with tenant: " + ebnb.getTenant() +", ip: " + netSocket.remoteAddress() +", bridgeUUID: " + ebnb.getBridgeUUID());
                     netSocket.resume();
                 } else {
                     String tenant = cmd;

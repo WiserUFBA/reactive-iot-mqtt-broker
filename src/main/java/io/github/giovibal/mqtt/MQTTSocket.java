@@ -5,6 +5,8 @@ import io.github.giovibal.mqtt.parser.MQTTEncoder;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
@@ -15,6 +17,8 @@ import static org.dna.mqtt.moquette.proto.messages.AbstractMessage.*;
  */
 public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerListener, Handler<Buffer> {
 
+    private static Logger logger = LoggerFactory.getLogger(MQTTSocket.class);
+    
     protected Vertx vertx;
     private MQTTDecoder decoder;
     private MQTTEncoder encoder;
@@ -59,11 +63,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 AbstractMessage message = decoder.dec(buffer);
                 onMessageFromClient(message);
             } else {
-                Container.logger().warn("Timeout occurred ...");
+                logger.warn("Timeout occurred ...");
             }
         } catch (Throwable ex) {
             String clientInfo = getClientInfo();
-            Container.logger().error(clientInfo +", Bad error in processing the message", ex);
+            logger.error(clientInfo +", Bad error in processing the message", ex);
             closeConnection();
         }
     }
@@ -71,14 +75,14 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     @Override
     public void onError(Throwable e) {
         String clientInfo = getClientInfo();
-        Container.logger().error(clientInfo +", "+ e.getMessage(), e);
+        logger.error(clientInfo +", "+ e.getMessage(), e);
 //        if(e instanceof CorruptedFrameException) {
             closeConnection();
 //        }
     }
 
     private void onMessageFromClient(AbstractMessage msg) throws Exception {
-        Container.logger().debug("<<< " + msg);
+        logger.debug("<<< " + msg);
         switch (msg.getMessageType()) {
             case CONNECT:
                 ConnectMessage connect = (ConnectMessage)msg;
@@ -91,12 +95,12 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                         if(session!=null) {
                             cinfo = session.getClientInfo();
                         }
-                        Container.logger().info("keep alive exausted! closing connection for client["+cinfo+"] ...");
+                        logger.info("keep alive exausted! closing connection for client["+cinfo+"] ...");
                         closeConnection();
                     });
                     connAck.setSessionPresent(false);
                 } else {
-                    Container.logger().warn("Session alredy allocated ...");
+                    logger.warn("Session alredy allocated ...");
                     /*
                      The Server MUST process a second CONNECT Packet sent from a Client as a protocol violation and disconnect the Client
                       */
@@ -109,7 +113,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                         connAck.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
                         sendMessageToClient(connAck);
                     } else {
-                        Container.logger().error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
+                        logger.error("Authentication failed! clientID= " + connect.getClientID() + " username=" + connect.getUsername());
 //                        closeConnection();
                         connAck.setReturnCode(ConnAckMessage.BAD_USERNAME_OR_PASSWORD);
                         sendMessageToClient(connAck);
@@ -203,7 +207,7 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
                 handleDisconnect(disconnectMessage);
                 break;
             default:
-                Container.logger().warn("type of message not known: "+ msg.getClass().getSimpleName());
+                logger.warn("type of message not known: "+ msg.getClass().getSimpleName());
                 break;
         }
 
@@ -214,11 +218,11 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
 
     public void sendMessageToClient(AbstractMessage message) {
         try {
-            Container.logger().debug(">>> " + message);
+            logger.debug(">>> " + message);
             Buffer b1 = encoder.enc(message);
             sendMessageToClient(b1);
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -237,12 +241,12 @@ public abstract class MQTTSocket implements MQTTPacketTokenizer.MqttTokenizerLis
     }
 
     protected void handleWillMessage() {
-//        Container.logger().info("handle will message... ");
+//        logger.info("handle will message... ");
         if(session != null) {
-//            Container.logger().info("handle will message: session found!");
+//            logger.info("handle will message: session found!");
             session.handleWillMessage();
         }
-//        Container.logger().info("handle will message end.");
+//        logger.info("handle will message end.");
     }
 
 }

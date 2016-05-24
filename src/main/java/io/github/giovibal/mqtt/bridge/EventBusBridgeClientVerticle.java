@@ -7,6 +7,8 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.*;
 
 /**
@@ -14,6 +16,8 @@ import io.vertx.core.net.*;
  */
 public class EventBusBridgeClientVerticle extends AbstractVerticle implements Handler<AsyncResult<NetSocket>> {
 
+    private static Logger logger = LoggerFactory.getLogger(EventBusBridgeClientVerticle.class);
+    
     private NetClient netClient;
     private String remoteBridgeHost;
     private Integer remoteBridgePort;
@@ -64,7 +68,7 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
 
     private void checkConnection() {
         if(!connected) {
-            Container.logger().info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort + "] ... " + connectionTimerID);
+            logger.info("Bridge Client - try to reconnect to server [" + remoteBridgeHost + ":" + remoteBridgePort + "] ... " + connectionTimerID);
             netClient.connect(remoteBridgePort, remoteBridgeHost, this);
         }
     }
@@ -73,14 +77,14 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
     public void handle(AsyncResult<NetSocket> netSocketAsyncResult) {
         if (netSocketAsyncResult.succeeded()) {
             connected = true;
-            Container.logger().info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort + "]");
+            logger.info("Bridge Client - connected to server [" + remoteBridgeHost + ":" + remoteBridgePort + "]");
             NetSocket netSocket = netSocketAsyncResult.result();
             netSocket.closeHandler(aVoid -> {
-                Container.logger().error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + netSocket.writeHandlerID());
+                logger.error("Bridge Client - closed connection from server [" + remoteBridgeHost + ":" + remoteBridgePort + "]" + netSocket.writeHandlerID());
                 connected = false;
             });
             netSocket.exceptionHandler(throwable -> {
-                Container.logger().error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
+                logger.error("Bridge Client - Exception: " + throwable.getMessage(), throwable);
                 connected = false;
             });
 //            tenant = new CertInfo("C:\\Sviluppo\\Certificati-SSL\\cmroma.it\\cmroma.it.crt").getTenant();
@@ -90,16 +94,16 @@ public class EventBusBridgeClientVerticle extends AbstractVerticle implements Ha
             EventBusNetBridge ebnb = new EventBusNetBridge(netSocket, vertx.eventBus(), address);
             ebnb.setTenant(tenant);
             ebnb.start();
-            Container.logger().info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
+            logger.info("Bridge Client - bridgeUUID: "+ ebnb.getBridgeUUID());
             netSocket.resume();
         } else {
             connected = false;
             String msg = "Bridge Client - not connected to server [" + remoteBridgeHost + ":" + remoteBridgePort +"]";
             Throwable e = netSocketAsyncResult.cause();
             if (e != null) {
-                Container.logger().error(msg, e);
+                logger.error(msg, e);
             } else {
-                Container.logger().error(msg);
+                logger.error(msg);
             }
         }
     }

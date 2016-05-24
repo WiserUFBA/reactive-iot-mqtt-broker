@@ -2,12 +2,16 @@ package io.github.giovibal.mqtt;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 
 /**
  * Created by giovanni on 07/05/2014.
  */
 public class MQTTNetSocket extends MQTTSocket {
+
+    private static Logger logger = LoggerFactory.getLogger(MQTTNetSocket.class);
 
     private NetSocket netSocket;
 
@@ -21,13 +25,13 @@ public class MQTTNetSocket extends MQTTSocket {
         netSocket.handler(this);
         netSocket.exceptionHandler(event -> {
             String clientInfo = getClientInfo();
-            Container.logger().info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID() + " error: " + event.getMessage());
+            logger.info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID() + " error: " + event.getMessage());
             handleWillMessage();
             shutdown();
         });
         netSocket.closeHandler(aVoid -> {
             String clientInfo = getClientInfo();
-            Container.logger().info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
+            logger.info(clientInfo + ", net-socket closed ... " + netSocket.writeHandlerID());
             handleWillMessage();
             shutdown();
         });
@@ -43,12 +47,12 @@ public class MQTTNetSocket extends MQTTSocket {
                 netSocket.drainHandler( done -> netSocket.resume() );
             }
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
     protected void closeConnection() {
-        Container.logger().debug("net-socket will be closed ... " + netSocket.writeHandlerID());
+        logger.debug("net-socket will be closed ... " + netSocket.writeHandlerID());
         netSocket.close();
     }
 

@@ -13,6 +13,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import org.dna.mqtt.moquette.proto.messages.*;
 
 import java.io.UnsupportedEncodingException;
@@ -24,6 +26,8 @@ import java.util.*;
  * Base class for connection handling, 1 tcp connection corresponds to 1 instance of this class.
  */
 public class MQTTSession implements Handler<Message<Buffer>> {
+
+    private static Logger logger = LoggerFactory.getLogger(MQTTSession.class);
 
     public static final String ADDRESS = "io.github.giovibal.mqtt";
     public static final String TENANT_HEADER = "tenant";
@@ -99,11 +103,11 @@ public class MQTTSession implements Handler<Message<Buffer>> {
         cleanSession = connectMessage.isCleanSession();
         protoName = connectMessage.getProtocolName();
         if("MQIsdp".equals(protoName)) {
-            Container.logger().debug("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
+            logger.debug("Detected MQTT v. 3.1 " + protoName + ", clientID: " + clientID);
         } else if("MQTT".equals(protoName)) {
-            Container.logger().debug("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
+            logger.debug("Detected MQTT v. 3.1.1 " + protoName + ", clientID: " + clientID);
         } else {
-            Container.logger().debug("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
+            logger.debug("Detected MQTT protocol " + protoName + ", clientID: " + clientID);
         }
 
         String username = connectMessage.getUsername();
@@ -143,7 +147,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
     private void _handleConnectMessage(ConnectMessage connectMessage) {
         if (!cleanSession) {
-            Container.logger().debug("cleanSession=false: restore old session state with subscriptions ...");
+            logger.debug("cleanSession=false: restore old session state with subscriptions ...");
         }
         boolean isWillFlag = connectMessage.isWillFlag();
         if(isWillFlag) {
@@ -163,12 +167,12 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                         willMessage.setMessageID(1);
                 }
             } catch (UnsupportedEncodingException e) {
-                Container.logger().error(e.getMessage(), e);
+                logger.error(e.getMessage(), e);
             }
         }
 
         startKeepAliveTimer(connectMessage.getKeepAlive());
-        Container.logger().info("New connection client : " + getClientInfo());
+        logger.info("New connection client : " + getClientInfo());
     }
 
     private void startKeepAliveTimer(int keepAliveSeconds) {
@@ -182,7 +186,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             long keepAliveMillis = keepAliveSeconds * 1500;
             keepAliveTimerID = vertx.setPeriodic(keepAliveMillis, tid -> {
                 if(keepAliveTimeEnded) {
-                    Container.logger().debug("keep-alive timer end " + getClientInfo());
+                    logger.debug("keep-alive timer end " + getClientInfo());
                     handleWillMessage();
                     if (keepaliveErrorHandler != null) {
                         keepaliveErrorHandler.handle(clientID);
@@ -196,13 +200,13 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     }
     private void stopKeepAliveTimer() {
         try {
-            Container.logger().debug("keep-alive cancel old timer: " + keepAliveTimerID + " " + getClientInfo());
+            logger.debug("keep-alive cancel old timer: " + keepAliveTimerID + " " + getClientInfo());
             boolean removed = vertx.cancelTimer(keepAliveTimerID);
             if (!removed) {
-                Container.logger().warn("keep-alive cancel old timer not removed ID: " + keepAliveTimerID + " " + getClientInfo());
+                logger.warn("keep-alive cancel old timer not removed ID: " + keepAliveTimerID + " " + getClientInfo());
             }
         } catch(Throwable e) {
-            Container.logger().error("Cannot stop keep-alive timer with ID: "+keepAliveTimerID +" "+ getClientInfo(), e);
+            logger.error("Cannot stop keep-alive timer with ID: "+keepAliveTimerID +" "+ getClientInfo(), e);
         }
     }
 
@@ -253,7 +257,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
 //            }
 
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -324,7 +328,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 }
             }
         } catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
@@ -363,14 +367,14 @@ public class MQTTSession implements Handler<Message<Buffer>> {
                 PublishMessage pm = (PublishMessage) decoder.dec(in);
                 // filter messages by of subscriptions of this client
                 if(pm == null) {
-                    Container.logger().warn("PublishMessage is null, message.headers => "+ message.headers().entries()+"");
+                    logger.warn("PublishMessage is null, message.headers => "+ message.headers().entries()+"");
                 }
                 else {
                     handlePublishMessageReceived(pm);
                 }
             }
         } catch (Throwable e) {
-            Container.logger().error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -443,12 +447,12 @@ public class MQTTSession implements Handler<Message<Buffer>> {
             }
         }
         catch(Throwable e) {
-            Container.logger().error(e.getMessage());
+            logger.error(e.getMessage());
         }
     }
 
     public void handleDisconnect(DisconnectMessage disconnectMessage) {
-        Container.logger().debug("Disconnect from " + clientID +" ...");
+        logger.debug("Disconnect from " + clientID +" ...");
         /*
          * TODO: implement this behaviour
          * On receipt of DISCONNECT the Server:
@@ -472,7 +476,7 @@ public class MQTTSession implements Handler<Message<Buffer>> {
     public void handleWillMessage() {
         // publish will message if present ...
         if(willMessage != null) {
-            Container.logger().debug("publish will message ... topic[" + willMessage.getTopicName()+"]");
+            logger.debug("publish will message ... topic[" + willMessage.getTopicName()+"]");
             handlePublishMessage(willMessage);
         }
     }

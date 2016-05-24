@@ -9,7 +9,7 @@ import io.vertx.core.logging.LoggerFactory;
  */
 public abstract class AuthenticatorVerticle extends AbstractVerticle {
 
-    protected static Logger logger = LoggerFactory.getLogger("mqtt-broker-auth-log");
+    protected Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
     public void start() throws Exception {

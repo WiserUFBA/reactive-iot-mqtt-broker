@@ -4,8 +4,6 @@ import io.github.giovibal.mqtt.MQTTPacketTokenizer;
 import io.github.giovibal.mqtt.parser.MQTTDecoder;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.MessageProducer;
-import io.vertx.core.eventbus.impl.MessageProducerImpl;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
