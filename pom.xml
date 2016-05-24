@@ -12,9 +12,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!--<vertx.version>3.1.0</vertx.version>-->
-        <!--<vertx.version>3.2.1</vertx.version>-->
-        <vertx.version>3.3.0-SNAPSHOT</vertx.version>
+        <vertx.version>3.1.0</vertx.version>
         <vertx.scope>provided</vertx.scope>
         <wso2.scope>provided</wso2.scope>
     </properties>
