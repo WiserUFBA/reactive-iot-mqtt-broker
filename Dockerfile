@@ -1,4 +1,4 @@
-FROM java:8
+FROM java:8-alpine
 
 WORKDIR /opt
 
@@ -25,3 +25,4 @@ ADD config.json config.json
 
 ## EXECUTE COMMAND (without parameters)
 ENTRYPOINT ["java", "-jar", "-XX:OnOutOfMemoryError=\"kill -9 %p\"", "-XX:+UseG1GC", "mqtt-broker.jar"]
+CMD ["-c","/opt/config.json"]

@@ -1,7 +1,7 @@
-vertx-mqtt-broker-mod
-=====================
+vertx-mqtt-broker
+=================
 
-MQTT broker implementation as Vert.x module.
+MQTT broker implementation based on Vert.x.
 
 Credits:
 <br/>
@@ -12,50 +12,36 @@ for coder and decoder implementation of MQTT messages.
 
 Quick Start
 -----------
-Requires Vert.x 3.0.0 and Maven 3+
+Requires Vert.x 3.1.x and Maven 3+
 
 ```
 git clone https://github.com/giovibal/vertx-mqtt-broker-mod.git
 cd vertx-mqtt-broker-mod
 mvn clean install
 ```
-use vertx command to start the service ...
-```
-vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json
-vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -Dvertx.metrics.options.jmxEnabled=true -conf config.json
 
-vertx run io.github.giovibal.mqtt.MQTTBroker -cp target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf conf.json
+run as normal java ...
 ```
-or uber jar ...
-```
-java -jar target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
-java -Dvertx.metrics.options.jmxEnabled=true -jar target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config.json
+java -jar target/vertx-mqtt-broker-<version>-fat.jar -c config.json
 ```
 
 cluster ...
 ```
-vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.0-SNAPSHOT::mqtt-broker -conf config.json -cluster -cluster-host <IP>
-vertx run io.github.giovibal.mqtt.MQTTBroker -cp target/vertx-mqtt-broker-mod-2.0-SNAPSHOT-fat.jar -conf config1.json -cluster -cluster-host <IP>
+vertx run maven:io.github.giovibal.mqtt:vertx-mqtt-broker-mod:2.2-SNAPSHOT::mqtt-broker -conf config.json -cluster -cluster-host <IP>
+vertx run io.github.giovibal.mqtt.MQTTBroker -cp target/vertx-mqtt-broker-mod-2.2-SNAPSHOT-fat.jar -conf config1.json -cluster -cluster-host <IP>
 ```
 
 Features
 ----
 * Suport both QoS 0, 1 and 2 messages
 * Persistence and session management (cleanSession=false)
-* Multi-tenancy: isolation of topics and storage, just use username@tenant as username
+* Multi-tenancy: isolation of topics and storage, (username@tenant)
+* Pluggable authentication
 * MQTT over WebSocket
 * Retain flag
 * Oauth2 authentication integrated with <a href="http://wso2.com/products/identity-server/">WSO2 Identity Server</a>
+and <a href="http://apifest.com/">apifest.com</a>
 * TLS support over TCP and Websocket
-* Multiple endpoint configuration in the same broker instance  
+* Multiple endpoint configuration in the same broker instance
+* Broker-to-Broker bidirectional bridge over websocket
 
-Work in progress
-----
-* Refactoring, new architecture
-* Clustering and Hign Availability
-
-Roadmap
-----
-* Pluggable persistence 
-* Implement some out-of-the-box persistence managers: RAM, Cassandra, HBase, MongoDB
-* Implement will message support 

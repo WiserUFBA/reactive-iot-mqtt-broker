@@ -4,11 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.giovibal.mqtt</groupId>
-    <artifactId>vertx-mqtt-broker-mod</artifactId>
+    <artifactId>vertx-mqtt-broker</artifactId>
     <packaging>jar</packaging>
     <version>2.2-SNAPSHOT</version>
-    <name>Project - vertx-mqtt-broker-mod</name>
-    <url>http://maven.apache.org</url>
+    <name>MQTT Broker based on Vert.x</name>
+    <url>http://githib.com/giovibal</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
