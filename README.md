@@ -45,3 +45,6 @@ and <a href="http://apifest.com/">apifest.com</a>
 * Multiple endpoint configuration in the same broker instance
 * Broker-to-Broker bidirectional bridge over websocket
 
+License:
+----
+http://www.apache.org/licenses/LICENSE-2.0
