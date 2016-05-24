@@ -15,8 +15,8 @@ Quick Start
 Requires Vert.x 3.1.x and Maven 3+
 
 ```
-git clone https://github.com/giovibal/vertx-mqtt-broker-mod.git
-cd vertx-mqtt-broker-mod
+git clone https://github.com/GruppoFilippetti/vertx-mqtt-broker.git
+cd vertx-mqtt-broker
 mvn clean install
 ```
 
