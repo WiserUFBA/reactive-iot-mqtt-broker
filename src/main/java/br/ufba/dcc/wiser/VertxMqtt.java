@@ -40,7 +40,7 @@ public class VertxMqtt {
     private static final Logger LOG = LoggerFactory.getLogger(VertxMqtt.class);
 
     public void init() {
-        System.out.println("Inicializando Vertx");
+         System.out.println("Inicializando Vertx ");
     }
 
     private static void handleSubscription(MqttEndpoint endpoint) {
