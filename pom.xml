@@ -2,8 +2,8 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <name>SOFT-IoT-Vertx-MQTT-Broker</name>
-    <groupId>br.ufba.dcc.wiser</groupId>
+    <name>soft-iot-vertx-mqtt-broker</name>
+    <groupId>br.ufba.dcc.wiser.soft_iot</groupId>
     <artifactId>soft-iot-vertx-mqtt-broker</artifactId>
     <description>Reactive Microservice</description>
     <version>1.0-SNAPSHOT</version>
