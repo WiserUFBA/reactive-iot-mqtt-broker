@@ -6,7 +6,7 @@
     <groupId>br.ufba.dcc.wiser.soft_iot</groupId>
     <artifactId>soft-iot-vertx-mqtt-broker</artifactId>
     <description>Reactive Microservice</description>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>bundle</packaging>
 
     
