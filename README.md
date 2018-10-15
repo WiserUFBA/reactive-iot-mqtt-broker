@@ -26,3 +26,9 @@ For installation of soft-iot-vertx-mqtt-broker it is necessary to execute the fo
 
 karaf@root()> bundle:install mvn:br.ufba.dcc.wiser.soft_iot/soft-iot-vertx-mqtt-broker/1.0.0
 
+## Support and development
+
+<p align="center">
+	Developed by Leandro Andrade at </br>
+  <img src="https://wiki.dcc.ufba.br/pub/SmartUFBA/ProjectLogo/wiserufbalogo.jpg"/>
+</p>
