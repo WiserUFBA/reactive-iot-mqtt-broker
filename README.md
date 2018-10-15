@@ -29,6 +29,6 @@ karaf@root()> bundle:install mvn:br.ufba.dcc.wiser.soft_iot/soft-iot-vertx-mqtt-
 ## Support and development
 
 <p align="center">
-	Developed by Leandro Andrade at </br>
+	Developed by Cleber Lira at </br>
   <img src="https://wiki.dcc.ufba.br/pub/SmartUFBA/ProjectLogo/wiserufbalogo.jpg"/>
 </p>
